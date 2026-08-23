@@ -1,10 +1,15 @@
-# Olist CRM Pulse — Frontend del sistema
+# Olist CRM Pulse — Frontend
 
-Capa de presentación del **sistema CRM analítico** (React + PHP + MySQL).
+Capa de presentación del sistema CRM analítico (React + PHP + MySQL).
 
-- Este repositorio/carpeta: **solo frontend**
-- Backend PHP y MySQL (`olist_crm_db`): a cargo del compañero
-- Contrato de integración: [API_CONTRACT.md](./API_CONTRACT.md)
+**Todo el frontend vive solo en esta carpeta:** `frontend/`
+
+## Stack
+
+- Vite + React
+- React Router
+- Recharts (gráficos avanzados)
+- Axios
 
 ## Arranque
 
@@ -14,17 +19,32 @@ npm install
 npm run dev
 ```
 
-Flujo del sistema en UI:
+Abre: http://localhost:5173/
 
-1. Acceso (`/login`)
-2. Panel general
-3. Módulos de gestión (clientes / pedidos)
-4. Módulos de reportes (RFM, logística, LTV, pagos)
+## Qué incluye
 
-Sin `.env` usa datos locales de desarrollo. Con `VITE_API_URL` consume la API PHP real.
+- Login / Registro
+- Panel general (KPIs + gráficos)
+- CRUD de clientes y pedidos
+- Reportes: RFM, logística, LTV, pagos
+- Header / Footer del sistema
+- Logo Olist CRM Pulse
+- Contrato API para backend: [API_CONTRACT.md](./API_CONTRACT.md)
 
-## Conectar al backend
+## Datos
+
+Sin `.env` → **modo desarrollo (mocks)**  
+Con backend PHP:
 
 1. Copia `.env.example` → `.env`
-2. Define `VITE_API_URL`
+2. Define:
+
+```env
+VITE_API_URL=http://localhost/ruta-de-tu-backend
+```
+
 3. Reinicia `npm run dev`
+
+## Rama
+
+Trabajo en: `Beatriz-frontend`

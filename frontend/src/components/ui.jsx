@@ -10,11 +10,14 @@ export function PageHeader({ title, subtitle, action }) {
   )
 }
 
-export function KpiCard({ label, value, hint }) {
+export function KpiCard({ label, value, hint, trend }) {
   return (
     <article className="kpi">
       <p className="kpi-label">{label}</p>
       <p className="kpi-value">{value}</p>
+      {trend ? (
+        <p className={`kpi-trend ${trend.startsWith('-') ? 'down' : 'up'}`}>{trend}</p>
+      ) : null}
       {hint ? <p className="kpi-hint">{hint}</p> : null}
     </article>
   )

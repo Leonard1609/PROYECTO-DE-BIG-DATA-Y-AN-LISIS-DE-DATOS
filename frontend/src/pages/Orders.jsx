@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Badge, DataTable, ErrorState, LoadingState, Panel } from '../components/ui'
+import {
+  Badge,
+  CrudModal,
+  CrudOpsBar,
+  CrudQueryBar,
+  CrudSelectionCard,
+  CrudTablePanel,
+} from '../components/CrudShell'
 import { api } from '../services/api'
 
 const emptyForm = {
@@ -19,6 +26,7 @@ export default function Orders() {
   const [status, setStatus] = useState('')
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState(null)
+  const [selected, setSelected] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
 
@@ -27,7 +35,12 @@ export default function Orders() {
       setLoading(true)
       setError('')
       const res = await api.getOrders(params)
-      setRows(res.data || [])
+      const data = res.data || []
+      setRows(data)
+      if (selected) {
+        const still = data.find((r) => r.order_id === selected.order_id)
+        setSelected(still || null)
+      }
     } catch (e) {
       setError(e.message || 'Error al cargar pedidos')
     } finally {
@@ -37,6 +50,7 @@ export default function Orders() {
 
   useEffect(() => {
     load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function openCreate() {
@@ -46,6 +60,7 @@ export default function Orders() {
   }
 
   function openEdit(row) {
+    setSelected(row)
     setEditing(row)
     setForm({
       customer_id: row.customer_id,
@@ -79,8 +94,9 @@ export default function Orders() {
   }
 
   async function onDelete(id) {
-    if (!confirm('¿Eliminar este pedido?')) return
+    if (!confirm('¿Eliminar este pedido? Esta acción es la operación D del CRUD.')) return
     await api.deleteOrder(id)
+    setSelected(null)
     await load({ q, status })
   }
 
@@ -110,7 +126,7 @@ export default function Orders() {
     },
     {
       key: 'actions',
-      label: 'Acciones',
+      label: 'CRUD',
       render: (r) => (
         <div className="actions">
           <button type="button" className="btn btn-ghost" onClick={() => openEdit(r)}>
@@ -124,130 +140,177 @@ export default function Orders() {
     },
   ]
 
-  return (
-    <>
-      <Panel
-        title="Gestión de pedidos"
-        subtitle="Estados, pagos y fechas de entrega"
-        action={
-          <button type="button" className="btn btn-primary" onClick={openCreate}>
-            Nuevo pedido
-          </button>
-        }
-      >
-        <div className="toolbar">
-          <input
-            className="input"
-            placeholder="Buscar…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-          <select className="select" value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">Todos los estados</option>
-            <option value="delivered">delivered</option>
-            <option value="shipped">shipped</option>
-            <option value="canceled">canceled</option>
-          </select>
-          <button type="button" className="btn btn-ghost" onClick={() => load({ q, status })}>
-            Filtrar
-          </button>
-        </div>
+  function focusQuery() {
+    const zone = document.getElementById('crud-query-zone')
+    zone?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    zone?.querySelector('input, select')?.focus()
+  }
 
-        {loading ? (
-          <LoadingState />
-        ) : error ? (
-          <ErrorState message={error} />
-        ) : (
-          <DataTable columns={columns} rows={rows} rowKey={(r) => r.order_id} />
-        )}
-      </Panel>
+  return (
+    <div className="crud-page">
+      <CrudOpsBar
+        entityLabel="Gestión de pedidos"
+        total={rows.length}
+        hasSelection={Boolean(selected)}
+        onCreate={openCreate}
+        onConsult={focusQuery}
+        onEdit={() => openEdit(selected)}
+        onDelete={() => onDelete(selected.order_id)}
+        createLabel="Registrar pedido (C)"
+      />
+
+      <CrudQueryBar
+        onClear={() => {
+          setQ('')
+          setStatus('')
+          load()
+        }}
+        onApply={() => load({ q, status })}
+      >
+        <input
+          className="input"
+          placeholder="Buscar por pedido, cliente, pago…"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+        />
+        <select className="select" value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option value="">Todos los estados</option>
+          <option value="delivered">delivered</option>
+          <option value="shipped">shipped</option>
+          <option value="canceled">canceled</option>
+          <option value="invoiced">invoiced</option>
+        </select>
+      </CrudQueryBar>
+
+      <div className="crud-split">
+        <CrudTablePanel
+          title="Listado de pedidos (R)"
+          subtitle="Haz clic en una fila para seleccionar · tabla olist_orders_dataset"
+          loading={loading}
+          error={error}
+          columns={columns}
+          rows={rows}
+          rowKey={(r) => r.order_id}
+          selectedId={selected?.order_id}
+          onSelect={setSelected}
+          empty="No hay pedidos con esos filtros"
+        />
+
+        <CrudSelectionCard
+          title="Registro seleccionado"
+          emptyText="Ningún pedido seleccionado"
+          selected={selected}
+          fields={
+            selected
+              ? [
+                  { label: 'order_id', value: selected.order_id },
+                  { label: 'customer_id', value: selected.customer_id },
+                  { label: 'Estado', value: selected.order_status },
+                  { label: 'Pago', value: selected.payment_type },
+                  {
+                    label: 'Monto',
+                    value: `R$ ${Number(selected.payment_value || 0).toFixed(2)}`,
+                  },
+                  { label: 'Review', value: selected.review_score ?? '—' },
+                  {
+                    label: 'Compra',
+                    value: selected.order_purchase_timestamp?.replace('T', ' ').slice(0, 16),
+                  },
+                ]
+              : []
+          }
+          onEdit={() => openEdit(selected)}
+          onDelete={() => onDelete(selected.order_id)}
+          onClear={() => setSelected(null)}
+        />
+      </div>
 
       {open && (
-        <div className="modal-backdrop" onClick={() => setOpen(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>{editing ? 'Editar pedido' : 'Nuevo pedido'}</h3>
-            <form className="form-grid" onSubmit={onSubmit}>
-              <label>
-                Customer ID
-                <input
-                  className="input"
-                  required
-                  value={form.customer_id}
-                  onChange={(e) => setForm({ ...form, customer_id: e.target.value })}
-                />
-              </label>
-              <label>
-                Estado
-                <select
-                  className="select"
-                  value={form.order_status}
-                  onChange={(e) => setForm({ ...form, order_status: e.target.value })}
-                >
-                  <option value="delivered">delivered</option>
-                  <option value="shipped">shipped</option>
-                  <option value="canceled">canceled</option>
-                  <option value="invoiced">invoiced</option>
-                </select>
-              </label>
-              <label>
-                Entrega estimada
-                <input
-                  className="input"
-                  type="datetime-local"
-                  required
-                  value={form.order_estimated_delivery_date}
-                  onChange={(e) =>
-                    setForm({ ...form, order_estimated_delivery_date: e.target.value })
-                  }
-                />
-              </label>
-              <label>
-                Entrega real
-                <input
-                  className="input"
-                  type="datetime-local"
-                  value={form.order_delivered_customer_date}
-                  onChange={(e) =>
-                    setForm({ ...form, order_delivered_customer_date: e.target.value })
-                  }
-                />
-              </label>
-              <label>
-                Tipo de pago
-                <select
-                  className="select"
-                  value={form.payment_type}
-                  onChange={(e) => setForm({ ...form, payment_type: e.target.value })}
-                >
-                  <option value="credit_card">credit_card</option>
-                  <option value="boleto">boleto</option>
-                  <option value="voucher">voucher</option>
-                  <option value="debit_card">debit_card</option>
-                </select>
-              </label>
-              <label>
-                Monto
-                <input
-                  className="input"
-                  type="number"
-                  step="0.01"
-                  required
-                  value={form.payment_value}
-                  onChange={(e) => setForm({ ...form, payment_value: e.target.value })}
-                />
-              </label>
-              <div className="modal-actions">
-                <button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>
-                  Cancelar
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={saving}>
-                  {saving ? 'Guardando…' : 'Guardar'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <CrudModal
+          title={editing ? 'Editar pedido (U)' : 'Registrar pedido (C)'}
+          onClose={() => setOpen(false)}
+        >
+          <form className="form-grid form-grid-2" onSubmit={onSubmit}>
+            <label>
+              Customer ID
+              <input
+                className="input"
+                required
+                value={form.customer_id}
+                onChange={(e) => setForm({ ...form, customer_id: e.target.value })}
+              />
+            </label>
+            <label>
+              Estado del pedido
+              <select
+                className="select"
+                value={form.order_status}
+                onChange={(e) => setForm({ ...form, order_status: e.target.value })}
+              >
+                <option value="delivered">delivered</option>
+                <option value="shipped">shipped</option>
+                <option value="canceled">canceled</option>
+                <option value="invoiced">invoiced</option>
+              </select>
+            </label>
+            <label>
+              Entrega estimada
+              <input
+                className="input"
+                type="datetime-local"
+                required
+                value={form.order_estimated_delivery_date}
+                onChange={(e) =>
+                  setForm({ ...form, order_estimated_delivery_date: e.target.value })
+                }
+              />
+            </label>
+            <label>
+              Entrega real
+              <input
+                className="input"
+                type="datetime-local"
+                value={form.order_delivered_customer_date}
+                onChange={(e) =>
+                  setForm({ ...form, order_delivered_customer_date: e.target.value })
+                }
+              />
+            </label>
+            <label>
+              Tipo de pago
+              <select
+                className="select"
+                value={form.payment_type}
+                onChange={(e) => setForm({ ...form, payment_type: e.target.value })}
+              >
+                <option value="credit_card">credit_card</option>
+                <option value="boleto">boleto</option>
+                <option value="voucher">voucher</option>
+                <option value="debit_card">debit_card</option>
+              </select>
+            </label>
+            <label>
+              Monto
+              <input
+                className="input"
+                type="number"
+                step="0.01"
+                required
+                value={form.payment_value}
+                onChange={(e) => setForm({ ...form, payment_value: e.target.value })}
+              />
+            </label>
+            <div className="modal-actions form-span-2">
+              <button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>
+                Cancelar
+              </button>
+              <button type="submit" className="btn btn-primary" disabled={saving}>
+                {saving ? 'Guardando…' : editing ? 'Guardar cambios (U)' : 'Crear registro (C)'}
+              </button>
+            </div>
+          </form>
+        </CrudModal>
       )}
-    </>
+    </div>
   )
 }

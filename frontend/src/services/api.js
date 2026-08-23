@@ -11,7 +11,7 @@ import {
   mockSalesHistory,
 } from './mocks'
 
-const delay = (ms = 280) => new Promise((r) => setTimeout(r, ms))
+const delay = (ms = 120) => new Promise((r) => setTimeout(r, ms))
 
 let customersStore = [...mockCustomers]
 let ordersStore = [...mockOrders]

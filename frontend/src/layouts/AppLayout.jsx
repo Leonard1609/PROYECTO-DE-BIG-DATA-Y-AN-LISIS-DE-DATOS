@@ -1,4 +1,6 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { BrandLogo } from '../components/BrandLogo'
+import { SystemFooter, SystemHeader } from '../components/SystemChrome'
 import { useAuth } from '../context/AuthContext'
 import { api } from '../services/api'
 
@@ -16,7 +18,7 @@ const reports = [
 ]
 
 const titles = {
-  '/': ['Panel general', 'Sistema CRM analítico — visión operativa y comercial'],
+  '/': ['Panel general', 'Visión operativa y comercial del CRM analítico'],
   '/clientes': ['Gestión de clientes', 'Registrar, editar, eliminar, consultar, buscar y filtrar'],
   '/pedidos': ['Gestión de pedidos', 'Control de órdenes, estados, pagos y entregas'],
   '/reportes/rfm': ['Reporte RFM', 'Segmentación automática: VIP, leales, en riesgo y perdidos'],
@@ -43,6 +45,7 @@ export default function AppLayout() {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand">
+          <BrandLogo variant="full" className="sidebar-logo" />
           <p className="brand-kicker">Sistema · Big Data</p>
           <h1>Olist CRM Pulse</h1>
           <p className="brand-sub">Plataforma analítica de e-commerce</p>
@@ -68,26 +71,18 @@ export default function AppLayout() {
             <strong>{user?.name}</strong>
             <span>{user?.role}</span>
           </div>
-          <p className="stack-note">Arquitectura: React · PHP · MySQL (`olist_crm_db`)</p>
           <span className={`mode-pill ${api.mode === 'api' ? 'api' : ''}`}>
             {api.mode === 'mock' ? 'Desarrollo (datos locales)' : 'Conectado a API PHP'}
           </span>
-          <button type="button" className="btn btn-logout" onClick={onLogout}>
-            Cerrar sesión
-          </button>
         </div>
       </aside>
 
       <div className="main">
-        <header className="topbar">
-          <div>
-            <h2>{title}</h2>
-            <p>{subtitle}</p>
-          </div>
-        </header>
+        <SystemHeader title={title} subtitle={subtitle} user={user} onLogout={onLogout} />
         <main className="content">
           <Outlet />
         </main>
+        <SystemFooter />
       </div>
     </div>
   )

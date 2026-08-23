@@ -138,6 +138,29 @@ Body create/update:
 
 ## Tablas MySQL de referencia (`olist_crm_db`)
 
+### Cómo se conectan (ER — no olvidar)
+
+```
+olist_orders_dataset  (hub)
+  ├─ order_id      → olist_order_reviews_dataset
+  ├─ order_id      → olist_order_payments_dataset
+  ├─ order_id      → olist_order_items_dataset
+  │                    ├─ product_id → olist_products_dataset
+  │                    └─ seller_id  → olist_sellers_dataset
+  │                                      └─ zip_code_prefix → olist_geolocation_dataset
+  └─ customer_id   → olist_order_customer_dataset
+                       └─ zip_code_prefix → olist_geolocation_dataset
+```
+
+| Desde | Llave | Hacia |
+|-------|-------|-------|
+| orders | `order_id` | reviews, payments, items |
+| orders | `customer_id` | customers |
+| items | `product_id` | products |
+| items | `seller_id` | sellers |
+| customers / sellers | `zip_code_prefix` | geolocation |
+
+Tablas:
 - `olist_order_customer_dataset`
 - `olist_orders_dataset`
 - `olist_order_items_dataset`
