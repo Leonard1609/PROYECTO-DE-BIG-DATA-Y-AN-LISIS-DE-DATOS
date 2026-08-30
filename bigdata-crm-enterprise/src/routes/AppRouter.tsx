@@ -1,48 +1,54 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from '../context/AuthContext';
-import { LoginPage } from '../pages/LoginPage';
-import { AdminDashboard } from '../pages/AdminDashboard';
+import { AdminLayout } from '../layouts/AdminLayout';
+import { EncargadoLayout } from '../layouts/EncargadoLayout';
+import { AnalisisPage } from '../pages/admin/AnalisisPage';
+import { CargasPage } from '../pages/admin/CargasPage';
+import { ResumenPage } from '../pages/admin/ResumenPage';
+import { SistemaPage } from '../pages/encargado/SistemaPage';
 import { EmployeeDashboard } from '../pages/EmployeeDashboard';
+import { LoginPage } from '../pages/LoginPage';
+import { ADMIN_CARGOS, INTEGRADOR_CARGOS } from '../types/auth';
 
-const ProtectedRoute: React.FC<{ children: React.ReactNode; allowed: string[] }> = ({ children, allowed }) => {
+const Gate: React.FC<{ children: React.ReactNode; allowed: string[] }> = ({ children, allowed }) => {
   const { user, loading } = useAuth();
-
-  if (loading) return <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">Cargando...</div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-slate-400">Cargando…</div>;
   if (!user) return <Navigate to="/login" replace />;
   if (!allowed.includes(user.cargo)) return <Navigate to="/login" replace />;
-
   return <>{children}</>;
 };
 
-export const AppRouter: React.FC = () => {
-  return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute allowed={['Administrador', 'Analista BI']}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-          
-          <Route
-            path="/employee"
-            element={
-              <ProtectedRoute allowed={['Empleado', 'Asesor CRM']}>
-                <EmployeeDashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
-  );
-};
+export const AppRouter: React.FC = () => (
+  <AuthProvider>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/admin"
+          element={
+            <Gate allowed={[...ADMIN_CARGOS]}>
+              <AdminLayout />
+            </Gate>
+          }
+        >
+          <Route index element={<ResumenPage />} />
+          <Route path="cargas" element={<CargasPage />} />
+          <Route path="analisis" element={<AnalisisPage />} />
+        </Route>
+        <Route
+          path="/employee"
+          element={
+            <Gate allowed={[...INTEGRADOR_CARGOS]}>
+              <EncargadoLayout />
+            </Gate>
+          }
+        >
+          <Route index element={<EmployeeDashboard />} />
+          <Route path="sistema" element={<SistemaPage />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </BrowserRouter>
+  </AuthProvider>
+);
