@@ -8,6 +8,8 @@ export interface Dataset {
   headers: string[];
   rows: Record<string, string>[];
   createdAt: string;
+  ingresos?: number;
+  costos?: number;
 }
 
 export interface ColumnStats {

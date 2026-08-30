@@ -7,7 +7,6 @@ export const DATASET_CACHE_KEY = 'nexus_bi_datasets_v1';
 
 export type TableStatus = 'live' | 'missing' | 'forbidden' | 'offline';
 
-/** Aislamiento real: no llama a la API. Sirve para probar resiliencia, no es un número inventado. */
 let isolationMode = false;
 
 export function setIsolationMode(value: boolean) {
@@ -28,7 +27,15 @@ export function readCache(): Dataset[] {
 }
 
 export function writeCache(items: Dataset[]) {
-  localStorage.setItem(DATASET_CACHE_KEY, JSON.stringify(items));
+  try {
+    const lightItems = items.map((item) => ({
+      ...item,
+      rows: Array.isArray(item.rows) ? item.rows.slice(0, 50) : [],
+    }));
+    localStorage.setItem(DATASET_CACHE_KEY, JSON.stringify(lightItems));
+  } catch (e) {
+    console.warn('No se pudo guardar el caché local:', e);
+  }
 }
 
 function fromRow(row: Record<string, unknown>): Dataset {
@@ -42,13 +49,15 @@ function fromRow(row: Record<string, unknown>): Dataset {
     headers: Array.isArray(row.headers) ? (row.headers as string[]) : [],
     rows: Array.isArray(row.filas) ? (row.filas as Record<string, string>[]) : [],
     createdAt: String(row.created_at ?? new Date().toISOString()),
+    ingresos: typeof row.ingresos === 'number' ? row.ingresos : Number(row.ingresos ?? 0),
+    costos: typeof row.costos === 'number' ? row.costos : Number(row.costos ?? 0),
   };
 }
 
 function isMissingTable(error: { code?: string; message?: string } | null): boolean {
   if (!error) return false;
   const msg = (error.message ?? '').toLowerCase();
-  return error.code === 'PGRST205' || msg.includes("could not find the table") || msg.includes('schema cache');
+  return error.code === 'PGRST205' || msg.includes('could not find the table') || msg.includes('schema cache');
 }
 
 export async function pingWithLatency(): Promise<{ status: TableStatus; message: string; ms: number }> {
@@ -92,7 +101,6 @@ export async function fetchDatasets(): Promise<{
           try {
             await insertDataset(item);
           } catch {
-            /* insertDataset already live-path; stop on first failure */
             break;
           }
         }
@@ -119,6 +127,10 @@ export async function insertDataset(item: Dataset): Promise<{ id: string; source
     if (item.isMine) {
       await supabase.from('datasets').update({ es_mio: false }).neq('id', item.id);
     }
+
+    // Muestra ligera de 100 filas para previsualizar en la tabla sin saturar Supabase
+    const sampleRows = Array.isArray(item.rows) ? item.rows.slice(0, 100) : [];
+
     const { data, error } = await supabase
       .from('datasets')
       .insert({
@@ -129,12 +141,13 @@ export async function insertDataset(item: Dataset): Promise<{ id: string; source
         costos: money.costos,
         es_mio: item.isMine,
         headers: item.headers,
-        filas: item.rows,
+        filas: sampleRows,
         source_filename: item.filename,
         created_by: sessionData.user?.id ?? null,
       })
       .select('id')
       .single();
+
     if (error || !data?.id) {
       throw new Error(error?.message ?? 'No se pudo guardar en Supabase.');
     }

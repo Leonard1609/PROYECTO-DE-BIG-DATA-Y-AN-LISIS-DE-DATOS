@@ -102,6 +102,17 @@ export function sumColumn(dataset: Dataset, candidates: string[]): { header: str
 }
 
 export function financials(dataset: Dataset): Financials {
+  // 1. Priorizar totales precargados si existen en el objeto dataset (evita recalcular sobre muestras incompletas)
+  if (typeof dataset.ingresos === 'number' && dataset.ingresos > 0) {
+    const ingresos = dataset.ingresos;
+    const costos = typeof dataset.costos === 'number' ? dataset.costos : 0;
+    const gananciaNeta = Number((ingresos - costos).toFixed(2));
+    const margen = ingresos === 0 ? 0 : Number((((ingresos - costos) / ingresos) * 100).toFixed(4));
+    const basis = costos > 0 ? 'ingresos_costos' : 'solo_ingresos';
+    return { ingresos, costos, gananciaNeta, margen, basis };
+  }
+
+  // 2. Si no hay totales precargados, calcular dinámicamente sumando la columna
   const ingresosHit = sumColumn(dataset, INGRESO_HEADERS);
   const costosHit = sumColumn(dataset, COSTO_HEADERS);
   const ingresos = ingresosHit?.sum ?? 0;
@@ -119,7 +130,6 @@ export function financials(dataset: Dataset): Financials {
   return { ingresos, costos, gananciaNeta, margen, basis };
 }
 
-/** Only if the file has delay + review columns. Never a hardcoded 80%. */
 export function delayReviewInsight(dataset: Dataset, thresholdDays = 8): DelayReviewInsight | null {
   const delayCol = findHeader(dataset.headers, ['dias_entrega', 'dias', 'delivery_days', 'delay']);
   const reviewCol = findHeader(dataset.headers, ['review_score', 'review', 'score', 'estrellas']);

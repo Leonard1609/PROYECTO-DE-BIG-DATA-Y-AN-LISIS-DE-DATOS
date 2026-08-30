@@ -364,7 +364,7 @@ export const CargasPage: React.FC = () => {
             <table className="w-full text-xs">
               <thead className="sticky top-0 bg-slate-950">
                 <tr>
-                  {active.headers.map((h) => (
+                  {(active.headers ?? []).map((h) => (
                     <th key={h} className="text-left px-3 py-2 text-slate-500 font-medium">
                       {h}
                     </th>
@@ -372,9 +372,9 @@ export const CargasPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {active.rows.slice(0, 60).map((row, i) => (
+                {(active.rows ?? []).slice(0, 60).map((row, i) => (
                   <tr key={i} className="border-t border-white/5">
-                    {active.headers.map((h) => (
+                    {(active.headers ?? []).map((h) => (
                       <td key={h} className="px-3 py-1.5 text-slate-300 whitespace-nowrap">
                         {row[h]}
                       </td>
