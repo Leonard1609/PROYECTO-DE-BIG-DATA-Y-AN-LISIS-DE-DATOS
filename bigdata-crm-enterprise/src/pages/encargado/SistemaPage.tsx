@@ -1,62 +1,49 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useDatasets } from '../../context/DatasetContext';
 import { pingWithLatency } from '../../lib/datasetStore';
+import { LatencyMonitor } from '../../modules/charts/LatencyMonitor';
 
 export const SistemaPage: React.FC = () => {
-  const { datasets, source, isolation, setIsolation, refresh, tableStatus } = useDatasets();
-  const [ping, setPing] = useState<string | null>(null);
+  const { datasets, isolation, setIsolation, refresh, tableStatus } = useDatasets();
   const [busy, setBusy] = useState(false);
 
-  const probar = async () => {
+  const medir = async () => {
     setBusy(true);
-    const r = await pingWithLatency();
-    setPing(`${r.ms} ms · ${r.status} · ${r.message}`);
+    await pingWithLatency();
     await refresh();
     setBusy(false);
   };
 
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="space-y-6 max-w-5xl">
       <div>
-        <h1 className="font-display text-4xl font-extrabold text-white">Sistema</h1>
-        <p className="text-slate-400 mt-2">
-          Tres piezas: pantalla, datos y gráficos. Si la nube no responde, se sigue con la copia local. Eso es real.
+        <h1 className="font-display text-3xl font-bold text-white">Salud del servicio</h1>
+        <p className="text-slate-400 mt-2 text-sm">
+          Tiempo de respuesta del servidor. Si no está disponible, la operación sigue con la copia de este equipo (
+          {datasets.length} datasets).
         </p>
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-4">
-        {[
-          { t: 'Pantalla', d: 'React. Siempre encendida.' },
-          { t: 'Datos', d: isolation ? 'Copia local' : source === 'supabase' ? 'Nube' : 'Copia local' },
-          { t: 'Gráficos', d: 'Chart.js en Comparar (Admin).' },
-        ].map((m) => (
-          <div key={m.t} className="nx-card p-5">
-            <p className="text-xs text-slate-500">{m.t}</p>
-            <p className="text-white mt-2 text-sm">{m.d}</p>
-          </div>
-        ))}
-      </div>
+      <LatencyMonitor
+        actions={
+          <>
+            <button type="button" className="nx-btn-ghost text-xs py-2 px-3" disabled={busy} onClick={() => void medir()}>
+              {busy ? 'Midiendo…' : 'Medir ahora'}
+            </button>
+            <button type="button" className="nx-btn text-xs py-2 px-3" onClick={() => void setIsolation(!isolation)}>
+              {isolation ? 'Salir de respaldo' : 'Modo respaldo'}
+            </button>
+          </>
+        }
+      />
 
-      <div className="nx-card p-6 space-y-4">
-        <p className="text-sm text-slate-300">
-          Copias en este equipo: <strong className="text-white">{datasets.length}</strong>
-          {' · '}
-          Estado: <strong className="text-white">{tableStatus}</strong>
+      {isolation || tableStatus !== 'live' ? (
+        <p className="text-sm text-amber-200/90">
+          {isolation
+            ? 'Modo respaldo activo: no se llama al servidor. Los datos que ves son locales.'
+            : 'El servidor no responde. Se está usando la copia local.'}
         </p>
-        <div className="flex flex-wrap gap-3">
-          <button type="button" className="nx-btn-ghost" disabled={busy} onClick={() => void probar()}>
-            {busy ? 'Midiendo…' : 'Medir conexión'}
-          </button>
-          <button type="button" className="nx-btn" onClick={() => void setIsolation(!isolation)}>
-            {isolation ? 'Volver a la nube' : 'Probar sin nube'}
-          </button>
-        </div>
-        {ping && <p className="text-xs text-slate-500">{ping}</p>}
-        <p className="text-xs text-slate-500">
-          «Probar sin nube» corta de verdad las llamadas. No inventa números: usa los archivos que ya están en este
-          equipo.
-        </p>
-      </div>
+      ) : null}
     </div>
   );
 };

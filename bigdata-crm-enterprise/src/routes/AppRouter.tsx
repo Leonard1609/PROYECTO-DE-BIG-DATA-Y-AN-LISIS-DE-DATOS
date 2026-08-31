@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from '../context/AuthContext';
+import { ThemeProvider } from '../context/ThemeContext';
 import { AdminLayout } from '../layouts/AdminLayout';
 import { EncargadoLayout } from '../layouts/EncargadoLayout';
 import { AnalisisPage } from '../pages/admin/AnalisisPage';
@@ -20,6 +21,7 @@ const Gate: React.FC<{ children: React.ReactNode; allowed: string[] }> = ({ chil
 };
 
 export const AppRouter: React.FC = () => (
+  <ThemeProvider>
   <AuthProvider>
     <BrowserRouter>
       <Routes>
@@ -51,4 +53,5 @@ export const AppRouter: React.FC = () => (
       </Routes>
     </BrowserRouter>
   </AuthProvider>
+  </ThemeProvider>
 );

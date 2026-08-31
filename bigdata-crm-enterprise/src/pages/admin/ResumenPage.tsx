@@ -4,6 +4,7 @@ import { ArrowRight, Upload, BarChart3 } from 'lucide-react';
 import { useDatasets } from '../../context/DatasetContext';
 import { financials } from '../../lib/analyze';
 import { rubroLabel } from '../../lib/catalog';
+import { explainWinner } from '../../lib/explain';
 import { formatMoney } from '../../lib/format';
 import { rankSameRubro } from '../../lib/recommend';
 import { supabase } from '../../lib/supabaseClient';
@@ -17,8 +18,10 @@ export const ResumenPage: React.FC = () => {
   const ranking = useMemo(() => (rubro ? rankSameRubro(datasets, rubro) : null), [datasets, rubro]);
   const neta = mine ? financials(mine) : null;
   const step = datasets.length === 0 ? 1 : ranking?.comparable ? 3 : 2;
-  const winner = ranking?.winner;
-  const mineRow = ranking?.ranked.find((r) => r.dataset.isMine);
+  const why = useMemo(
+    () => (ranking?.comparable ? explainWinner(ranking.ranked, rubroLabel(rubro)) : null),
+    [ranking, rubro],
+  );
 
   const avisar = async () => {
     setLoading(true);
@@ -28,9 +31,9 @@ export const ResumenPage: React.FC = () => {
       {
         cliente: mine?.name ?? 'Nuestro negocio',
         prioridad: 'Alta',
-        accion: w
+        accion: why?.task ?? (w
           ? `Aplicar en ${mine?.name ?? 'lo nuestro'} (${rubroLabel(rubro)}): metodología «${w.dataset.metodologia}» como ${w.dataset.name}.`
-          : 'Falta comparar archivos del mismo rubro.',
+          : 'Falta comparar archivos del mismo rubro.'),
         completada: false,
       },
     ]);
@@ -40,14 +43,7 @@ export const ResumenPage: React.FC = () => {
 
   return (
     <div className="space-y-8 max-w-5xl">
-      <div>
-        <p className="text-xs tracking-[0.2em] text-blue-400 uppercase">Inteligencia de negocio</p>
-        <h1 className="font-display text-4xl font-extrabold text-white mt-2">Qué conviene copiar</h1>
-        <p className="text-slate-400 mt-3 max-w-xl">
-          Medís con CSV reales. Comparás solo el mismo rubro. El Encargado aplica la metodología ganadora en el negocio.
-        </p>
-      </div>
-
+      <h1 className="font-display text-4xl font-extrabold text-white">Inteligencia de negocio</h1>
       <div className="grid sm:grid-cols-3 gap-3">
         {[
           { n: '01', t: 'Subir', d: 'CSV + rubro del catálogo', to: '/admin/cargas', icon: Upload, on: step >= 1 },
@@ -79,18 +75,26 @@ export const ResumenPage: React.FC = () => {
         ))}
       </div>
 
-      {ranking?.comparable && winner ? (
-        <div className="nx-card p-6 border-blue-500/30 bg-blue-600/10">
-          <p className="text-sm text-slate-300">
-            En {rubroLabel(rubro)} conviene probar <strong className="text-white">{winner.dataset.metodologia}</strong> de{' '}
-            {winner.dataset.name} ({formatMoney(winner.money.gananciaNeta)}).
-          </p>
-          {mineRow && mineRow.dataset.id !== winner.dataset.id && (
-            <p className="text-xs text-slate-400 mt-2">
-              Brecha vs lo nuestro: {formatMoney(winner.money.gananciaNeta - mineRow.money.gananciaNeta)}.
-            </p>
-          )}
-          <button type="button" disabled={loading} onClick={() => void avisar()} className="nx-btn mt-4">
+      {ranking?.comparable && why ? (
+        <div className="nx-card p-6 border-blue-500/30 bg-blue-600/10 space-y-4">
+          <p className="text-sm text-white">{why.headline}</p>
+          <div>
+            <p className="text-xs text-blue-400 uppercase tracking-wide">Por qué</p>
+            <ul className="mt-2 space-y-1 text-sm text-slate-300 list-disc pl-5">
+              {why.why.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="text-xs text-blue-400 uppercase tracking-wide">Cómo / qué copiar</p>
+            <ul className="mt-2 space-y-1 text-sm text-slate-300 list-disc pl-5">
+              {why.how.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </div>
+          <button type="button" disabled={loading} onClick={() => void avisar()} className="nx-btn mt-2">
             {loading ? 'Enviando…' : 'Pasar al equipo'}
           </button>
           {mensaje && <p className="text-xs text-slate-400 mt-3">{mensaje}</p>}

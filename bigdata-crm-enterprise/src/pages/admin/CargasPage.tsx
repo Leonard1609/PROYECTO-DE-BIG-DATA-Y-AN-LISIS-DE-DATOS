@@ -5,6 +5,7 @@ import { financials, withCanonicalMoney } from '../../lib/analyze';
 import { METODOLOGIA_OTRA, METODOLOGIAS, RUBROS, metodologiaLabel, normalizeRubro, rubroLabel } from '../../lib/catalog';
 import { formatMoney, formatPct } from '../../lib/format';
 import { csvKindLabel, readCsvFile } from '../../lib/inspectCsv';
+import { matchContract, profileDataset } from '../../lib/profile';
 
 type Draft = {
   filename: string;
@@ -43,6 +44,7 @@ export const CargasPage: React.FC = () => {
 
   const active = datasets.find((d) => d.id === activeId) ?? datasets.at(-1);
   const money = active ? financials(active) : null;
+  const extra = active ? profileDataset(active) : null;
 
   const preview = useMemo(() => {
     if (!draft || !ingresosCol) return null;
@@ -203,6 +205,22 @@ export const CargasPage: React.FC = () => {
           />
         </label>
 
+        <div className="rounded-xl border border-white/10 bg-slate-950/50 p-4">
+          <p className="text-sm text-white">Qué columnas importan (cualquier rubro)</p>
+          <p className="text-xs text-slate-500 mt-1 mb-3">
+            El archivo puede llamarse distinto (`monto` o `price`). Lo que no cambia es la pregunta de negocio.
+          </p>
+          <div className="grid sm:grid-cols-2 gap-2 text-xs">
+            {matchContract(draft?.headers ?? []).map((c) => (
+              <p key={c.id} className={c.found ? 'text-blue-300' : 'text-slate-500'}>
+                {c.found ? '●' : '○'} {c.title}
+                {c.need === 'clave' ? ' · imprescindible' : ''}
+                {c.found ? ` → ${c.column}` : ''}
+              </p>
+            ))}
+          </div>
+        </div>
+
         {draft && (
           <div className="space-y-6">
             <div className="rounded-xl border border-blue-500/30 bg-blue-600/10 p-4">
@@ -353,13 +371,22 @@ export const CargasPage: React.FC = () => {
               ['Costos', money.basis === 'sin_dinero' || money.basis === 'solo_ingresos' ? '—' : formatMoney(money.costos)],
               ['Ganancia', money.basis === 'sin_dinero' ? '—' : formatMoney(money.gananciaNeta)],
               ['Margen', money.basis === 'sin_dinero' ? '—' : formatPct(money.margen)],
+              ['Pedidos', String(extra?.pedidos ?? 0)],
+              ['Demora prom.', extra?.delayAvg != null ? `${extra.delayAvg.toFixed(1)} días` : '—'],
+              ['Estrellas prom.', extra?.reviewAvg != null ? extra.reviewAvg.toFixed(2) : '—'],
+              ['Ciudades', extra?.topPlaces.length ? extra.topPlaces.map((p) => p.name).slice(0, 2).join(', ') : '—'],
             ].map(([k, v]) => (
               <div key={k} className="rounded-xl bg-slate-950/80 border border-white/5 p-3">
                 <p className="text-[11px] text-slate-500">{k}</p>
-                <p className="text-lg text-white mt-1">{v}</p>
+                <p className="text-lg text-white mt-1 truncate">{v}</p>
               </div>
             ))}
           </div>
+          {extra && extra.used.length > 0 && (
+            <p className="text-xs text-slate-500">
+              Columnas usadas para analizar: {extra.used.map((u) => `${u.role} → ${u.column}`).join(' · ')}
+            </p>
+          )}
           <div className="overflow-x-auto max-h-80 rounded-xl border border-white/5">
             <table className="w-full text-xs">
               <thead className="sticky top-0 bg-slate-950">

@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Lock, Mail, Shield, Users } from 'lucide-react';
+import { ArrowRight, Lock, Mail } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { AppFooter } from '../components/AppChrome';
+import { SystemPreview } from '../components/SystemPreview';
+import { ThemeToggle } from '../components/ThemeToggle';
 import { homePathForCargo, type Cargo } from '../types/auth';
 
 export const LoginPage: React.FC = () => {
@@ -30,38 +33,38 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
-      <section className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/30 via-transparent to-cyan-500/10" />
-        <p className="relative font-display text-sm tracking-[0.3em] text-blue-300">NEXUS</p>
-        <div className="relative max-w-md space-y-6">
-          <h1 className="font-display text-5xl font-extrabold leading-tight text-white">
-            Compará. Elegí. Aplicá en lo tuyo.
-          </h1>
-          <p className="text-slate-300 text-lg leading-relaxed">
-            Cargá CSV del mismo rubro. El sistema lee las columnas, compara ganancia y el equipo aplica esa forma de trabajo.
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="nx-card p-4">
-              <Shield className="text-blue-400 mb-2" size={20} />
-              <p className="text-sm font-medium text-white">Administrador</p>
-              <p className="text-xs text-slate-400 mt-1">Sube, compara y decide</p>
-            </div>
-            <div className="nx-card p-4">
-              <Users className="text-blue-400 mb-2" size={20} />
-              <p className="text-sm font-medium text-white">Encargado</p>
-              <p className="text-xs text-slate-400 mt-1">Tareas y salud del sistema</p>
-            </div>
+    <div className="h-screen flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 grid lg:grid-cols-2">
+      <section className="relative hidden lg:flex flex-col justify-center px-12 py-10 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/25 via-transparent to-cyan-500/10" />
+        <div className="relative max-w-md space-y-5">
+          <div className="flex items-center gap-3">
+            <p className="font-display text-sm tracking-[0.3em] text-blue-300">NEXUS</p>
+            <span className="text-[10px] tracking-[0.14em] uppercase text-blue-300/90 border border-blue-500/25 bg-blue-600/10 rounded-full px-2.5 py-0.5">
+              Para tu empresa
+            </span>
           </div>
+          <h1 className="font-display text-[2rem] xl:text-4xl font-extrabold leading-tight text-white">
+            Comparar, decidir y aplicar en tu operación.
+          </h1>
+          <p className="text-slate-300 text-[15px] leading-relaxed">
+            Tu empresa carga CSV del mismo rubro. Nexus muestra qué método deja más ganancia. El equipo lo aplica, no se queda en un informe.
+          </p>
+          <SystemPreview />
+          <p className="text-xs text-slate-500">
+            Acceso con el correo de la empresa. Cada persona entra a su panel según su cargo.
+          </p>
         </div>
-        <p className="relative text-xs text-slate-500">PostgreSQL · el permiso lo da tu usuario, no un botón</p>
       </section>
 
-      <section className="flex items-center justify-center p-8">
+      <section className="relative flex items-center justify-center p-8">
+        <div className="absolute top-4 right-4">
+          <ThemeToggle />
+        </div>
         <form onSubmit={handleSubmit} className="w-full max-w-md space-y-6">
           <div>
-            <h2 className="font-display text-3xl font-bold text-white">Entrar</h2>
-            <p className="text-slate-400 text-sm mt-2">Usá el correo de trabajo. El sistema te lleva a tu panel.</p>
+            <h2 className="font-display text-3xl font-bold text-white">Acceso</h2>
+            <p className="text-slate-400 text-sm mt-2">Correo de la empresa. El sistema te lleva a tu panel.</p>
           </div>
           {errorMessage && (
             <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">{errorMessage}</div>
@@ -100,6 +103,8 @@ export const LoginPage: React.FC = () => {
           </button>
         </form>
       </section>
+      </div>
+      <AppFooter />
     </div>
   );
 };
