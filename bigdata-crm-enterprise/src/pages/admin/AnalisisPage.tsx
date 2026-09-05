@@ -21,11 +21,24 @@ export const AnalisisPage: React.FC = () => {
     setRubro((current) => (unique.includes(current) ? current : unique[0]));
   }, [datasets]);
 
+  const [comparativeMetric, setComparativeMetric] = useState<'ganancia' | 'ingresos' | 'costos'>('ganancia');
   const ranking = useMemo(() => (rubro ? rankSameRubro(datasets, rubro) : null), [datasets, rubro]);
   const winner = ranking?.winner;
   const otros = datasets.filter((d) => normalizeRubro(d.rubro) !== normalizeRubro(rubro));
   const delRubro = ranking?.ranked.length ?? 0;
   const mine = ranking?.ranked.find((r) => r.dataset.isMine);
+
+  // Cálculo de valores según la variable elegida
+  const chartValues = useMemo(() => {
+    if (!ranking?.ranked) return [];
+    return ranking.ranked.map((r) => {
+      if (comparativeMetric === 'ingresos') return r.money.ingresos;
+      if (comparativeMetric === 'costos') return r.money.costos;
+      return r.money.gananciaNeta;
+    });
+  }, [ranking, comparativeMetric]);
+
+  const chartLabel = comparativeMetric === 'ingresos' ? 'Ingresos totales' : comparativeMetric === 'costos' ? 'Costos' : 'Ganancia neta';
 
   return (
     <div className="space-y-8 max-w-5xl">
@@ -80,13 +93,31 @@ export const AnalisisPage: React.FC = () => {
         </div>
       ) : (
         <>
-          <div className="nx-card p-6">
+          <div className="nx-card p-6 space-y-4">
+            {/* Control selector de variable comparativa */}
+            <div className="flex justify-between items-center flex-wrap gap-2">
+              <h3 className="text-sm font-semibold text-slate-300">Comparativa Visual</h3>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-400">Métrica:</span>
+                <select
+                  value={comparativeMetric}
+                  onChange={(e) => setComparativeMetric(e.target.value as any)}
+                  className="nx-input !w-auto !py-1 text-xs"
+                >
+                  <option value="ganancia">Ganancia Neta ($)</option>
+                  <option value="ingresos">Ingresos Totales ($)</option>
+                  <option value="costos">Costos ($)</option>
+                </select>
+              </div>
+            </div>
+
             <ProfitBarChart
               labels={ranking.ranked.map((r) => (r.dataset.isMine ? `${r.dataset.name} (mío)` : r.dataset.name))}
-              values={ranking.ranked.map((r) => r.money.gananciaNeta)}
-              label="Ganancia neta"
+              values={chartValues}
+              label={chartLabel}
             />
           </div>
+
           <div className="nx-card overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

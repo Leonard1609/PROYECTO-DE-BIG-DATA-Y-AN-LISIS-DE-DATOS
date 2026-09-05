@@ -5,6 +5,8 @@ import { financials, withCanonicalMoney } from '../../lib/analyze';
 import { METODOLOGIA_OTRA, METODOLOGIAS, RUBROS, metodologiaLabel, normalizeRubro, rubroLabel } from '../../lib/catalog';
 import { formatMoney, formatPct } from '../../lib/format';
 import { csvKindLabel, readCsvFile } from '../../lib/inspectCsv';
+import { DatasetModal } from '../../components/DatasetModal';
+import type { Dataset } from '../../types/dataset';
 
 type Draft = {
   filename: string;
@@ -32,6 +34,7 @@ export const CargasPage: React.FC = () => {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [activeId, setActiveId] = useState<string | null>(datasets.at(-1)?.id ?? null);
   const [rubroTouched, setRubroTouched] = useState(false);
+  const [selectedDatasetForModal, setSelectedDatasetForModal] = useState<Dataset | null>(null);
 
   useEffect(() => {
     if (rubroTouched) return;
@@ -360,32 +363,29 @@ export const CargasPage: React.FC = () => {
               </div>
             ))}
           </div>
-          <div className="overflow-x-auto max-h-80 rounded-xl border border-white/5">
-            <table className="w-full text-xs">
-              <thead className="sticky top-0 bg-slate-950">
-                <tr>
-                  {(active.headers ?? []).map((h) => (
-                    <th key={h} className="text-left px-3 py-2 text-slate-500 font-medium">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {(active.rows ?? []).slice(0, 60).map((row, i) => (
-                  <tr key={i} className="border-t border-white/5">
-                    {(active.headers ?? []).map((h) => (
-                      <td key={h} className="px-3 py-1.5 text-slate-300 whitespace-nowrap">
-                        {row[h]}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+          {/* Reemplazo de tabla pesada por el botón que abre el Modal diferido */}
+          <div className="mt-4 flex justify-between items-center bg-slate-950/60 p-4 rounded-xl border border-white/5">
+            <div className="text-xs text-slate-400">
+              Registros procesados: <b className="text-slate-200">{active.rows.length} filas</b>.
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedDatasetForModal(active)}
+              className="nx-btn text-xs px-4 py-2 flex items-center gap-2"
+            >
+              <span>🔍</span> Inspeccionar Dataset (Tabla y Gráficos)
+            </button>
           </div>
         </div>
       )}
+
+      {/* Modal diferido bajo demanda */}
+      <DatasetModal
+        dataset={selectedDatasetForModal}
+        isOpen={!!selectedDatasetForModal}
+        onClose={() => setSelectedDatasetForModal(null)}
+      />
     </div>
   );
 };
