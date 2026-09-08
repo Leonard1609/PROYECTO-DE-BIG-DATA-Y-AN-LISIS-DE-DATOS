@@ -35,9 +35,9 @@ export async function aprobarSolicitud(req, res) {
     const usuario = data[0];
 
     await enviarCredencialesAcceso(
-  usuario.email,           // 1. emailDestino
-  usuario.nombre_completo, // 2. nombre ("Sam Test")
-  passwordTemporal,        // 3. passwordTemporal ("22wdtc1v")
+  usuario.email,           // 1. emailDestino -> darkkrisalix616@gmail.com
+  passwordTemporal,        // 2. nombre -> Pasa la contraseña temporal para que coincida con la plantilla si está invertida
+  usuario.nombre_completo, // 3. passwordTemporal -> Pasa el nombre para ajustarlo al orden que está leyendo la función
   rolAsignado              // 4. rol
 );
 
