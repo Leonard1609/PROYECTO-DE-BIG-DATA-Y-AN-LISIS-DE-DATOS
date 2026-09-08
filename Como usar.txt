@@ -7,9 +7,11 @@ Por si acaso:
 - npm install dotenv (Para Leer archivos)
 
 Para iniciar:
-cd src
+cd nexus-email-test
 
 node src/app.js
+
+
 
 prueba test local: node test.js 
 
