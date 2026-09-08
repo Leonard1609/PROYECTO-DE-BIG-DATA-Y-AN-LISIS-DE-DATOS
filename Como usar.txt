@@ -1,0 +1,48 @@
+Todo dentro de nexus-email-test:
+1- npm install express nodemailer dotenv bcryptjs
+2- npm install resend @supabase/supabase-js dotenv
+3- npm install @supabase/supabase-js (supabase)
+
+Por si acaso:
+- npm install dotenv (Para Leer archivos)
+
+Para iniciar:
+cd src
+
+node src/app.js
+
+prueba test local: node test.js 
+
+
+Colocas esto en el navegador: 
+http://localhost:3000/solicitudes.html
+
+En el SupaBase agregas de manera manual algunos correos tuyos así en SQL Editor:
+
+INSERT INTO usuarios_solicitudes (email, nombre_completo, estado)
+VALUES ('Tu_correo@gmail.com', 'Colocas_Tu_Nombre', 'PENDIENTE')
+RETURNING id;
+
+INSERT INTO usuarios_solicitudes (email, nombre_completo, estado)
+VALUES ('Tu_correo@gmail.com', 'Colocas_Tu_Nombre', 'PENDIENTE')
+RETURNING id;
+
+Le das f5 o recargar a la página de solicitudes para que aparezcan y le des en uno de los botones.
+
+Si quieres probarlo por tí mismo solo vas al .env y cambias estos apartados para ti:
+
+EMAIL_USER=Un_Correo_Tuyo@gmail.com
+EMAIL_PASS=Código_De_Acceso_Del_Aplicativo
+
+Para conseguir el código de acceso es: 
+1- Ir a gmail con una cuenta que quieras usar
+2- Al estar en gmail le das un click al icono de la cuenta y bajas a Administrar tu cuenta de google.
+3- Vas al apartado de seguridad y acceso.
+4- Si tienes activado el Verificación en 2 pasos puedes continuar, si no sigue estos pasos.
+4.1 En seguridad y acceso le das click a activar el verificacion en 2 pasos
+4.2 Te pedirá la contraseña de tu cuenta y le das, sigues las instrucciones para activarla.
+5- Una vez activado regresa a seguridad y acceso, luego, en la barra de búsqueda colocas Contraseñas de aplicaciones.
+6- Colocas tu contraseña del correo que estás usando para continuar.
+7-Te saldrá un apartado de Contraseñas de aplicaciones y solamente escribes el nombre del aplicativo, o cualquier nombre en realidad, por ejemplo: NEXUS
+8-Te saldrá un código de 16 dígitos, lo copias y guardas en el apartado .env.
+9- En test.js -en const transporter = nodemailer.createTransport- cambias en user y pass lo que colocaste en tu .env, y escribes en la terminal node test.js
