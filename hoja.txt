@@ -3,3 +3,5 @@
 2- npm install resend @supabase/supabase-js dotenv
 
 lzhq rfje nohm ekrx (contraseña de aplicación gmail)
+
+npm install dotenv (Para Leer archivos)
