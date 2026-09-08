@@ -1,4 +1,7 @@
 import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
@@ -27,6 +30,23 @@ export const enviarCredencialesAcceso = async (emailDestino, nombre, passwordTem
         <p><strong>Contraseña Temporal:</strong> <code>${nombre}</code></p>
         <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
         <p style="font-size: 12px; color: #666;">Por favor, ingresa al sistema y cambia tu contraseña tras el primer inicio de sesión.</p>
+      </div>
+    `
+  };
+
+  return await transporter.sendMail(mailOptions);
+};
+
+export const enviarNotificacionRechazo = async (emailDestino, nombre) => {
+  const mailOptions = {
+    from: `"NEXUS Enterprise System" <${process.env.EMAIL_USER}>`,
+    to: emailDestino,
+    subject: 'Estado de Solicitud - Plataforma NEXUS',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; padding: 20px; border-radius: 8px;">
+        <h2 style="color: #e11d48;">Hola, ${nombre}</h2>
+        <p>Lamentamos informarte que tu solicitud de acceso a la plataforma <strong>NEXUS</strong> no ha sido aprobada en este momento.</p>
+        <p>Si consideras que esto es un error, por favor ponte en contacto con el administrador del sistema.</p>
       </div>
     `
   };

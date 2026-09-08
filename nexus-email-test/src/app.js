@@ -1,15 +1,13 @@
-import 'dotenv/config';
 import express from 'express';
-import path from 'path';
-import { aprobarSolicitud } from './controllers/authController.js';
+import authRoutes from './routes/authRoutes.js'; // Importas las rutas que creaste
 
 const app = express();
+
 app.use(express.json());
+app.use(express.static('public')); // Para servir tus HTML (solicitudes.html, aprobar.html, etc.)
 
-// Servir la vista de prueba HTML
-app.use(express.static('public'));
-
-app.post('/api/aprobar-solicitud', aprobarSolicitud);
+// REGISTRAR RUTAS CON EL PREFIJO /api
+app.use('/api', authRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

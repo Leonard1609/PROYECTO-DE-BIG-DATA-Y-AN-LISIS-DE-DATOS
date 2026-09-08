@@ -14,3 +14,8 @@ cd src
 node src/app.js
 
 prueba test local: node test.js
+
+
+Colocas esto en el navegador:
+http://localhost:3000/solicitudes.html
+
