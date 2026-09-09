@@ -11,7 +11,9 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   },
-  family: 4
+  tls: {
+    rejectUnauthorized: false // Evita el error 'self-signed certificate in certificate chain'
+  }
 });
 
 export const enviarCredencialesAcceso = async (emailDestino, nombre, passwordTemporal, rol) => {
