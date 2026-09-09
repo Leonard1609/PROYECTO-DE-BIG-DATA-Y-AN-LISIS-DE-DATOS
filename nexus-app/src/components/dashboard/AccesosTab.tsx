@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, Clock, Briefcase } from 'lucide-react';
+import { CheckCircle2, Clock, Briefcase, Mail, UserCheck } from 'lucide-react';
 import type { CuentaActiva, InvitacionSolicitud } from '../../types/dashboard';
 import { CuentasActivasTable } from './CuentasActivasTable';
 import { InvitacionesTable } from './InvitacionesTable';
@@ -23,6 +23,10 @@ export const AccesosTab: React.FC<AccesosTabProps> = ({
   onEliminarCuentaActiva,
   onEliminarInvitacion
 }) => {
+  // Clasificación estricta de las solicitudes según el origen
+  const solicitudesAcceso = invitacionesSolicitudes.filter(item => item.origen === 'Solicitud');
+  const invitacionesDirectas = invitacionesSolicitudes.filter(item => item.origen === 'Invitación');
+
   return (
     <div className="max-w-7xl mx-auto space-y-8">
       {/* TARJETAS RESUMEN */}
@@ -58,18 +62,44 @@ export const AccesosTab: React.FC<AccesosTabProps> = ({
         </div>
       </div>
 
+      {/* TABLA DE CUENTAS ACTIVAS */}
       <CuentasActivasTable 
         cuentas={cuentasActivas}
         onEditarProyecto={onEditarProyectoCuenta}
         onEliminar={onEliminarCuentaActiva}
       />
 
-      <InvitacionesTable 
-        invitaciones={invitacionesSolicitudes}
-        onOpenInviteModal={onOpenInviteModal}
-        onAprobarActivar={onAprobarActivar}
-        onEliminarInvitacion={onEliminarInvitacion}
-      />
+      {/* SECCIÓN FLUJO 1: SOLICITUDES DE ACCESO */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <UserCheck className="w-5 h-5 text-blue-600" />
+          <h2 className="text-base font-bold text-slate-800">
+            Flujo 1: Solicitudes de Acceso Web (Registro Público)
+          </h2>
+        </div>
+        <InvitacionesTable 
+          invitaciones={solicitudesAcceso}
+          onOpenInviteModal={onOpenInviteModal}
+          onAprobarActivar={onAprobarActivar}
+          onEliminarInvitacion={onEliminarInvitacion}
+        />
+      </div>
+
+      {/* SECCIÓN FLUJO 2: INVITACIONES DIRECTAS */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Mail className="w-5 h-5 text-indigo-600" />
+          <h2 className="text-base font-bold text-slate-800">
+            Flujo 2: Invitaciones Directas Enviadas (Administración)
+          </h2>
+        </div>
+        <InvitacionesTable 
+          invitaciones={invitacionesDirectas}
+          onOpenInviteModal={onOpenInviteModal}
+          onAprobarActivar={onAprobarActivar}
+          onEliminarInvitacion={onEliminarInvitacion}
+        />
+      </div>
     </div>
   );
 };

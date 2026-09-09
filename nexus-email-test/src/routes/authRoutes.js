@@ -8,7 +8,9 @@ import {
   rechazarSolicitud, 
   validarEmailLogin, 
   login,
-  obtenerCuentasActivas
+  obtenerCuentasActivas,
+  crearInvitacion,
+  solicitarActivacion
 } from '../controllers/authController.js';
 
 const router = Router();
@@ -18,10 +20,9 @@ router.get('/cuentas-activas', obtenerCuentasActivas);
 router.post('/registrar-solicitud', registrarSolicitud);
 router.post('/aprobar-solicitud', aprobarSolicitud);
 router.post('/rechazar-solicitud', rechazarSolicitud);
-
-// CAMBIO AQUÍ: Cambia '/validar-email' por '/validar-email-login'
+router.post('/crear-invitacion', crearInvitacion);
 router.post('/validar-email-login', validarEmailLogin);
-
+router.post('/solicitar-activacion', solicitarActivacion);
 router.post('/login', login); 
 
 export default router;

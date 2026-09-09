@@ -28,7 +28,7 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
     { id: 4, titulo: 'MODELADO DE DATOS POSTGRES', nrc: '202620-BD-05-NRC_9351', estado: 'Pendiente', lider: 'JUAN JOSE LEON SUIYON', bg: 'from-amber-700 to-amber-900', colorBar: 'bg-emerald-600' },
   ];
 
-  // Cargar cuentas activas desde Supabase
+  // 1. Cargar cuentas activas desde Supabase
   const cargarCuentasActivas = async () => {
     try {
       const response = await fetch('http://localhost:3000/api/cuentas-activas');
@@ -38,7 +38,7 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
           id: usr.id,
           nombre: usr.nombre_completo || 'Usuario Sistema',
           cargo: usr.rol === 'ADMIN' ? 'Administrador General' : 'Especialista / Analista',
-          correoNormal: usr.email,
+          correoNormal: usr.email_personal || usr.email,
           correoEmpresarial: usr.email,
           passwordPlana: '••••••••',
           rol: usr.rol || 'Empleado',
@@ -53,28 +53,50 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
     }
   };
 
-  // Cargar solicitudes pendientes desde el Backend Node.js
+  // 2. Cargar solicitudes e invitaciones pendientes
   const cargarSolicitudesPendientes = async () => {
     try {
       const response = await fetch('http://localhost:3000/api/solicitudes-pendientes');
       if (response.ok) {
         const data = await response.json();
         
-        // Mapear los datos de Supabase a la estructura de la tabla
-        const mapeadas: InvitacionSolicitud[] = data.map((sol: any) => ({
+        // Mapeo de Solicitudes
+        const solicitudesMapeadas: InvitacionSolicitud[] = (data.solicitudes || []).map((sol: any) => ({
           id: sol.id,
           origen: 'Solicitud',
-          fase: 'Fase 2/2 (Datos Completados)',
+          fase: sol.fase === 3 
+            ? 'Fase 3/4 (Solicitud de Activación)' 
+            : sol.fase === 2 
+            ? 'Fase 2/4 (Visto Bueno Gestión)' 
+            : `Fase ${sol.fase || 2}/4`,
           destinatario: sol.nombre_completo || 'Solicitante Web',
           cargo: sol.modulo_interes ? `Interés: ${sol.modulo_interes}` : 'Solicitante Acceso',
           correoEmpresarial: sol.email,
           proyecto: sol.modulo_interes || 'PROYECTO GENERAL',
-          rol: sol.rol || 'Empleado',
-          fechaEnviado: new Date(sol.creado_en || Date.now()).toLocaleDateString('es-ES'),
-          estado: 'Pendiente Activación'
+          rol: sol.rol || 'EMPLEADO',
+          fechaEnviado: sol.creado_en ? new Date(sol.creado_en).toLocaleDateString('es-ES') : new Date().toLocaleDateString('es-ES'),
+          estado: sol.estado
         }));
 
-        setInvitacionesSolicitudes(mapeadas);
+        // Mapeo de Invitaciones
+        const invitacionesMapeadas: InvitacionSolicitud[] = (data.invitaciones || []).map((inv: any) => ({
+          id: inv.id,
+          origen: 'Invitación',
+          fase: inv.estado === 'DATOS_COMPLETADOS' 
+            ? 'Fase 2/3 (Datos Completados por Usuario)' 
+            : 'Fase 1/3 (Correo Enviado al Empleado)',
+          destinatario: inv.email_personal || 'Empleado Invitado',
+          cargo: inv.cargo || 'Analista / Colaborador',
+          correoEmpresarial: inv.email_empresarial,
+          proyecto: inv.proyecto || 'PROYECTO GENERAL',
+          rol: inv.rol || 'EMPLEADO',
+          fechaEnviado: inv.creado_en ? new Date(inv.creado_en).toLocaleDateString('es-ES') : new Date().toLocaleDateString('es-ES'),
+          estado: inv.estado
+        }));
+
+        setInvitacionesSolicitudes([...solicitudesMapeadas, ...invitacionesMapeadas]);
+      } else {
+        console.error('Error HTTP al cargar pendientes:', response.status);
       }
     } catch (error) {
       console.error('Error al cargar las solicitudes del backend:', error);
@@ -86,75 +108,122 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
     cargarCuentasActivas();
   }, []);
 
-  const handleSendInvite = (data: {
+  // 3. Crear invitación (Fase 1 Invitación)
+  const handleSendInvite = async (data: {
     emailNormal: string;
     role: 'Admin' | 'Analista' | 'Empleado';
     cargo: string;
     proyecto: string;
     correoEmpresarial: string;
   }) => {
-    const nuevaInv: InvitacionSolicitud = {
-      id: Date.now(),
-      origen: 'Invitación',
-      fase: 'Fase 1/1 (Correo Enviado)',
-      destinatario: 'Pendiente de Login',
-      cargo: data.role === 'Admin' ? 'Administrador de Control' : data.cargo,
-      correoEmpresarial: data.correoEmpresarial,
-      proyecto: data.role === 'Admin' ? 'N/A (Acceso General Admin)' : data.proyecto,
-      rol: data.role,
-      fechaEnviado: new Date().toLocaleDateString('es-ES'),
-      estado: 'Invitación Pendiente'
-    };
+    try {
+      const response = await fetch('http://localhost:3000/api/crear-invitacion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email_personal: data.emailNormal,
+          email_empresarial: data.correoEmpresarial,
+          rol: data.role.toUpperCase(),
+          cargo: data.cargo,
+          proyecto: data.proyecto
+        })
+      });
 
-    setInvitacionesSolicitudes([nuevaInv, ...invitacionesSolicitudes]);
-    alert(`Invitación enviada automáticamente a ${data.emailNormal}`);
-    setShowInviteModal(false);
+      if (response.ok) {
+        alert(`Invitación creada e email enviado exitosamente a ${data.emailNormal}`);
+        setShowInviteModal(false);
+        cargarSolicitudesPendientes();
+      } else {
+        const err = await response.json();
+        alert(`Error al generar invitación: ${err.error}`);
+      }
+    } catch (error) {
+      console.error('Error creando invitación:', error);
+      alert('Error de conexión con el servidor.');
+    }
   };
 
-  // Función para aprobar solicitud y llamar a la API del backend
+  // 4. Aprobar o Activar registros (Garantiza el origen correcto sin errores TypeScript)
   const handleAprobarActivar = async (item: InvitacionSolicitud) => {
     try {
+      const estadoStr = String(item.estado || '').toUpperCase();
+      const faseStr = String(item.fase || '');
+
+      const esSolicitudActivacion = estadoStr === 'PENDIENTE_ACTIVACION' || faseStr.includes('Fase 3/4');
+
+      const origenDinamico = item.origen === 'Invitación'
+        ? 'INVITACION'
+        : esSolicitudActivacion
+        ? 'SOLICITUD_ACTIVACION'
+        : 'SOLICITUD_FASE_2';
+
       const response = await fetch('http://localhost:3000/api/aprobar-solicitud', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: item.id,
           email: item.correoEmpresarial,
+          correoEmpresarial: item.correoEmpresarial,
           nombre: item.destinatario,
-          rol: item.rol
+          rol: item.rol,
+          proyecto: item.proyecto,
+          origen: origenDinamico
         })
       });
 
       if (response.ok) {
-        alert(`Solicitud aprobada con éxito. Se enviaron las credenciales de correo a ${item.correoEmpresarial}`);
-        // Recargar ambas listas
+        const data = await response.json();
+        alert(data.message);
         cargarSolicitudesPendientes();
         cargarCuentasActivas();
       } else {
-        const errData = await response.json();
-        alert(`Error al aprobar: ${errData.error}`);
+        const err = await response.json();
+        alert(`Error: ${err.error}`);
       }
     } catch (error) {
-      console.error('Error al aprobar la solicitud:', error);
-      alert('Error de conexión con el servidor.');
+      console.error('Error al aprobar:', error);
     }
   };
 
-  const handleEditarProyectoCuenta = (id: number) => {
+  const handleEditarProyectoCuenta = (id: number | string) => {
     const nuevoProyecto = prompt("Ingrese el nuevo proyecto o área de trabajo:");
     if (nuevoProyecto) {
       setCuentasActivas(cuentasActivas.map(c => c.id === id ? { ...c, proyecto: nuevoProyecto } : c));
     }
   };
 
-  const handleEliminarCuentaActiva = (id: number) => {
+  const handleEliminarCuentaActiva = (id: number | string) => {
     if (confirm("¿Está seguro de revocar el acceso a este usuario?")) {
       setCuentasActivas(cuentasActivas.filter(c => c.id !== id));
     }
   };
 
-  const handleEliminarInvitacion = (id: string | number) => {
-    setInvitacionesSolicitudes(invitacionesSolicitudes.filter(i => i.id !== id));
+  const handleEliminarInvitacion = async (id: string | number) => {
+    if (!confirm("¿Desea rechazar/eliminar este registro?")) return;
+
+    const item = invitacionesSolicitudes.find(i => i.id === id);
+    if (!item) return;
+
+    try {
+      const response = await fetch('http://localhost:3000/api/rechazar-solicitud', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: item.id,
+          origen: item.origen === 'Invitación' ? 'INVITACION' : 'SOLICITUD',
+          motivo: 'Rechazado desde el panel de administración.'
+        })
+      });
+
+      if (response.ok) {
+        setInvitacionesSolicitudes(invitacionesSolicitudes.filter(i => i.id !== id));
+      } else {
+        const err = await response.json();
+        alert(`Error al rechazar: ${err.error}`);
+      }
+    } catch (error) {
+      console.error('Error al rechazar:', error);
+    }
   };
 
   return (
