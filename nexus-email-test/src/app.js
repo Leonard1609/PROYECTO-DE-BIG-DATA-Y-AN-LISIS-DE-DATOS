@@ -1,12 +1,19 @@
 import express from 'express';
-import authRoutes from './routes/authRoutes.js'; // Importas las rutas que creaste
+import cors from 'cors';
+import authRoutes from './routes/authRoutes.js';
 
 const app = express();
 
-app.use(express.json());
-app.use(express.static('public')); // Para servir tus HTML (solicitudes.html, aprobar.html, etc.)
+// Configuración de CORS para permitir solicitudes desde React (Vite)
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true
+}));
 
-// REGISTRAR RUTAS CON EL PREFIJO /api
+app.use(express.json());
+app.use(express.static('public'));
+
+// Rutas de la API
 app.use('/api', authRoutes);
 
 const PORT = process.env.PORT || 3000;
