@@ -1,14 +1,9 @@
 import React, { useState } from 'react';
 import { 
   User, 
-  Building2, 
-  Activity, 
   FolderKanban, 
-  Users, 
-  Calendar as CalendarIcon, 
   MessageSquare, 
   ShieldCheck, 
-  Wrench, 
   LogOut, 
   Search, 
   Grid, 
@@ -17,17 +12,18 @@ import {
   UserPlus, 
   X,
   CheckCircle2,
-  Clock,
-  Send,
   Plus,
-  Lock,
-  Mail,
-  Phone,
-  MapPin,
-  Briefcase,
-  Settings,
   ChevronRight,
-  FileText
+  Eye,
+  EyeOff,
+  Mail,
+  Briefcase,
+  Key,
+  Clock,
+  RefreshCw,
+  Trash2,
+  Edit3,
+  CheckCircle
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -35,25 +31,136 @@ interface DashboardProps {
   onLogout: () => void;
 }
 
+interface CuentaActiva {
+  id: number;
+  nombre: string;
+  cargo: string;
+  correoNormal: string;
+  correoEmpresarial: string;
+  passwordPlana: string;
+  rol: 'Admin' | 'Analista' | 'Empleado';
+  proyecto: string;
+  estado: 'Activo' | 'Inactivo';
+  tiempoEstado: string; // Ej: "hace 3 meses" o "hace 5 días"
+}
+
+interface InvitacionSolicitud {
+  id: number;
+  origen: 'Invitación' | 'Solicitud';
+  fase: string; // Ej: "Fase 1/1 (Correo Enviado)" o "Fase 2/2 (Datos Completados)"
+  destinatario: string;
+  cargo: string;
+  correoEmpresarial: string;
+  proyecto: string;
+  rol: 'Admin' | 'Analista' | 'Empleado';
+  fechaEnviado: string;
+  estado: 'Pendiente Activación' | 'Invitación Pendiente';
+}
+
 export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout }) => {
-  // Estado de navegación lateral (incluye 'perfil')
-  const [activeTab, setActiveTab] = useState<
-    'perfil' | 'empresa' | 'actividad' | 'proyectos' | 'equipos' | 'calendario' | 'mensajes' | 'roles' | 'herramientas'
-  >('proyectos');
+  // Navegación lateral
+  const [activeTab, setActiveTab] = useState<'perfil' | 'proyectos' | 'mensajes' | 'accesos'>('accesos');
 
   const [showInviteModal, setShowInviteModal] = useState(false);
-  
-  // Búsqueda y vista
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<number, boolean>>({});
+
+  // Búsqueda y Filtros de Proyectos
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Todos');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // Formulario de invitación
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<'admin' | 'analista' | 'empleado'>('analista');
+  // --- RECUADRO MORADO: CUENTAS ACTIVAS ---
+  const [cuentasActivas, setCuentasActivas] = useState<CuentaActiva[]>([
+    {
+      id: 1,
+      nombre: 'Cesar Erinson Carlos Zamb',
+      cargo: 'Líder de Arquitectura de Datos',
+      correoNormal: 'cesar.carlos@gmail.com',
+      correoEmpresarial: 'ccarlos@nexus-tech.com',
+      passwordPlana: 'Nx$9823#Cesar',
+      rol: 'Admin',
+      proyecto: 'PROYECTO BIG DATA & ANALÍTICA',
+      estado: 'Activo',
+      tiempoEstado: 'hace 3 meses'
+    },
+    {
+      id: 2,
+      nombre: 'Leonard Dev',
+      cargo: 'Desarrollador Senior Backend',
+      correoNormal: 'leonard.dev99@outlook.com',
+      correoEmpresarial: 'ldev@nexus-tech.com',
+      passwordPlana: 'LDev_2026!Sec',
+      rol: 'Analista',
+      proyecto: 'GESTIÓN CRM & PIPELINE VENTAS',
+      estado: 'Activo',
+      tiempoEstado: 'hace 1 mes'
+    },
+    {
+      id: 3,
+      nombre: 'Alcides Llanos Nieto',
+      cargo: 'Especialista Cloud AWS',
+      correoNormal: 'alcides.llanos@yahoo.com',
+      correoEmpresarial: 'allanos@nexus-tech.com',
+      passwordPlana: 'AwsCloud#8821',
+      rol: 'Empleado',
+      proyecto: 'MIGRACIÓN CLOUD AWS',
+      estado: 'Inactivo',
+      tiempoEstado: 'hace 5 días'
+    },
+    {
+      id: 4,
+      nombre: 'Juan Jose Leon Suiyon',
+      cargo: 'Administrador de Bases de Datos',
+      correoNormal: 'juan.suiyon@hotmail.com',
+      correoEmpresarial: 'jsuiyon@nexus-tech.com',
+      passwordPlana: 'Postgre$Pass2026',
+      rol: 'Analista',
+      proyecto: 'MODELADO DE DATOS POSTGRES',
+      estado: 'Activo',
+      tiempoEstado: 'hace 2 semanas'
+    }
+  ]);
+
+  // --- RECUADRO ROJO: HISTORIAL DE INVITACIONES Y SOLICITUDES ---
+  const [invitacionesSolicitudes, setInvitacionesSolicitudes] = useState<InvitacionSolicitud[]>([
+    {
+      id: 101,
+      origen: 'Solicitud',
+      fase: 'Fase 2/2 (Datos Completados)',
+      destinatario: 'María Fernanda Ruiz',
+      cargo: 'Analista BI',
+      correoEmpresarial: 'mruiz@nexus-tech.com',
+      proyecto: 'PROYECTO BIG DATA & ANALÍTICA',
+      rol: 'Analista',
+      fechaEnviado: '08/09/2026',
+      estado: 'Pendiente Activación'
+    },
+    {
+      id: 102,
+      origen: 'Invitación',
+      fase: 'Fase 1/1 (Correo Enviado)',
+      destinatario: 'Carlos Eduardo Mendoza',
+      cargo: 'Ingeniero de Software',
+      correoEmpresarial: 'cmendoza@nexus-tech.com',
+      proyecto: 'GESTIÓN CRM & PIPELINE VENTAS',
+      rol: 'Empleado',
+      fechaEnviado: '05/09/2026',
+      estado: 'Invitación Pendiente'
+    }
+  ]);
+
+  // --- FORMULARIO DE INVITACIÓN (MODAL SIMPLIFICADO) ---
+  const [inviteEmailNormal, setInviteEmailNormal] = useState('');
+  const [inviteRole, setInviteRole] = useState<'Admin' | 'Analista' | 'Empleado'>('Analista');
+  const [inviteCargo, setInviteCargo] = useState('Analista (Big Data / Operativo)');
   const [inviteProject, setInviteProject] = useState('PROYECTO BIG DATA & ANALÍTICA');
 
-  // Proyectos
+  // Autogeneración dinámica del correo empresarial
+  const correoEmpresarialGenerado = inviteEmailNormal 
+    ? `${inviteEmailNormal.split('@')[0].toLowerCase()}@nexus-tech.com`
+    : '';
+
+  // Proyectos Lista Base
   const proyectos = [
     { id: 1, titulo: 'PROYECTO BIG DATA & ANALÍTICA', nrc: '202620-BD-01-NRC_7540', estado: 'Activo', lider: 'CESAR ERINSON CARLOS ZAMB', bg: 'from-blue-700 to-indigo-900', colorBar: 'bg-blue-600' },
     { id: 2, titulo: 'GESTIÓN CRM & PIPELINE VENTAS', nrc: '202620-CRM-02-NRC_7396', estado: 'Activo', lider: 'LEONARD DEV', bg: 'from-slate-800 to-blue-900', colorBar: 'bg-indigo-600' },
@@ -65,34 +172,89 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
     const matchesSearch = p.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           p.nrc.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           p.lider.toLowerCase().includes(searchTerm.toLowerCase());
-    
     const matchesStatus = statusFilter === 'Todos' ? true : p.estado === statusFilter;
-
     return matchesSearch && matchesStatus;
   });
 
+  const togglePasswordVisibility = (id: number) => {
+    setVisiblePasswords(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // --- MANEJO DE INVITACIONES (CREAR) ---
   const handleSendInvite = (e: React.FormEvent) => {
     e.preventDefault();
-    alert(`Invitación enviada a ${inviteEmail} con rol "${inviteRole.toUpperCase()}" para el proyecto: ${inviteProject}`);
-    setInviteEmail('');
+    const nuevaInv: InvitacionSolicitud = {
+      id: Date.now(),
+      origen: 'Invitación',
+      fase: 'Fase 1/1 (Correo Enviado)',
+      destinatario: 'Pendiente de Login',
+      cargo: inviteRole === 'Admin' ? 'Administrador de Control' : inviteCargo,
+      correoEmpresarial: correoEmpresarialGenerado,
+      proyecto: inviteRole === 'Admin' ? 'N/A (Acceso General Admin)' : inviteProject,
+      rol: inviteRole,
+      fechaEnviado: new Date().toLocaleDateString('es-ES'),
+      estado: 'Invitación Pendiente'
+    };
+
+    setInvitacionesSolicitudes([nuevaInv, ...invitacionesSolicitudes]);
+    alert(`Invitación enviada automáticamente a ${inviteEmailNormal}`);
+    
+    // Resetear formulario modal
+    setInviteEmailNormal('');
+    setInviteRole('Analista');
     setShowInviteModal(false);
+  };
+
+  // --- ACCIÓN APROBAR Y MOVER A CUENTAS ACTIVAS ---
+  const handleAprobarActivar = (item: InvitacionSolicitud) => {
+    const nuevaCuenta: CuentaActiva = {
+      id: Date.now(),
+      nombre: item.destinatario !== 'Pendiente de Login' ? item.destinatario : 'Usuario Confirmado',
+      cargo: item.cargo,
+      correoNormal: 'usuario.registrado@gmail.com',
+      correoEmpresarial: item.correoEmpresarial,
+      passwordPlana: 'Pass2026!Active',
+      rol: item.rol,
+      proyecto: item.proyecto,
+      estado: 'Activo',
+      tiempoEstado: 'hace un momento'
+    };
+
+    setCuentasActivas([...cuentasActivas, nuevaCuenta]);
+    setInvitacionesSolicitudes(invitacionesSolicitudes.filter(i => i.id !== item.id));
+    alert(`La cuenta de ${item.correoEmpresarial} ha sido activada con éxito.`);
+  };
+
+  // --- ACCIÓN EDITAR ÁREA / PROYECTO (CRUD CUENTAS ACTIVAS) ---
+  const handleEditarProyectoCuenta = (id: number) => {
+    const nuevoProyecto = prompt("Ingrese el nuevo proyecto o área de trabajo:");
+    if (nuevoProyecto) {
+      setCuentasActivas(cuentasActivas.map(c => c.id === id ? { ...c, proyecto: nuevoProyecto } : c));
+    }
+  };
+
+  // --- ACCIÓN BORRAR / REVOCAR ACCESO ---
+  const handleEliminarCuentaActiva = (id: number) => {
+    if (confirm("¿Está seguro de revocar el acceso a este usuario?")) {
+      setCuentasActivas(cuentasActivas.filter(c => c.id !== id));
+    }
+  };
+
+  const handleEliminarInvitacion = (id: number) => {
+    setInvitacionesSolicitudes(invitacionesSolicitudes.filter(i => i.id !== id));
   };
 
   return (
     <div className="min-h-screen bg-[#f4f6f8] text-slate-800 flex font-sans text-sm">
       
-      {/* 1. BARRA LATERAL */}
+      {/* 1. BARRA LATERAL UNIFICADA */}
       <aside className="w-64 bg-[#1e1e1e] text-slate-300 flex flex-col justify-between shrink-0 min-h-screen">
         <div>
           <div className="p-5 border-b border-zinc-800 flex items-center justify-between">
             <h1 className="text-xl font-black text-white tracking-widest">NEXUS</h1>
-            <span className="text-[9px] bg-blue-900/80 text-blue-300 font-mono px-1.5 py-0.5 rounded border border-blue-700">
-              SYS-ADMIN
-            </span>
           </div>
 
-          <nav className="py-2">
-            {/* ÁREA DE USUARIO/ADMIN CLICABLE (Estilo Blackboard) */}
+          <nav className="py-2 space-y-1">
             <div 
               onClick={() => setActiveTab('perfil')}
               className={`mx-2 p-2.5 rounded-md flex items-center gap-3 cursor-pointer transition-all border ${
@@ -100,7 +262,6 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
                   ? 'bg-blue-600 text-white border-blue-500 shadow-md' 
                   : 'hover:bg-zinc-800/80 border-transparent text-slate-200'
               }`}
-              title="Ver datos del Administrador Actual"
             >
               <div className="w-9 h-9 rounded-full bg-slate-700 border border-slate-500 flex items-center justify-center text-white shrink-0 overflow-hidden">
                 <User className="w-5 h-5" />
@@ -116,43 +277,11 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
             <div className="my-2 border-b border-zinc-800/80" />
 
             <button 
-              onClick={() => setActiveTab('empresa')}
-              className={`w-full flex items-center gap-3 px-5 py-2.5 text-xs transition-colors ${activeTab === 'empresa' ? 'bg-[#0056d2] text-white font-semibold' : 'hover:bg-zinc-800'}`}
-            >
-              <Building2 className="w-4 h-4 text-slate-400" />
-              <span>Página de la Empresa</span>
-            </button>
-
-            <button 
-              onClick={() => setActiveTab('actividad')}
-              className={`w-full flex items-center gap-3 px-5 py-2.5 text-xs transition-colors ${activeTab === 'actividad' ? 'bg-[#0056d2] text-white font-semibold' : 'hover:bg-zinc-800'}`}
-            >
-              <Activity className="w-4 h-4 text-slate-400" />
-              <span>Flujo de Actividad</span>
-            </button>
-
-            <button 
               onClick={() => setActiveTab('proyectos')}
               className={`w-full flex items-center gap-3 px-5 py-2.5 text-xs transition-colors ${activeTab === 'proyectos' ? 'bg-[#0056d2] text-white font-semibold' : 'hover:bg-zinc-800'}`}
             >
               <FolderKanban className="w-4 h-4" />
               <span>Proyectos</span>
-            </button>
-
-            <button 
-              onClick={() => setActiveTab('equipos')}
-              className={`w-full flex items-center gap-3 px-5 py-2.5 text-xs transition-colors ${activeTab === 'equipos' ? 'bg-[#0056d2] text-white font-semibold' : 'hover:bg-zinc-800'}`}
-            >
-              <Users className="w-4 h-4 text-slate-400" />
-              <span>Equipos / Áreas</span>
-            </button>
-
-            <button 
-              onClick={() => setActiveTab('calendario')}
-              className={`w-full flex items-center gap-3 px-5 py-2.5 text-xs transition-colors ${activeTab === 'calendario' ? 'bg-[#0056d2] text-white font-semibold' : 'hover:bg-zinc-800'}`}
-            >
-              <CalendarIcon className="w-4 h-4 text-slate-400" />
-              <span>Calendario</span>
             </button>
 
             <button 
@@ -164,27 +293,11 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
             </button>
 
             <button 
-              onClick={() => setShowInviteModal(true)}
-              className="w-full flex items-center gap-3 px-5 py-2.5 text-xs hover:bg-zinc-800 transition-colors text-blue-400 font-medium"
+              onClick={() => setActiveTab('accesos')}
+              className={`w-full flex items-center gap-3 px-5 py-2.5 text-xs transition-colors ${activeTab === 'accesos' ? 'bg-[#0056d2] text-white font-semibold' : 'hover:bg-zinc-800'}`}
             >
-              <UserPlus className="w-4 h-4 text-blue-400" />
-              <span>Generar Invitación / Cargo</span>
-            </button>
-
-            <button 
-              onClick={() => setActiveTab('roles')}
-              className={`w-full flex items-center gap-3 px-5 py-2.5 text-xs transition-colors ${activeTab === 'roles' ? 'bg-[#0056d2] text-white font-semibold' : 'hover:bg-zinc-800'}`}
-            >
-              <ShieldCheck className="w-4 h-4 text-slate-400" />
-              <span>Roles y Accesos</span>
-            </button>
-
-            <button 
-              onClick={() => setActiveTab('herramientas')}
-              className={`w-full flex items-center gap-3 px-5 py-2.5 text-xs transition-colors ${activeTab === 'herramientas' ? 'bg-[#0056d2] text-white font-semibold' : 'hover:bg-zinc-800'}`}
-            >
-              <Wrench className="w-4 h-4 text-slate-400" />
-              <span>Herramientas ERP</span>
+              <ShieldCheck className="w-4 h-4 text-blue-400" />
+              <span>Gestión de Accesos e Invitaciones</span>
             </button>
           </nav>
         </div>
@@ -205,25 +318,279 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
         <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between min-h-[57px]">
           <h1 className="text-xl font-bold text-slate-800 capitalize">
             {activeTab === 'perfil' && 'Perfil de Usuario'}
-            {activeTab === 'empresa' && 'Página de la Empresa'}
-            {activeTab === 'actividad' && 'Flujo de Actividad'}
             {activeTab === 'proyectos' && 'Proyectos'}
-            {activeTab === 'equipos' && 'Equipos y Áreas'}
-            {activeTab === 'calendario' && 'Calendario de Entregas'}
             {activeTab === 'mensajes' && 'Mensajes e Informes de Proyectos'}
-            {activeTab === 'roles' && 'Roles y Permisos de Acceso'}
-            {activeTab === 'herramientas' && 'Herramientas Integradas ERP'}
+            {activeTab === 'accesos' && 'Gestión Unificada de Accesos e Invitaciones'}
           </h1>
+          
+          {activeTab === 'accesos' && (
+            <button 
+              onClick={() => setShowInviteModal(true)}
+              className="px-3.5 py-2 bg-[#0056d2] text-white rounded-md text-xs font-semibold hover:bg-blue-700 flex items-center gap-2 shadow-sm transition-all"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Generar Nueva Invitación / Cargo</span>
+            </button>
+          )}
         </header>
 
         <div className="flex-1 flex overflow-hidden">
           
           <main className="flex-1 p-6 overflow-y-auto space-y-6">
 
-            {/* VISTA 1: PERFIL ESTILO BLACKBOARD */}
+            {/* VISTA COMBINADA: GESTIÓN DE ACCESOS E INVITACIONES */}
+            {activeTab === 'accesos' && (
+              <div className="max-w-7xl mx-auto space-y-8">
+                
+                {/* TARJETAS RESUMEN DE CONTROL */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-slate-500 font-medium">Cuentas Activas</p>
+                      <p className="text-2xl font-bold text-slate-800 mt-1">{cuentasActivas.length}</p>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                      <CheckCircle2 className="w-5 h-5" />
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-slate-500 font-medium">Invitaciones / Solicitudes Pendientes</p>
+                      <p className="text-2xl font-bold text-amber-600 mt-1">
+                        {invitacionesSolicitudes.length}
+                      </p>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center">
+                      <Clock className="w-5 h-5" />
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-slate-500 font-medium">Cargos Asignados</p>
+                      <p className="text-2xl font-bold text-blue-600 mt-1">{cuentasActivas.length}</p>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                      <Briefcase className="w-5 h-5" />
+                    </div>
+                  </div>
+                </div>
+
+
+
+                {/* SECCIÓN 1 (RECUADRO MORADO): HISTORIAL DE CUENTAS ACTIVAS */}
+                <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                    <div>
+                      <h2 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                        Historial de Cuentas Activas y Credenciales de Acceso
+                      </h2>
+                      <p className="text-xs text-slate-500">Muestra datos corporativos, personales, tiempo de inactividad/permanencia y gestión CRUD de acceso.</p>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs text-slate-700">
+                      <thead className="bg-slate-100 text-slate-600 font-semibold uppercase text-[10px] border-b border-slate-200">
+                        <tr>
+                          <th className="p-3">Usuario y Cargo</th>
+                          <th className="p-3">Correo Personal</th>
+                          <th className="p-3">Correo Empresarial</th>
+                          <th className="p-3">Contraseña Oculta</th>
+                          <th className="p-3">Rol / Proyecto</th>
+                          <th className="p-3">Estado / Tiempo</th>
+                          <th className="p-3 text-center">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {cuentasActivas.map((cuenta) => (
+                          <tr key={cuenta.id} className="hover:bg-slate-50/80 transition-colors">
+                            <td className="p-3">
+                              <p className="font-bold text-slate-800">{cuenta.nombre}</p>
+                              <span className="inline-flex items-center gap-1 text-[11px] text-blue-600 font-medium">
+                                <Briefcase className="w-3 h-3 text-blue-500" />
+                                {cuenta.cargo}
+                              </span>
+                            </td>
+                            <td className="p-3 text-slate-600 font-mono text-[11px]">
+                              {cuenta.correoNormal}
+                            </td>
+                            <td className="p-3 font-mono text-[11px] font-semibold text-slate-800">
+                              {cuenta.correoEmpresarial}
+                            </td>
+                            <td className="p-3 font-mono">
+                              <div className="flex items-center gap-2 bg-slate-100 px-2.5 py-1 rounded border border-slate-200 w-fit">
+                                <Key className="w-3 h-3 text-slate-400" />
+                                <span className="text-slate-700 text-[11px] font-bold">
+                                  {visiblePasswords[cuenta.id] ? cuenta.passwordPlana : '••••••••••••'}
+                                </span>
+                                <button 
+                                  onClick={() => togglePasswordVisibility(cuenta.id)}
+                                  className="text-slate-400 hover:text-slate-700 transition-colors ml-1"
+                                >
+                                  {visiblePasswords[cuenta.id] ? (
+                                    <EyeOff className="w-3.5 h-3.5 text-amber-600" />
+                                  ) : (
+                                    <Eye className="w-3.5 h-3.5" />
+                                  )}
+                                </button>
+                              </div>
+                            </td>
+                            <td className="p-3 space-y-1">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                                cuenta.rol === 'Admin' ? 'bg-purple-100 text-purple-800' :
+                                cuenta.rol === 'Analista' ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-700'
+                              }`}>
+                                {cuenta.rol}
+                              </span>
+                              <p className="text-[10px] text-slate-500 truncate max-w-[180px]">
+                                {cuenta.proyecto}
+                              </p>
+                            </td>
+                            <td className="p-3">
+                              <span className={`font-bold text-[10px] px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${
+                                cuenta.estado === 'Activo' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                              }`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${cuenta.estado === 'Activo' ? 'bg-emerald-600' : 'bg-amber-600'}`} />
+                                {cuenta.estado} ({cuenta.tiempoEstado})
+                              </span>
+                            </td>
+                            <td className="p-3 text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                <button 
+                                  onClick={() => handleEditarProyectoCuenta(cuenta.id)}
+                                  className="p-1 text-slate-400 hover:text-blue-600 transition-colors"
+                                  title="Mover de Área / Proyecto"
+                                >
+                                  <Edit3 className="w-4 h-4" />
+                                </button>
+                                <button 
+                                  onClick={() => handleEliminarCuentaActiva(cuenta.id)}
+                                  className="p-1 text-slate-400 hover:text-rose-600 transition-colors"
+                                  title="Revocar / Quitar Acceso"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* SECCIÓN 2 (RECUADRO ROJO): HISTORIAL DE INVITACIONES Y SOLICITUDES DE ACCESO */}
+                <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                    <div>
+                      <h2 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <UserPlus className="w-4 h-4 text-blue-600" />
+                        Historial de Invitaciones Enviadas & Cargos Solicitados
+                      </h2>
+                      <p className="text-xs text-slate-500">Muestra la fase de verificación, origen de la petición y permite la aprobación directa.</p>
+                    </div>
+
+                    <button 
+                      onClick={() => setShowInviteModal(true)}
+                      className="px-3 py-1.5 bg-slate-800 text-white rounded text-xs font-semibold hover:bg-slate-900 flex items-center gap-1.5"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Nueva Invitación</span>
+                    </button>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs text-slate-700">
+                      <thead className="bg-slate-100 text-slate-600 font-semibold uppercase text-[10px] border-b border-slate-200">
+                        <tr>
+                          <th className="p-3">Origen</th>
+                          <th className="p-3">Fase Verificación</th>
+                          <th className="p-3">Destinatario / Cargo</th>
+                          <th className="p-3">Correo Empresarial</th>
+                          <th className="p-3">Proyecto / Rol</th>
+                          <th className="p-3">Fecha Envío</th>
+                          <th className="p-3 text-center">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {invitacionesSolicitudes.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="p-6 text-center text-slate-400">
+                              No hay solicitudes ni invitaciones pendientes.
+                            </td>
+                          </tr>
+                        ) : (
+                          invitacionesSolicitudes.map((inv) => (
+                            <tr key={inv.id} className="hover:bg-slate-50">
+                              <td className="p-3">
+                                <span className={`px-2 py-0.5 rounded font-bold text-[10px] ${
+                                  inv.origen === 'Solicitud' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                                }`}>
+                                  {inv.origen}
+                                </span>
+                              </td>
+                              <td className="p-3">
+                                <span className="text-[10px] font-semibold text-slate-700 bg-slate-100 px-2 py-1 rounded border border-slate-200">
+                                  {inv.fase}
+                                </span>
+                              </td>
+                              <td className="p-3">
+                                <p className="font-bold text-slate-800">{inv.destinatario}</p>
+                                <p className="text-[11px] text-slate-500">{inv.cargo}</p>
+                              </td>
+                              <td className="p-3 font-mono text-[11px] font-semibold text-slate-700">
+                                {inv.correoEmpresarial}
+                              </td>
+                              <td className="p-3 text-slate-700">
+                                <span className="font-bold text-[10px] block">{inv.rol}</span>
+                                <span className="text-[10px] text-slate-500">{inv.proyecto}</span>
+                              </td>
+                              <td className="p-3 text-slate-500 font-mono text-[11px]">
+                                {inv.fechaEnviado}
+                              </td>
+                              <td className="p-3 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <button 
+                                    onClick={() => handleAprobarActivar(inv)}
+                                    className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded text-[11px] font-semibold transition-colors"
+                                    title="Aprobar y Activar Cuenta"
+                                  >
+                                    <CheckCircle className="w-3.5 h-3.5" />
+                                    <span>Activar</span>
+                                  </button>
+                                  <button 
+                                    onClick={() => alert(`Reenviando notificación a ${inv.correoEmpresarial}`)}
+                                    className="p-1 text-slate-400 hover:text-blue-600 transition-colors"
+                                    title="Reenviar Correo"
+                                  >
+                                    <RefreshCw className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button 
+                                    onClick={() => handleEliminarInvitacion(inv.id)}
+                                    className="p-1 text-slate-400 hover:text-rose-600 transition-colors"
+                                    title="Eliminar"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* VISTA 1: PERFIL */}
             {activeTab === 'perfil' && (
               <div className="max-w-5xl mx-auto space-y-6">
-                {/* Banner Header Perfil */}
                 <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
                   <div className="h-32 bg-gradient-to-r from-slate-700 via-slate-800 to-slate-900 relative" />
                   <div className="px-6 pb-6 pt-0 relative flex flex-col items-center -mt-16 text-center">
@@ -234,128 +601,13 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
                       {userEmail.split('@')[0]} (Sistemas)
                     </h2>
                     <p className="text-xs text-blue-600 font-semibold">{userEmail}</p>
-                    <span className="mt-2 text-[10px] bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-mono border">
-                      ID: 001600055-SYS
-                    </span>
                   </div>
-                </div>
-
-                {/* Dos Columnas Estilo Blackboard */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  
-                  {/* Columna Izquierda: Información Básica & Adicional */}
-                  <div className="space-y-6">
-                    {/* Información básica */}
-                    <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
-                      <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
-                        <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Información básica</h3>
-                      </div>
-                      <div className="divide-y divide-slate-100 text-xs">
-                        <div className="p-3.5 flex justify-between items-center">
-                          <span className="font-semibold text-slate-600">Nombre completo</span>
-                          <span className="text-slate-800 font-medium uppercase">{userEmail.split('@')[0]} ADMIN SISTEMAS</span>
-                        </div>
-                        <div className="p-3.5 flex justify-between items-center">
-                          <span className="font-semibold text-slate-600">Dirección de correo electrónico</span>
-                          <span className="text-slate-800 font-mono">{userEmail}</span>
-                        </div>
-                        <div className="p-3.5 flex justify-between items-center">
-                          <span className="font-semibold text-slate-600">ID de usuario</span>
-                          <span className="text-slate-800 font-mono">001600055</span>
-                        </div>
-                        <div className="p-3.5 flex justify-between items-center">
-                          <span className="font-semibold text-slate-600">Contraseña</span>
-                          <button className="text-blue-600 hover:underline font-semibold text-[11px]">Cambiar contraseña</button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Información adicional */}
-                    <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
-                      <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
-                        <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Información adicional</h3>
-                      </div>
-                      <div className="divide-y divide-slate-100 text-xs">
-                        <div className="p-3.5 flex justify-between items-center">
-                          <span className="font-semibold text-slate-600">Sexo</span>
-                          <button className="text-blue-600 hover:underline">Agregar género</button>
-                        </div>
-                        <div className="p-3.5 flex justify-between items-center">
-                          <span className="font-semibold text-slate-600">Nombre adicional</span>
-                          <button className="text-blue-600 hover:underline">Agregar nombre adicional</button>
-                        </div>
-                        <div className="p-3.5 flex justify-between items-center">
-                          <span className="font-semibold text-slate-600">Fecha de nacimiento</span>
-                          <button className="text-blue-600 hover:underline">Agregar fecha de nacimiento</button>
-                        </div>
-                        <div className="p-3.5 flex justify-between items-center">
-                          <span className="font-semibold text-slate-600">Nivel de educación</span>
-                          <span className="text-slate-800">Especialista TI / Ingeniería</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Información de contacto */}
-                    <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
-                      <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
-                        <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Información de contacto</h3>
-                      </div>
-                      <div className="divide-y divide-slate-100 text-xs">
-                        <div className="p-3.5 flex justify-between items-start">
-                          <span className="font-semibold text-slate-600">Dirección postal</span>
-                          <span className="text-slate-800 text-right">LIMA, PE</span>
-                        </div>
-                        <div className="p-3.5 flex justify-between items-center">
-                          <span className="font-semibold text-slate-600">Número de teléfono</span>
-                          <span className="text-blue-600 font-mono">+51 963256957 (Móvil)</span>
-                        </div>
-                        <div className="p-3.5 flex justify-between items-center">
-                          <span className="font-semibold text-slate-600">Empresa / Cargo</span>
-                          <span className="text-slate-800 font-semibold">NEXUS Corp. / Administrador de Sistemas</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Columna Derecha: Configuración del Sistema */}
-                  <div className="space-y-6">
-                    <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
-                      <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
-                        <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Configuración del sistema</h3>
-                      </div>
-                      <div className="divide-y divide-slate-100 text-xs">
-                        <div className="p-3.5 flex justify-between items-center">
-                          <span className="font-semibold text-slate-600">Idioma</span>
-                          <button className="text-blue-600 hover:underline">Predeterminado del sistema (Español)</button>
-                        </div>
-                        <div className="p-3.5 flex justify-between items-center">
-                          <span className="font-semibold text-slate-600">Ajustes de privacidad</span>
-                          <button className="text-blue-600 hover:underline text-right max-w-[200px]">Solo administradores pueden ver mi perfil</button>
-                        </div>
-                        <div className="p-3.5 space-y-2">
-                          <span className="font-semibold text-slate-600 block">Ajustes de notificaciones generales</span>
-                          <ul className="space-y-1.5 pl-2 pt-1">
-                            <li><button className="text-blue-600 hover:underline">Notificaciones de secuencias</button></li>
-                            <li><button className="text-blue-600 hover:underline">Notificaciones por correo electrónico</button></li>
-                            <li><button className="text-blue-600 hover:underline">Notificaciones emergentes</button></li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-xs space-y-2">
-                      <p className="font-bold text-blue-900">Modo Usuario General (Pruebas)</p>
-                      <p className="text-blue-700 leading-relaxed">
-                        Actualmente estás navegando con el rol de <strong>Sistemas / Admin General</strong>. Este usuario tiene permisos totales para probar el sistema antes de simular las vistas de <em>Admin de Documentación</em>, <em>Analista</em> y <em>Empleado</em>.
-                      </p>
-                    </div>
-                  </div>
-
                 </div>
               </div>
             )}
 
-            {/* VISTA 2: MENSAJES E INFORMES ESTILO BLACKBOARD */}
+
+            {/* VISTA 2: MENSAJES E INFORMES */}
             {activeTab === 'mensajes' && (
               <div className="space-y-4 max-w-5xl mx-auto">
                 <div className="flex items-center justify-between bg-white p-4 rounded-md border border-slate-200">
@@ -363,50 +615,11 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
                     <h2 className="text-base font-bold text-slate-800">Bandeja de Mensajes, Informes y Solicitudes</h2>
                     <p className="text-xs text-slate-500">Comunicaciones e informes enviados directamente por cada proyecto asignado.</p>
                   </div>
-                  <button className="px-3 py-1.5 bg-[#0056d2] text-white rounded text-xs font-semibold hover:bg-blue-700 flex items-center gap-1.5">
-                    <Plus className="w-4 h-4" />
-                    <span>Nuevo Informe</span>
-                  </button>
-                </div>
-
-                <div className="space-y-3">
-                  {proyectos.map((p) => (
-                    <div 
-                      key={p.id} 
-                      className="bg-white rounded-md border border-slate-200 shadow-sm flex items-center justify-between p-4 hover:shadow-md transition-shadow relative overflow-hidden"
-                    >
-                      {/* Barra de color lateral estilo Blackboard */}
-                      <div className={`absolute left-0 top-0 bottom-0 w-2 ${p.colorBar}`} />
-
-                      <div className="pl-3 space-y-1">
-                        <span className="text-[10px] font-mono text-slate-400 font-semibold block uppercase">
-                          ID: {p.nrc}
-                        </span>
-                        <h3 className="font-bold text-slate-800 text-sm hover:text-blue-600 cursor-pointer transition-colors">
-                          {p.titulo}
-                        </h3>
-                        <p className="text-[11px] text-slate-500">
-                          Líder a cargo: <span className="font-medium text-slate-700">{p.lider}</span>
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <button className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-blue-600 border border-slate-300 rounded px-3 py-1.5 hover:border-blue-400 transition-colors bg-white font-medium">
-                          <MessageSquare className="w-3.5 h-3.5 text-slate-400" />
-                          <span>Enviar solicitud</span>
-                        </button>
-                        <button className="flex items-center gap-1.5 text-xs text-blue-600 font-semibold hover:underline">
-                          <span>Ver reportes</span>
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
                 </div>
               </div>
             )}
 
-            {/* TAB: PROYECTOS */}
+            {/* VISTA 3: PROYECTOS */}
             {activeTab === 'proyectos' && (
               <>
                 <div className="bg-white p-4 rounded-md shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
@@ -529,99 +742,6 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
               </>
             )}
 
-            {/* OTROS TABS */}
-            {activeTab === 'empresa' && (
-              <div className="bg-white p-6 rounded-md border border-slate-200 space-y-4">
-                <h2 className="text-lg font-bold text-slate-800">Organización NEXUS Corp.</h2>
-                <p className="text-xs text-slate-600">Sistema unificado de gestión de proyectos, analítica de datos y optimización de flujos de trabajo CRM.</p>
-                <div className="grid grid-cols-3 gap-4 pt-4">
-                  <div className="p-4 bg-slate-50 rounded border text-center">
-                    <p className="text-2xl font-black text-blue-600">2</p>
-                    <p className="text-xs text-slate-500 font-medium">Proyectos Activos</p>
-                  </div>
-                  <div className="p-4 bg-slate-50 rounded border text-center">
-                    <p className="text-2xl font-black text-emerald-600">100%</p>
-                    <p className="text-xs text-slate-500 font-medium">Operatividad del Sistema</p>
-                  </div>
-                  <div className="p-4 bg-slate-50 rounded border text-center">
-                    <p className="text-2xl font-black text-indigo-600">PostgreSQL</p>
-                    <p className="text-xs text-slate-500 font-medium">Motor de Datos</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'actividad' && (
-              <div className="bg-white p-6 rounded-md border border-slate-200 space-y-4">
-                <h2 className="text-sm font-bold text-slate-800 mb-2">Historial Reciente</h2>
-                <div className="space-y-3">
-                  <div className="flex gap-3 items-start pb-3 border-b">
-                    <Clock className="w-4 h-4 text-blue-600 mt-0.5" />
-                    <div>
-                      <p className="text-xs font-semibold text-slate-800">Se actualizó el perfil del Administrador General</p>
-                      <p className="text-[10px] text-slate-400">Hace 2 minutos</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'equipos' && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white p-4 rounded border">
-                  <h3 className="font-bold text-sm text-slate-800">Equipo de Big Data & Analítica</h3>
-                  <p className="text-xs text-slate-500 mt-1">Líder: CESAR ERINSON CARLOS ZAMB</p>
-                  <p className="text-[11px] text-blue-600 font-semibold mt-2">3 Integrantes asignados</p>
-                </div>
-                <div className="bg-white p-4 rounded border">
-                  <h3 className="font-bold text-sm text-slate-800">Equipo CRM & Pipeline</h3>
-                  <p className="text-xs text-slate-500 mt-1">Líder: LEONARD DEV</p>
-                  <p className="text-[11px] text-blue-600 font-semibold mt-2">2 Integrantes asignados</p>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'calendario' && (
-              <div className="bg-white p-6 rounded border space-y-3">
-                <h3 className="font-bold text-slate-800 text-sm">Cronograma de Revisiones</h3>
-                <div className="p-3 bg-blue-50 border-l-4 border-blue-600 text-xs">
-                  <p className="font-bold text-blue-900">Entrega de Avance de Proyecto</p>
-                  <p className="text-blue-700 text-[11px]">Presentación de arquitectura y módulos activos.</p>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'roles' && (
-              <div className="bg-white rounded border p-5 space-y-4">
-                <h3 className="font-bold text-slate-800 text-sm">Configuración de los 4 Roles del Sistema NEXUS</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                  <div className="p-3 border rounded bg-slate-50">
-                    <p className="font-bold text-blue-700">1. Admin General (Sistemas)</p>
-                    <p className="text-slate-600 text-[11px] mt-1">Acceso total para pruebas y control maestro.</p>
-                  </div>
-                  <div className="p-3 border rounded bg-slate-50">
-                    <p className="font-bold text-slate-800">2. Admin (Documentación)</p>
-                    <p className="text-slate-600 text-[11px] mt-1">Gestión de documentos, invitaciones e informes.</p>
-                  </div>
-                  <div className="p-3 border rounded bg-slate-50">
-                    <p className="font-bold text-slate-800">3. Analista</p>
-                    <p className="text-slate-600 text-[11px] mt-1">Análisis de datos y métricas de proyectos.</p>
-                  </div>
-                  <div className="p-3 border rounded bg-slate-50">
-                    <p className="font-bold text-slate-800">4. Empleado</p>
-                    <p className="text-slate-600 text-[11px] mt-1">Desarrollo y trabajo general asignado.</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'herramientas' && (
-              <div className="bg-white p-6 rounded border space-y-2">
-                <h3 className="font-bold text-slate-800 text-sm">Módulos ERP Conectados</h3>
-                <p className="text-xs text-slate-600">Integración directa con PostgreSQL para almacenamiento y generación de reportes.</p>
-              </div>
-            )}
-
           </main>
 
           {/* 3. PANEL DERECHO: TAREAS PENDIENTES */}
@@ -630,21 +750,20 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
             <div className="p-6 border border-dashed border-slate-200 rounded-md text-center text-slate-400 text-xs space-y-2">
               <CheckCircle2 className="w-8 h-8 mx-auto text-slate-300" />
               <p className="font-medium text-slate-600">Sin tareas pendientes</p>
-              <p className="text-[10px] text-slate-400">Las tareas aparecerán automáticamente al conectar la base de datos.</p>
             </div>
           </aside>
 
         </div>
       </div>
 
-      {/* 4. MODAL DE INVITACIÓN (CON SELECCIÓN DE ROLES) */}
+      {/* 4. MODAL SIMPLIFICADO: GENERAR INVITACIÓN DE USUARIO */}
       {showInviteModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg max-w-md w-full shadow-2xl overflow-hidden border border-slate-200">
             <div className="bg-[#1e1e1e] text-white p-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <UserPlus className="w-5 h-5 text-blue-400" />
-                <h3 className="font-bold text-sm">Generar Invitación NEXUS</h3>
+                <h3 className="font-bold text-sm">Generar Invitación</h3>
               </div>
               <button onClick={() => setShowInviteModal(false)} className="text-slate-400 hover:text-white">
                 <X className="w-5 h-5" />
@@ -652,54 +771,92 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
             </div>
 
             <form onSubmit={handleSendInvite} className="p-5 space-y-4">
+              
+              {/* Correo Personal / Normal (@gmail.com) */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Correo Electrónico del Usuario
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                  Correo Personal (Gmail)
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
+                  <input 
+                    type="email" 
+                    required
+                    placeholder="ejemplo@gmail.com"
+                    value={inviteEmailNormal}
+                    onChange={(e) => setInviteEmailNormal(e.target.value)}
+                    className="w-full border border-slate-300 rounded pl-8 pr-3 py-2 text-xs focus:outline-none focus:border-blue-600 font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Correo Empresarial Autogenerado */}
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
+                  Correo Empresarial (Autogenerado)
                 </label>
                 <input 
-                  type="email" 
-                  required
-                  placeholder="ejemplo@empresa.com"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  className="w-full border border-slate-300 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-600"
+                  type="text" 
+                  readOnly 
+                  value={correoEmpresarialGenerado}
+                  placeholder="ejemplo@nexus-tech.com"
+                  className="w-full border border-slate-200 bg-slate-100 text-slate-600 rounded px-3 py-2 text-xs font-mono cursor-not-allowed"
                 />
               </div>
 
+              {/* Rol Asignado */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Proyecto Asignado
-                </label>
-                <select 
-                  value={inviteProject}
-                  onChange={(e) => setInviteProject(e.target.value)}
-                  className="w-full border border-slate-300 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-600"
-                >
-                  {proyectos.map(p => (
-                    <option key={p.id} value={p.titulo}>{p.titulo}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
                   Rol Asignado
                 </label>
                 <select 
                   value={inviteRole}
-                  onChange={(e) => setInviteRole(e.target.value as 'admin' | 'analista' | 'empleado')}
-                  className="w-full border border-slate-300 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-600 font-medium"
+                  onChange={(e) => setInviteRole(e.target.value as 'Admin' | 'Analista' | 'Empleado')}
+                  className="w-full border border-slate-300 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-600 font-medium bg-white"
                 >
-                  <option value="admin">Admin (Gestión & Documentación)</option>
-                  <option value="analista">Analista (Big Data / Datos)</option>
-                  <option value="empleado">Empleado (General)</option>
+                  <option value="Admin">Admin (Documentación / Control)</option>
+                  <option value="Analista">Analista (Big Data / Operativo)</option>
+                  <option value="Empleado">Empleado (General)</option>
                 </select>
-                <p className="text-[10px] text-slate-400 mt-1">
-                  Al recibir la invitación, la barra lateral del usuario filtrará sus permisos según este rol.
-                </p>
               </div>
 
-              <div className="pt-3 flex items-center justify-end gap-2">
+              {/* Desplegable de Cargo (si no es Admin) */}
+              {inviteRole !== 'Admin' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Cargo / Puesto
+                  </label>
+                  <select 
+                    value={inviteCargo}
+                    onChange={(e) => setInviteCargo(e.target.value)}
+                    className="w-full border border-slate-300 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-600 bg-white"
+                  >
+                    <option value="Analista (Big Data / Operativo)">Analista (Big Data / Operativo)</option>
+                    <option value="Desarrollador Senior Backend">Desarrollador Senior Backend</option>
+                    <option value="Empleado (General)">Empleado (General)</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Proyecto Asignado (OCULTO SI ES ADMIN) */}
+              {inviteRole !== 'Admin' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Proyecto Asignado
+                  </label>
+                  <select 
+                    value={inviteProject}
+                    onChange={(e) => setInviteProject(e.target.value)}
+                    className="w-full border border-slate-300 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-600 bg-white"
+                  >
+                    {proyectos.map(p => (
+                      <option key={p.id} value={p.titulo}>{p.titulo}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100">
                 <button 
                   type="button" 
                   onClick={() => setShowInviteModal(false)}
@@ -709,11 +866,13 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
                 </button>
                 <button 
                   type="submit" 
-                  className="px-4 py-2 bg-[#0056d2] hover:bg-blue-700 text-white rounded text-xs font-semibold"
+                  className="px-4 py-2 bg-[#0056d2] hover:bg-blue-700 text-white rounded text-xs font-semibold flex items-center gap-1.5 shadow-sm"
                 >
-                  Enviar Invitación
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>Enviar Invitación</span>
                 </button>
               </div>
+
             </form>
           </div>
         </div>

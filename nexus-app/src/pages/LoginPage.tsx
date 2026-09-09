@@ -83,7 +83,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
           {/* Descripción Corta */}
           <p className="text-slate-400 text-sm sm:text-base max-w-lg leading-relaxed">
-            Un espacio donde poder guardar tus proyectos y gestionarlos.
+            Un espacio para gestionar y probar tus proyectos.
           </p>
 
           {/* Tarjetas de Módulos */}
@@ -110,7 +110,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   <Database className="w-3.5 h-3.5" />
   <span>NEXUS ERP · Integración de datos masivos y analítica predictiva.</span>
 </div>
-
 
         </div>
 
