@@ -22,6 +22,6 @@ router.post('/rechazar-solicitud', rechazarSolicitud);
 // CAMBIO AQUÍ: Cambia '/validar-email' por '/validar-email-login'
 router.post('/validar-email-login', validarEmailLogin);
 
-router.post('/login', login);
+router.post('/login', login); 
 
 export default router;
