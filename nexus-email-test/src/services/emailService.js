@@ -31,6 +31,7 @@ export const enviarCredencialesAcceso = async (emailDestino, correoEmpresarial, 
         <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
         <h3>Credenciales de acceso:</h3>
         <p><strong>Correo Empresarial:</strong> <span style="color: #0284c7;">${correoEmpresarial}</span></p>
+        <p><strong>Correo Contraseña:</strong> <span style="color: #0284c7;">${passwordTemporal}</span></p>
         <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
         <p style="font-size: 12px; color: #666;">Por favor, ingresa a la plataforma y cambia tu contraseña tras el primer inicio.</p>
       </div>

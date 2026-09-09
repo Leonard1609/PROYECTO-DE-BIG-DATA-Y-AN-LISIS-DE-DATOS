@@ -108,29 +108,19 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
     cargarCuentasActivas();
   }, []);
 
-  // 3. Crear invitación (Fase 1 Invitación)
-  const handleSendInvite = async (data: {
-    emailNormal: string;
-    role: 'Admin' | 'Analista' | 'Empleado';
-    cargo: string;
-    proyecto: string;
-    correoEmpresarial: string;
-  }) => {
+  // 3. Crear invitación (Fase 1 Invitación - Flujo 2)
+  const handleSendInvite = async (emailPersonal: string) => {
     try {
       const response = await fetch('http://localhost:3000/api/crear-invitacion', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email_personal: data.emailNormal,
-          email_empresarial: data.correoEmpresarial,
-          rol: data.role.toUpperCase(),
-          cargo: data.cargo,
-          proyecto: data.proyecto
+          email_personal: emailPersonal
         })
       });
 
       if (response.ok) {
-        alert(`Invitación creada e email enviado exitosamente a ${data.emailNormal}`);
+        alert(`Invitación enviada exitosamente a ${emailPersonal}`);
         setShowInviteModal(false);
         cargarSolicitudesPendientes();
       } else {
@@ -143,7 +133,7 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
     }
   };
 
-  // 4. Aprobar o Activar registros (Garantiza el origen correcto sin errores TypeScript)
+  // 4. Aprobar o Activar registros
   const handleAprobarActivar = async (item: InvitacionSolicitud) => {
     try {
       const estadoStr = String(item.estado || '').toUpperCase();
@@ -280,7 +270,6 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
 
       {showInviteModal && (
         <InviteModal 
-          proyectos={proyectos}
           onClose={() => setShowInviteModal(false)}
           onSendInvite={handleSendInvite}
         />

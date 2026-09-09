@@ -11,7 +11,7 @@ interface AccesosTabProps {
   onAprobarActivar: (item: InvitacionSolicitud) => void;
   onEditarProyectoCuenta: (id: number) => void;
   onEliminarCuentaActiva: (id: number) => void;
-  onEliminarInvitacion: (id: number) => void;
+  onEliminarInvitacion: (id: string | number) => void;
 }
 
 export const AccesosTab: React.FC<AccesosTabProps> = ({
@@ -23,7 +23,6 @@ export const AccesosTab: React.FC<AccesosTabProps> = ({
   onEliminarCuentaActiva,
   onEliminarInvitacion
 }) => {
-  // Clasificación estricta de las solicitudes según el origen
   const solicitudesAcceso = invitacionesSolicitudes.filter(item => item.origen === 'Solicitud');
   const invitacionesDirectas = invitacionesSolicitudes.filter(item => item.origen === 'Invitación');
 

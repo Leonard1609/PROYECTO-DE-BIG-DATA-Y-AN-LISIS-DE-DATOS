@@ -15,12 +15,18 @@ const REGEX_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 export async function crearInvitacion(req, res) {
   const { email_personal, email_empresarial, rol, cargo, proyecto } = req.body;
 
-  if (!email_personal || !email_empresarial) {
-    return res.status(400).json({ error: 'El correo personal y el empresarial son requeridos.' });
+  if (!email_personal) {
+    return res.status(400).json({ error: 'El correo personal es requerido.' });
   }
 
-  const emailEmpClean = email_empresarial.trim().toLowerCase();
   const emailPersClean = email_personal.trim().toLowerCase();
+
+  // Generar correo empresarial autogenerado si no se proporciona explícitamente
+  let emailEmpClean = email_empresarial ? email_empresarial.trim().toLowerCase() : '';
+  if (!emailEmpClean) {
+    const prefix = emailPersClean.split('@')[0].replace(/[^a-z0-9]/g, '');
+    emailEmpClean = `${prefix}@nexus-tech.com`;
+  }
 
   try {
     const { data: existente } = await supabase
@@ -71,7 +77,47 @@ export async function crearInvitacion(req, res) {
   }
 }
 
-// 2. VALIDAR EMAIL EN LOGIN GENERAL (GESTIÓN DE FASES)
+// 2. COMPLETAR REGISTRO DE INVITACIÓN POR EL USUARIO (FASE 2 INVITACIÓN)
+export async function completarInvitacion(req, res) {
+  const { email_empresarial, codigo, nombre_completo, password } = req.body;
+
+  if (!email_empresarial || !codigo || !nombre_completo || !password) {
+    return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
+  }
+
+  try {
+    const { data: inv, error } = await supabase
+      .from('invitaciones')
+      .select('*')
+      .eq('email_empresarial', email_empresarial.trim().toLowerCase())
+      .eq('codigo', codigo.trim())
+      .eq('usado', false)
+      .maybeSingle();
+
+    if (error || !inv) {
+      return res.status(400).json({ error: 'Código de invitación inválido o ya utilizado.' });
+    }
+
+    const { error: updateError } = await supabase
+      .from('invitaciones')
+      .update({
+        nombre_completo: nombre_completo.trim(),
+        password_hash: password,
+        estado: 'DATOS_COMPLETADOS'
+      })
+      .eq('id', inv.id);
+
+    if (updateError) return res.status(500).json({ error: updateError.message });
+
+    return res.status(200).json({
+      message: 'Datos registrados con éxito. Tu cuenta está en espera de activación por el administrador.'
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Error interno al completar la invitación.' });
+  }
+}
+
+// 3. VALIDAR EMAIL EN LOGIN GENERAL (GESTIÓN DE FASES)
 export async function validarEmailLogin(req, res) {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'El correo es requerido.' });
@@ -147,7 +193,7 @@ export async function validarEmailLogin(req, res) {
   }
 }
 
-// 3. REGISTRAR SOLICITUD / DATOS (FASE 2)
+// 4. REGISTRAR SOLICITUD / DATOS (FASE 2)
 export async function registrarSolicitud(req, res) {
   const { nombre_completo, email, modulo_interes, origen, invitacion_id } = req.body;
   const emailClean = email.trim().toLowerCase();
@@ -187,7 +233,7 @@ export async function registrarSolicitud(req, res) {
   }
 }
 
-// 4. SOLICITAR ACTIVACIÓN (FASE 3 - SOLICITUD DE ACCESO)
+// 5. SOLICITAR ACTIVACIÓN (FASE 3 - SOLICITUD DE ACCESO)
 export async function solicitarActivacion(req, res) {
   const { email } = req.body;
   const emailClean = email.trim().toLowerCase();
@@ -211,7 +257,7 @@ export async function solicitarActivacion(req, res) {
   }
 }
 
-// 5. APROBAR Y ACTIVAR DEFINITIVAMENTE (FASE 4 / FASE 3 INVITACIÓN)
+// 6. APROBAR Y ACTIVAR DEFINITIVAMENTE (FASE 4 / FASE 3 INVITACIÓN)
 export async function aprobarSolicitud(req, res) {
   const { id, email, correoEmpresarial, nombre, rol, proyecto, origen } = req.body;
 
@@ -282,12 +328,13 @@ export async function aprobarSolicitud(req, res) {
 
       const emailPersonal = invData ? invData.email_personal : email;
       const correoDestino = correoEmpresarial || invData?.email_empresarial || email;
+      const nombreUsuario = invData?.nombre_completo || nombre || 'Usuario Invitado';
 
       const { error: insertError } = await supabase
         .from('usuarios_solicitudes')
         .insert([
           {
-            nombre_completo: nombre || 'Usuario Invitado',
+            nombre_completo: nombreUsuario,
             email: correoDestino,
             email_personal: emailPersonal,
             modulo_interes: proyecto || invData?.proyecto || 'GENERAL',
@@ -295,7 +342,7 @@ export async function aprobarSolicitud(req, res) {
             origen: 'INVITACION',
             fase: 3,
             rol: rolNormalizado,
-            password_hash: passwordHash
+            password_hash: invData?.password_hash || passwordHash
           }
         ]);
 
@@ -310,7 +357,7 @@ export async function aprobarSolicitud(req, res) {
         await enviarCredencialesAcceso(
           emailPersonal,
           correoDestino,
-          nombre || 'Usuario',
+          nombreUsuario,
           passwordTemporal,
           rolNormalizado
         );
@@ -365,7 +412,7 @@ export async function aprobarSolicitud(req, res) {
   }
 }
 
-// 6. RECHAZAR SOLICITUD O INVITACIÓN
+// 7. RECHAZAR SOLICITUD O INVITACIÓN
 export async function rechazarSolicitud(req, res) {
   const { id, origen, motivo } = req.body;
 
@@ -417,7 +464,7 @@ export async function rechazarSolicitud(req, res) {
   }
 }
 
-// 7. LISTAR PENDIENTES
+// 8. LISTAR PENDIENTES
 export async function listarSolicitudesPendientes(req, res) {
   try {
     const { data: solicitudes, error: errSol } = await supabase
@@ -443,7 +490,7 @@ export async function listarSolicitudesPendientes(req, res) {
   }
 }
 
-// 8. LOGIN DE USUARIOS ACTIVOS
+// 9. LOGIN DE USUARIOS ACTIVOS
 export async function login(req, res) {
   const { email, password } = req.body;
 
@@ -469,7 +516,7 @@ export async function login(req, res) {
   }
 }
 
-// 9. CUENTAS ACTIVAS
+// 10. CUENTAS ACTIVAS
 export async function obtenerCuentasActivas(req, res) {
   try {
     const { data, error } = await supabase

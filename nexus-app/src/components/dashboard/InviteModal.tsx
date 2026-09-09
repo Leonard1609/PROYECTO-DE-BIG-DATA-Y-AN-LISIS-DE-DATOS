@@ -1,147 +1,123 @@
 import React, { useState } from 'react';
-import { UserPlus, X, Mail } from 'lucide-react';
-import type { Proyecto } from '../../types/dashboard';
+import { Mail, X } from 'lucide-react';
 
 interface InviteModalProps {
-  proyectos: Proyecto[];
+  isOpen: boolean;
   onClose: () => void;
   onSendInvite: (data: {
-    emailNormal: string;
-    role: 'Admin' | 'Analista' | 'Empleado';
-    cargo: string;
-    proyecto: string;
-    correoEmpresarial: string;
-  }) => void;
+    emailPersonal: string;
+    rol?: string;
+    cargo?: string;
+    proyecto?: string;
+  }) => Promise<void> | void;
 }
 
-export const InviteModal: React.FC<InviteModalProps> = ({ proyectos, onClose, onSendInvite }) => {
-  const [inviteEmailNormal, setInviteEmailNormal] = useState('');
-  const [inviteRole, setInviteRole] = useState<'Admin' | 'Analista' | 'Empleado'>('Analista');
-  const [inviteCargo, setInviteCargo] = useState('Analista (Big Data / Operativo)');
-  const [inviteProject, setInviteProject] = useState('PROYECTO BIG DATA & ANALÍTICA');
+export const InviteModal: React.FC<InviteModalProps> = ({ isOpen, onClose, onSendInvite }) => {
+  const [emailPersonal, setEmailPersonal] = useState('');
+  const [rol, setRol] = useState('EMPLEADO');
+  const [cargo, setCargo] = useState('');
+  const [proyecto, setProyecto] = useState('GENERAL');
+  const [loading, setLoading] = useState(false);
 
-  const correoEmpresarialGenerado = inviteEmailNormal 
-    ? `${inviteEmailNormal.split('@')[0].toLowerCase()}@nexus-tech.com`
-    : '';
+  if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSendInvite({
-      emailNormal: inviteEmailNormal,
-      role: inviteRole,
-      cargo: inviteCargo,
-      proyecto: inviteProject,
-      correoEmpresarial: correoEmpresarialGenerado
-    });
+    setLoading(true);
+    try {
+      await onSendInvite({ emailPersonal, rol, cargo, proyecto });
+      setEmailPersonal('');
+      setCargo('');
+      onClose();
+    } catch (err) {
+      console.error('Error enviando invitación:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg max-w-md w-full shadow-2xl overflow-hidden border border-slate-200">
-        <div className="bg-[#1e1e1e] text-white p-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <UserPlus className="w-5 h-5 text-blue-400" />
-            <h3 className="font-bold text-sm">Generar Invitación</h3>
+    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-200">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+          <div className="flex items-center gap-2 text-slate-800">
+            <Mail className="w-5 h-5 text-blue-600" />
+            <h3 className="font-bold text-base">Nueva Invitación Directa</h3>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-              Correo Personal (Gmail)
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Correo Personal (Gmail / Entrevistado) *
             </label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
-              <input 
-                type="email" 
-                required
-                placeholder="ejemplo@gmail.com"
-                value={inviteEmailNormal}
-                onChange={(e) => setInviteEmailNormal(e.target.value)}
-                className="w-full border border-slate-300 rounded pl-8 pr-3 py-2 text-xs focus:outline-none focus:border-blue-600 font-mono"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">
-              Correo Empresarial (Autogenerado)
-            </label>
-            <input 
-              type="text" 
-              readOnly 
-              value={correoEmpresarialGenerado}
-              placeholder="ejemplo@nexus-tech.com"
-              className="w-full border border-slate-200 bg-slate-100 text-slate-600 rounded px-3 py-2 text-xs font-mono cursor-not-allowed"
+            <input
+              type="email"
+              required
+              placeholder="ejemplo@gmail.com"
+              value={emailPersonal}
+              onChange={(e) => setEmailPersonal(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none"
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-              Rol Asignado
-            </label>
-            <select 
-              value={inviteRole}
-              onChange={(e) => setInviteRole(e.target.value as 'Admin' | 'Analista' | 'Empleado')}
-              className="w-full border border-slate-300 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-600 font-medium bg-white"
-            >
-              <option value="Admin">Admin (Documentación / Control)</option>
-              <option value="Analista">Analista (Big Data / Operativo)</option>
-              <option value="Empleado">Empleado (General)</option>
-            </select>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Rol *</label>
+              <select
+                value={rol}
+                onChange={(e) => setRol(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+              >
+                <option value="EMPLEADO">Empleado</option>
+                <option value="ANALISTA">Analista</option>
+                <option value="ADMIN">Administrador</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Proyecto / Módulo *</label>
+              <select
+                value={proyecto}
+                onChange={(e) => setProyecto(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+              >
+                <option value="GENERAL">General</option>
+                <option value="LOGISTICA">Logística</option>
+                <option value="FINANZAS">Finanzas</option>
+                <option value="MANTENIMIENTO">Mantenimiento</option>
+              </select>
+            </div>
           </div>
 
-          {inviteRole !== 'Admin' && (
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Cargo / Puesto
-              </label>
-              <select 
-                value={inviteCargo}
-                onChange={(e) => setInviteCargo(e.target.value)}
-                className="w-full border border-slate-300 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-600 bg-white"
-              >
-                <option value="Analista (Big Data / Operativo)">Analista (Big Data / Operativo)</option>
-                <option value="Desarrollador Senior Backend">Desarrollador Senior Backend</option>
-                <option value="Empleado (General)">Empleado (General)</option>
-              </select>
-            </div>
-          )}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Cargo / Puesto</label>
+            <input
+              type="text"
+              placeholder="Ej: Desarrollador Backend"
+              value={cargo}
+              onChange={(e) => setCargo(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+          </div>
 
-          {inviteRole !== 'Admin' && (
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Proyecto Asignado
-              </label>
-              <select 
-                value={inviteProject}
-                onChange={(e) => setInviteProject(e.target.value)}
-                className="w-full border border-slate-300 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-600 bg-white"
-              >
-                {proyectos.map(p => (
-                  <option key={p.id} value={p.titulo}>{p.titulo}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100">
-            <button 
-              type="button" 
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-slate-300 rounded text-xs font-semibold text-slate-600 hover:bg-slate-50"
+              className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg"
             >
               Cancelar
             </button>
-            <button 
-              type="submit" 
-              className="px-4 py-2 bg-[#0056d2] hover:bg-blue-700 text-white rounded text-xs font-semibold flex items-center gap-1.5 shadow-sm"
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-4 py-2 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
-              <UserPlus className="w-3.5 h-3.5" />
-              <span>Enviar Invitación</span>
+              {loading ? 'Enviando...' : 'Enviar Invitación'}
             </button>
           </div>
         </form>
