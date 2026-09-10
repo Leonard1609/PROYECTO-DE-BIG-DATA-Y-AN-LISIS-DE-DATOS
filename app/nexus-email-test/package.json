@@ -7,5 +7,6 @@
     "express": "^5.2.1",
     "nodemailer": "^10.0.2",
     "resend": "^6.27.0"
-  }
+  },
+  "type": "module"
 }
