@@ -8,7 +8,7 @@ import { AccesosTab } from '../components/dashboard/AccesosTab';
 import { PerfilTab } from '../components/dashboard/PerfilTab';
 import { MensajesTab } from '../components/dashboard/MensajesTab';
 import { ProyectosTab } from '../components/dashboard/ProyectosTab';
-import type { CuentaActiva, InvitacionSolicitud, Proyecto } from '../types/dashboard';
+import type { CuentaActiva, InvitacionSolicitud, Proyecto } from '../types/dashboard.ts';
 
 interface DashboardProps {
   userEmail: string;
