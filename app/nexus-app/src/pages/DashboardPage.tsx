@@ -16,6 +16,9 @@ interface DashboardProps {
   onLogout: () => void;
 }
 
+const API_BASE = 'https://proyecto-de-big-data-y-an-lisis-de-datos.onrender.com/api';
+
+
 export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'perfil' | 'proyectos' | 'mensajes' | 'accesos'>('accesos');
@@ -34,7 +37,7 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
   // 1. Cargar cuentas activas desde Supabase / Backend
   const cargarCuentasActivas = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/cuentas-activas`);
+      const response = await fetch(`${API_BASE}/api/cuentas-activas`);
       if (response.ok) {
         const data = await response.json();
         const mapeadas: CuentaActiva[] = data.map((usr: any) => ({
