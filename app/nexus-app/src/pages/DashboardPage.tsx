@@ -36,7 +36,7 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
   // 1. Cargar cuentas activas desde Supabase / Backend
   const cargarCuentasActivas = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/cuentas-activas`);
+      const response = await fetch(`${API_BASE}/cuentas-activas`);
       if (response.ok) {
         const data = await response.json();
         const mapeadas: CuentaActiva[] = data.map((usr: any) => ({
@@ -113,7 +113,7 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
   const handleSendInvite = async (data: any) => {
     const emailTarget = typeof data === 'string' ? data : data.emailPersonal;
     try {
-      const response = await fetch(`${API_BASE}/api/crear-invitacion`, {
+      const response = await fetch(`${API_BASE}/crear-invitacion`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -152,7 +152,7 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
         ? 'SOLICITUD_ACTIVACION'
         : 'SOLICITUD_FASE_2';
 
-      const response = await fetch(`${API_BASE}/api/aprobar-solicitud`, {
+      const response = await fetch(`${API_BASE}/aprobar-solicitud`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -200,7 +200,7 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
     if (!item) return;
 
     try {
-      const response = await fetch(`${API_BASE}/api/rechazar-solicitud`, {
+      const response = await fetch(`${API_BASE}/rechazar-solicitud`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
