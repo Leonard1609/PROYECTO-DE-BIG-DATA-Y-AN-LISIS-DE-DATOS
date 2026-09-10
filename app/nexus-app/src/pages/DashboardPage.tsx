@@ -140,45 +140,53 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
 
   // 4. Aprobar o Activar registros
   const handleAprobarActivar = async (item: InvitacionSolicitud) => {
-    try {
-      const estadoStr = String(item.estado || '').toUpperCase();
-      const faseStr = String(item.fase || '');
+  try {
+    const estadoStr = String(item.estado || '').toUpperCase();
+    const faseStr = String(item.fase || '');
 
-      const esSolicitudActivacion = estadoStr === 'PENDIENTE_ACTIVACION' || faseStr.includes('Fase 3/4');
+    const esSolicitudActivacion = estadoStr === 'PENDIENTE_ACTIVACION' || faseStr.includes('Fase 3/4');
 
-      const origenDinamico = item.origen === 'Invitación'
-        ? 'INVITACION'
-        : esSolicitudActivacion
-        ? 'SOLICITUD_ACTIVACION'
-        : 'SOLICITUD_FASE_2';
+    const origenDinamico = item.origen === 'Invitación'
+      ? 'INVITACION'
+      : esSolicitudActivacion
+      ? 'SOLICITUD_ACTIVACION'
+      : 'SOLICITUD_FASE_2';
 
-      const response = await fetch(`${API_BASE}/aprobar-solicitud`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: item.id,
-          email: item.correoEmpresarial,
-          correoEmpresarial: item.correoEmpresarial,
-          nombre: item.destinatario,
-          rol: item.rol,
-          proyecto: item.proyecto,
-          origen: origenDinamico
-        })
-      });
-
-      if (response.ok) {
-        const resData = await response.json();
-        alert(resData.message);
-        cargarSolicitudesPendientes();
-        cargarCuentasActivas();
-      } else {
-        const err = await response.json();
-        alert(`Error: ${err.error}`);
-      }
-    } catch (error) {
-      console.error('Error al aprobar:', error);
+    // Validar que el correo exista antes de enviar
+    const correoFinal = item.correoEmpresarial || item.email || '';
+    if (!correoFinal || correoFinal.includes('Pendiente')) {
+      alert('Atención: La solicitud no tiene un correo válido asignado.');
+      return;
     }
-  };
+
+    const response = await fetch(`${API_BASE}/aprobar-solicitud`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: item.id,
+        email: correoFinal,
+        correoEmpresarial: correoFinal,
+        nombre: item.destinatario || 'Usuario',
+        rol: item.rol || 'EMPLEADO',
+        proyecto: item.proyecto || 'General',
+        origen: origenDinamico
+      })
+    });
+
+    if (response.ok) {
+      const resData = await response.json();
+      alert(resData.message || '¡Cuenta activada con éxito!');
+      cargarSolicitudesPendientes();
+      cargarCuentasActivas();
+    } else {
+      const err = await response.json();
+      alert(`Error del servidor: ${err.error || 'No se pudo aprobar'}`);
+    }
+  } catch (error) {
+    console.error('Error al aprobar:', error);
+    alert('Error de conexión: Revisa que el servidor Node/Express esté encendido.');
+  }
+};
 
   const handleEditarProyectoCuenta = (id: number | string) => {
     const nuevoProyecto = prompt("Ingrese el nuevo proyecto o área de trabajo:");
