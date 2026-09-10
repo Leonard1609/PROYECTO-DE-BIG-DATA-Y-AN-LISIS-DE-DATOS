@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_URL } from '../config/api';
 import { 
   ShieldCheck, 
   Mail, 
@@ -17,7 +18,7 @@ interface LoginPageProps {
   onLoginSuccess: (email: string, usuarioData?: any) => void;
 }
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://proyecto-de-big-data-y-an-lisis-de-datos.onrender.com/api';
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [step, setStep] = useState<
