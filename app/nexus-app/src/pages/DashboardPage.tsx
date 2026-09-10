@@ -9,6 +9,7 @@ import { PerfilTab } from '../components/dashboard/PerfilTab';
 import { MensajesTab } from '../components/dashboard/MensajesTab';
 import { ProyectosTab } from '../components/dashboard/ProyectosTab';
 import type { CuentaActiva, InvitacionSolicitud, Proyecto } from '../types/dashboard.ts';
+import { API_URL } from '../config/api';
 
 interface DashboardProps {
   userEmail: string;
@@ -33,7 +34,7 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
   // 1. Cargar cuentas activas desde Supabase / Backend
   const cargarCuentasActivas = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/cuentas-activas');
+      const response = await fetch(`${API_URL}/api/cuentas-activas`);
       if (response.ok) {
         const data = await response.json();
         const mapeadas: CuentaActiva[] = data.map((usr: any) => ({
