@@ -1,0 +1,2 @@
+Importar Librerías:
+npm install jspdf react-chartjs-2 chart.js @supabase/supabase-js

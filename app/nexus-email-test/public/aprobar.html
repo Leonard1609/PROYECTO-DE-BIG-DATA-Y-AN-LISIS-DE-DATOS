@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>NEXUS - Asignar Rol</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0f172a; color: #f8fafc; display: flex; justify-content: center; padding: 40px; }
+    .card { background: #1e293b; padding: 24px; border-radius: 12px; width: 100%; max-width: 400px; }
+    label { display: block; margin: 12px 0 4px; font-size: 14px; }
+    input, select, button { width: 100%; padding: 10px; margin-bottom: 12px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #fff; box-sizing: border-box; }
+    button { background: #0284c7; border: none; font-weight: bold; cursor: pointer; }
+    #status { margin-top: 12px; padding: 10px; border-radius: 6px; display: none; }
+    .success { background: #065f46; color: #34d399; }
+    .error { background: #991b1b; color: #fca5a5; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Aprobar y Asignar Rol</h2>
+    <label>UUID de la Solicitud:</label>
+    <input type="text" id="usuarioId" readonly>
+
+    <label>Rol a Asignar:</label>
+    <select id="rolAsignado">
+      <option value="ANALISTA">ANALISTA</option>
+      <option value="EMPLEADO">EMPLEADO</option>
+      <option value="ADMIN">ADMIN</option>
+    </select>
+
+    <button onclick="enviarAprobacion()">Aprobar y Enviar Correo</button>
+    <div id="status"></div>
+  </div>
+
+  <form id="loginForm">
+  <!-- Paso 1: Correo -->
+  <div id="paso-email">
+    <label>Correo Electrónico:</label>
+    <input type="email" id="loginEmail" required />
+    <button type="button" onclick="validarCorreo()">Continuar</button>
+  </div>
+
+  <!-- Paso 2: Contraseña (Oculto inicialmente) -->
+  <div id="paso-password" style="display: none; margin-top: 15px;">
+    <label>Contraseña:</label>
+    <input type="password" id="loginPassword" />
+    <button type="submit">Iniciar Sesión</button>
+  </div>
+  
+  <p id="mensajeError" style="color: red;"></p>
+</form>
+
+<script>
+    
+  async function validarCorreo() {
+    const email = document.getElementById('loginEmail').value;
+    const msg = document.getElementById('mensajeError');
+    msg.innerText = '';
+
+    const res = await fetch('/api/validar-email-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.permitido) {
+      // Oculta/Deshabilita input email y despliega contraseña
+      document.getElementById('loginEmail').readOnly = true;
+      document.getElementById('paso-password').style.display = 'block';
+    } else {
+      msg.innerText = data.error || 'El correo no tiene una solicitud aprobada o activa.';
+    }
+  }
+</script>
+
+  <script>
+    // Obtener el UUID desde los parámetros de la URL (?uuid=...)
+    const urlParams = new URLSearchParams(window.location.search);
+    const uuidParam = urlParams.get('uuid');
+    if (uuidParam) {
+      document.getElementById('usuarioId').value = uuidParam;
+    }
+
+    async function enviarAprobacion() {
+      const usuarioId = document.getElementById('usuarioId').value;
+      const rolAsignado = document.getElementById('rolAsignado').value;
+      const statusDiv = document.getElementById('status');
+
+      statusDiv.style.display = 'block';
+      statusDiv.innerText = 'Procesando...';
+
+      const res = await fetch('/api/aprobar-solicitud', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuarioId, rolAsignado })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        statusDiv.className = 'success';
+        statusDiv.innerText = data.message;
+        setTimeout(() => window.location.href = '/solicitudes.html', 2000);
+      } else {
+        statusDiv.className = 'error';
+        statusDiv.innerText = data.error;
+      }
+    }
+  </script>
+
+  <script>
+    async function enviarAprobacion() {
+      const usuarioId = document.getElementById('usuarioId').value;
+      const rolAsignado = document.getElementById('rolAsignado').value;
+      const statusDiv = document.getElementById('status');
+
+      statusDiv.style.display = 'block';
+      statusDiv.className = '';
+      statusDiv.innerText = 'Procesando aprobación...';
+
+      try {
+        const res = await fetch('/api/aprobar-solicitud', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ usuarioId, rolAsignado })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          statusDiv.className = 'success';
+          statusDiv.innerText = data.message;
+        } else {
+          statusDiv.className = 'error';
+          statusDiv.innerText = data.error || 'Error al procesar';
+        }
+      } catch (err) {
+        statusDiv.className = 'error';
+        statusDiv.innerText = 'Error de conexión con el servidor';
+      }
+    }
+  </script>
+</body>
+</html>

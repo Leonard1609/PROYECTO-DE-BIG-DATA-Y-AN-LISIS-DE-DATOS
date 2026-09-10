@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>NEXUS - Solicitudes Pendientes</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0b1120; color: #f8fafc; display: flex; justify-content: center; padding: 40px; }
+    .card { background: #1e293b; padding: 24px; border-radius: 12px; width: 100%; max-width: 650px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { border: 1px solid #334155; padding: 12px; text-align: left; }
+    th { background: #0f172a; color: #38bdf8; }
+    .btn-aceptar { background: #16a34a; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+    .btn-rechazar { background: #dc2626; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Solicitudes de Acceso Pendientes</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Correo</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-solicitudes"></tbody>
+    </table>
+  </div>
+
+  <script>
+    async function cargarSolicitudes() {
+      const res = await fetch('/api/solicitudes-pendientes');
+      if (!res.ok) return;
+
+      const solicitudes = await res.json();
+      const tbody = document.getElementById('tabla-solicitudes');
+
+      if (solicitudes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No hay solicitudes pendientes</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = solicitudes.map(sol => `
+        <tr>
+          <td>${sol.nombre_completo}</td>
+          <td>${sol.email}</td>
+          <td>
+            <button class="btn-aceptar" onclick="aceptarSolicitud('${sol.id}')">Aceptar</button>
+            <button class="btn-rechazar" onclick="rechazarSolicitud('${sol.id}')">Rechazar</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function aceptarSolicitud(id) {
+  window.location.href = `/aprobar.html?uuid=${id}`;
+}
+
+    async function rechazarSolicitud(id) {
+      if (!confirm('¿Deseas rechazar la solicitud?')) return;
+
+      const res = await fetch('/api/rechazar-solicitud', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+
+      if (res.ok) {
+        cargarSolicitudes();
+      }
+    }
+
+    cargarSolicitudes();
+  </script>
+</body>
+</html>
