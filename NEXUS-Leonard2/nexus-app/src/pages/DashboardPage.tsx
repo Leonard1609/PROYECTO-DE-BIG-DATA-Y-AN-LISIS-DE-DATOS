@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { UserPlus } from 'lucide-react';
 import { Sidebar } from '../components/dashboard/Sidebar';
 import { RightSidebar } from '../components/dashboard/RightSidebar';
@@ -15,6 +16,7 @@ interface DashboardProps {
 }
 
 export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'perfil' | 'proyectos' | 'mensajes' | 'accesos'>('accesos');
   const [showInviteModal, setShowInviteModal] = useState(false);
 
@@ -28,7 +30,7 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
     { id: 4, titulo: 'MODELADO DE DATOS POSTGRES', nrc: '202620-BD-05-NRC_9351', estado: 'Pendiente', lider: 'JUAN JOSE LEON SUIYON', bg: 'from-amber-700 to-amber-900', colorBar: 'bg-emerald-600' },
   ];
 
-  // 1. Cargar cuentas activas desde Supabase
+  // 1. Cargar cuentas activas desde Supabase / Backend
   const cargarCuentasActivas = async () => {
     try {
       const response = await fetch('http://localhost:3000/api/cuentas-activas');
@@ -60,7 +62,6 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
       if (response.ok) {
         const data = await response.json();
         
-        // Mapeo de Solicitudes
         const solicitudesMapeadas: InvitacionSolicitud[] = (data.solicitudes || []).map((sol: any) => ({
           id: sol.id,
           origen: 'Solicitud',
@@ -78,7 +79,6 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
           estado: sol.estado
         }));
 
-        // Mapeo de Invitaciones
         const invitacionesMapeadas: InvitacionSolicitud[] = (data.invitaciones || []).map((inv: any) => ({
           id: inv.id,
           origen: 'Invitación',
@@ -95,8 +95,6 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
         }));
 
         setInvitacionesSolicitudes([...solicitudesMapeadas, ...invitacionesMapeadas]);
-      } else {
-        console.error('Error HTTP al cargar pendientes:', response.status);
       }
     } catch (error) {
       console.error('Error al cargar las solicitudes del backend:', error);
@@ -109,18 +107,22 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
   }, []);
 
   // 3. Crear invitación (Fase 1 Invitación - Flujo 2)
-  const handleSendInvite = async (emailPersonal: string) => {
+  const handleSendInvite = async (data: any) => {
+    const emailTarget = typeof data === 'string' ? data : data.emailPersonal;
     try {
       const response = await fetch('http://localhost:3000/api/crear-invitacion', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email_personal: emailPersonal
+          email_personal: emailTarget,
+          rol: data.rol,
+          cargo: data.cargo,
+          proyecto: data.proyecto
         })
       });
 
       if (response.ok) {
-        alert(`Invitación enviada exitosamente a ${emailPersonal}`);
+        alert(`Invitación enviada exitosamente a ${emailTarget}`);
         setShowInviteModal(false);
         cargarSolicitudesPendientes();
       } else {
@@ -162,8 +164,8 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
       });
 
       if (response.ok) {
-        const data = await response.json();
-        alert(data.message);
+        const resData = await response.json();
+        alert(resData.message);
         cargarSolicitudesPendientes();
         cargarCuentasActivas();
       } else {
@@ -261,7 +263,16 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
 
             {activeTab === 'perfil' && <PerfilTab userEmail={userEmail} />}
             {activeTab === 'mensajes' && <MensajesTab />}
-            {activeTab === 'proyectos' && <ProyectosTab proyectos={proyectos} />}
+            {activeTab === 'proyectos' && (
+              <ProyectosTab 
+                proyectos={proyectos} 
+                onSelectProyecto={(id) => {
+                  if (id === 1) {
+                    navigate('/big-data');
+                  }
+                }}
+              />
+            )}
           </main>
 
           <RightSidebar />
@@ -270,6 +281,7 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
 
       {showInviteModal && (
         <InviteModal 
+          isOpen={showInviteModal}
           onClose={() => setShowInviteModal(false)}
           onSendInvite={handleSendInvite}
         />

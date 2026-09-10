@@ -4,9 +4,10 @@ import type { Proyecto } from '../../types/dashboard';
 
 interface ProyectosTabProps {
   proyectos: Proyecto[];
+  onSelectProyecto?: (id: number) => void;
 }
 
-export const ProyectosTab: React.FC<ProyectosTabProps> = ({ proyectos }) => {
+export const ProyectosTab: React.FC<ProyectosTabProps> = ({ proyectos, onSelectProyecto }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Todos');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -97,7 +98,12 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({ proyectos }) => {
               </div>
 
               <div className="p-3 border-t border-slate-100 flex items-center justify-between text-slate-400">
-                <span className="text-[10px] text-blue-600 font-semibold cursor-pointer hover:underline">Acceder al proyecto →</span>
+                <span 
+                  onClick={() => onSelectProyecto && onSelectProyecto(p.id)}
+                  className="text-[10px] text-blue-600 font-semibold cursor-pointer hover:underline"
+                >
+                  Acceder al proyecto →
+                </span>
                 <Star className="w-4 h-4 cursor-pointer hover:text-amber-400" />
               </div>
             </div>
@@ -130,7 +136,12 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({ proyectos }) => {
                     </span>
                   </td>
                   <td className="p-3 text-right">
-                    <button className="text-blue-600 font-semibold hover:underline">Acceder →</button>
+                    <button 
+                      onClick={() => onSelectProyecto && onSelectProyecto(p.id)}
+                      className="text-blue-600 font-semibold hover:underline"
+                    >
+                      Acceder →
+                    </button>
                   </td>
                 </tr>
               ))}
