@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_URL } from '../../config/api';
 
 interface Props {
   onClose: () => void;
@@ -17,7 +18,7 @@ export const CompletarInvitacionModal: React.FC<Props> = ({ onClose, onSuccess }
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:3000/api/completar-invitacion', {
+      const res = await fetch(`${API_URL}/api/completar-invitacion`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

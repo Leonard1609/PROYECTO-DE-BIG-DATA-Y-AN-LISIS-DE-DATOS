@@ -6,7 +6,7 @@ import { RequestFormStep } from '../components/login/RequestFormStep';
 import { RequestActivationStep, StatusScreen } from '../components/login/StatusScreens';
 import { API_URL } from '../config/api';
 
-const API_BASE_URL = API_URL || 'http://localhost:3006';
+const API_BASE_URL = API_URL;
 
 interface LoginPageProps {
   onLoginSuccess: (email: string, usuarioData?: any) => void;

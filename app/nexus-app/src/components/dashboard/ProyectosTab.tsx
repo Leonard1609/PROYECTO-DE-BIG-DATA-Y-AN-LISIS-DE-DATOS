@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_URL } from '../../config/api';
 
 // 1. Interfaz amplia de Proyecto para soportar backend y datos de DashboardPage
 export interface Proyecto {
@@ -50,7 +51,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
   const [guardando, setGuardando] = useState<boolean>(false);
 
   const navigate = useNavigate();
-  const API_URL = 'http://localhost:3006/api/proyectos';
+  const res = await fetch(`${API_URL}/api/proyectos`);
 
   // Cargar proyectos desde la API backend si no se reciben por props
   const cargarProyectos = async () => {

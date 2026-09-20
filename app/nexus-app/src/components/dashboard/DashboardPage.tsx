@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LogOut, Users, Key, RefreshCw } from 'lucide-react';
 import { SolicitudesTable } from './SolicitudesTable';
+import { API_URL } from '../../config/api';
 
 interface DashboardProps {
   userEmail?: string;
@@ -16,7 +17,7 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
   const cargarSolicitudes = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:3000/solicitudes-pendientes');
+      const response = await fetch(`${API_URL}/solicitudes-pendientes`);
       if (response.ok) {
         const data = await response.json();
         setSolicitudes(data);
@@ -37,7 +38,7 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
   // 2. Handler para Aprobar Solicitud
   const handleAprobarSolicitud = async (solicitud: any) => {
     try {
-      const response = await fetch('http://localhost:3000/aprobar-solicitud', {
+      const response = await fetch(`${API_URL}/aprobar-solicitud`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -65,7 +66,7 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
     if (!window.confirm("¿Seguro que deseas rechazar esta solicitud?")) return;
 
     try {
-      const response = await fetch('http://localhost:3000/rechazar-solicitud', {
+      const response = await fetch(`${API_URL}/rechazar-solicitud`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })

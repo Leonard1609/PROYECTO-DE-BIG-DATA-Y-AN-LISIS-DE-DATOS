@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Folder, LayoutDashboard, Database, FileText } from 'lucide-react';
+import { API_URL } from '../config/api';
 
 interface Proyecto {
   id: number;
@@ -20,7 +21,7 @@ export const ProyectoDetallePage: React.FC = () => {
     const obtenerProyecto = async () => {
       try {
         setCargando(true);
-        const res = await fetch(`http://localhost:3006/api/proyectos`);
+        const res = await fetch(`${API_URL}/api/proyectos`);
         if (!res.ok) throw new Error('Error al cargar proyectos');
         const data: Proyecto[] = await res.json();
         const encontrado = data.find((p) => p.id === Number(id));
