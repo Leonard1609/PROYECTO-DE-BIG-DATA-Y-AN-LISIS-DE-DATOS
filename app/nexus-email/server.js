@@ -114,7 +114,7 @@ app.post('/api/solicitudes/validar-email', async (req, res) => {
     }
 });
 
-// 2. Autenticación / Login
+// 2. Autenticación / Login (Soporta Bcrypt y Texto Plano)
 app.post('/api/auth/login', async (req, res) => {
     const { email, password } = req.body;
 
@@ -139,9 +139,22 @@ app.post('/api/auth/login', async (req, res) => {
         }
 
         const usuario = rows[0];
-        const coincide = await bcrypt.compare(password, usuario.password_hash);
+
+        // 1. Intentar comparar con Bcrypt
+        let coincide = false;
+        try {
+            coincide = await bcrypt.compare(password, usuario.password_hash);
+        } catch (err) {
+            coincide = false;
+        }
+
+        // 2. Si falla Bcrypt, verificar si está en texto plano en la BD (ej. 'admin123')
+        if (!coincide && password === usuario.password_hash) {
+            coincide = true;
+        }
 
         if (!coincide) {
+            console.log(`[LOGIN FAIL] Usuario: ${cleanEmail} | Password recibida: "${password}" | Guardada en BD: "${usuario.password_hash}"`);
             return res.status(401).json({ error: 'Contraseña incorrecta.' });
         }
 
