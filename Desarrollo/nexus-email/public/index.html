@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS - Sistema de Gestión de Accesos</title>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-card: #1e293b;
+            --accent-blue: #2563eb;
+            --accent-red: #dc2626;
+            --accent-green: #16a34a;
+            --text-main: #f8fafc;
+            --border-color: #334155;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+        }
+
+        nav {
+            display: flex;
+            background-color: #020617;
+            border-bottom: 2px solid var(--border-color);
+            padding: 10px 20px;
+            gap: 10px;
+        }
+
+        .nav-btn {
+            background: transparent;
+            color: #94a3b8;
+            border: 1px solid var(--border-color);
+            padding: 10px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .nav-btn.active, .nav-btn:hover {
+            background-color: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .page-view { display: none; }
+        .page-view.active { display: block; }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        .form-group { margin-bottom: 15px; }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #cbd5e1;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background-color: #0f172a;
+            color: white;
+            box-sizing: border-box;
+        }
+
+        .btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            background-color: var(--accent-blue);
+            transition: opacity 0.2s;
+        }
+
+        .btn-red { background-color: var(--accent-red); }
+        .btn-green { background-color: var(--accent-green); }
+
+        .btn:disabled {
+            background-color: #475569 !important;
+            color: #94a3b8 !important;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: left;
+            font-size: 0.9em;
+        }
+
+        th { background-color: #020617; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.75);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 25px;
+            border-radius: 8px;
+            width: 450px;
+            max-width: 90%;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .console-box {
+            background: #000;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 15px;
+            color: #4ade80;
+            font-family: monospace;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .input-addon-group {
+            display: flex;
+            align-items: center;
+        }
+
+        .input-addon-group input {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .input-addon {
+            background-color: #334155;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-left: none;
+            border-top-right-radius: 6px;
+            border-bottom-right-radius: 6px;
+            color: #cbd5e1;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .details-box {
+            background: #0f172a;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            border: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <button class="nav-btn active" onclick="switchPage('page-solicitud', event)">1. Solicitud / Login</button>
+        <button class="nav-btn" onclick="switchPage('page-admin', event)">2. Panel de Administración</button>
+        <button class="nav-btn" id="btn-nav-activacion" onclick="switchPage('page-activacion', event)">3. Activación Corporativa</button>
+    </nav>
+
+    <div class="container">
+
+        <!-- PÁGINA 1: INGRESO / LOGIN -->
+        <div id="page-solicitud" class="page-view active">
+            <h2>Ingreso al Sistema NEXUS</h2>
+            <div class="card">
+                <div class="form-group">
+                    <label>Correo Personal (@gmail.com) o Corporativo (@nexus.com)</label>
+                    <input type="email" id="v_email" placeholder="ejemplo@gmail.com o usuario@nexus.com">
+                </div>
+
+                <div class="form-group" id="sec-password" style="display: none;">
+                    <label>Contraseña Temporal</label>
+                    <input type="password" id="v_password" placeholder="••••••••">
+                </div>
+
+                <button class="btn" id="btn-validar-email" onclick="validarEmail()">Ingresar / Verificar</button>
+                <button class="btn btn-green" id="btn-login" style="display: none;" onclick="iniciarSesion()">Iniciar Sesión</button>
+            </div>
+
+            <div id="sec-registro" style="display: none;">
+                <h2>Registro de Datos Personales</h2>
+                <div class="card">
+                    <div class="form-group">
+                        <label>Correo Personal Confirmado</label>
+                        <input type="email" id="f_email" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Nombres</label>
+                        <input type="text" id="f_nombres" placeholder="Ingrese sus nombres">
+                    </div>
+                    <div class="form-group">
+                        <label>Apellidos</label>
+                        <input type="text" id="f_apellidos" placeholder="Ingrese sus apellidos">
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono</label>
+                        <input type="text" id="f_telefono" placeholder="Ejemplo: 912345678" maxlength="9">
+                    </div>
+                    <div class="form-group">
+                        <label>Dirección / Ciudad</label>
+                        <input type="text" id="f_direccion" placeholder="Ingrese su dirección">
+                    </div>
+                    <div class="form-group">
+                        <label>Nivel de Educación</label>
+                        <select id="f_educacion">
+                            <option value="" disabled selected>Seleccione nivel educativo</option>
+                            <option value="SECUNDARIA">Secundaria Completa</option>
+                            <option value="SUPERIOR_INCOMPLETA">Educación Superior Incompleta</option>
+                            <option value="SUPERIOR_COMPLETA">Educación Superior Completa</option>
+                            <option value="POSTGRADO">Postgrado / Maestría</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-green" onclick="crearSolicitud()">Enviar Solicitud</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PÁGINA 2: PANEL ADMINISTRATIVO -->
+        <div id="page-admin" class="page-view">
+            <h2>Panel de Administración de Solicitudes</h2>
+            <div class="card">
+                <button class="btn" onclick="cargarSolicitudes()">Actualizar Solicitudes</button>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre Completo</th>
+                            <th>Correo Personal</th>
+                            <th>Estado</th>
+                            <th>Fase</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-solicitudes">
+                        <tr><td colspan="5">Haz clic en actualizar para cargar registros.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PÁGINA 3: ACTIVACIÓN CORPORATIVA -->
+        <div id="page-activacion" class="page-view">
+            <h2>Paso 3: Solicitar Activación de Cuenta Corporativa</h2>
+            <div class="card">
+                <div class="form-group">
+                    <label>Correo Corporativo Asignado (@nexus.com)</label>
+                    <input type="email" id="act_email" placeholder="usuario@nexus.com">
+                </div>
+                <button class="btn btn-green" onclick="solicitarActivacion()">Solicitar Activación</button>
+            </div>
+        </div>
+
+        <!-- CONSOLA DE LOGS -->
+        <div class="card">
+            <label>Consola de Respuesta Server:</label>
+            <div class="console-box" id="output">Esperando acciones...</div>
+        </div>
+
+    </div>
+
+    <!-- MODAL DE PRE-APROBACIÓN -->
+    <div id="modal-preaprobar" class="modal">
+        <div class="modal-content">
+            <h3>Pre-Aprobar Solicitud</h3>
+            <div id="modal-user-details" class="details-box"></div>
+            <input type="hidden" id="modal-solicitud-id">
+            <div class="form-group">
+                <label>Asignar Usuario Corporativo</label>
+                <div class="input-addon-group">
+                    <input type="text" id="modal-corp-user" placeholder="nombre.apellido">
+                    <span class="input-addon">@nexus.com</span>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-red" onclick="closeModal('modal-preaprobar')">Cancelar</button>
+                <button class="btn btn-green" onclick="confirmarPreAprobacion()">Guardar y Enviar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE ACTIVACIÓN FINAL Y ASIGNACIÓN DE ROL -->
+    <div id="modal-activar" class="modal">
+        <div class="modal-content">
+            <h3 style="color: #38bdf8; margin-top: 0;">Activar Cuenta y Asignar Rol</h3>
+            <div id="modal-act-details" class="details-box"></div>
+            <input type="hidden" id="modal-act-id">
+            
+            <div class="form-group">
+                <label>Proyecto Asignado</label>
+                <select id="modal-act-proyecto">
+                    <option value="" disabled selected>Seleccione un proyecto</option>
+                    <option value="BIG_DATA">Proyecto Big Data</option>
+                    <option value="AZURE">Proyecto Azure Cloud</option>
+                    <option value="AMBOS">Todos los Proyectos (Big Data + Azure)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Rol del Usuario</label>
+                <select id="modal-act-rol">
+                    <option value="" disabled selected>Seleccione un rol</option>
+                    <option value="ADMINISTRADOR">Administrador</option>
+                    <option value="ANALISTA">Analista</option>
+                    <option value="USUARIO">Usuario Regular</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Cargo / Puesto de Trabajo</label>
+                <input type="text" id="modal-act-cargo" placeholder="Ej. Analista de Datos, Ingeniero Cloud">
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-red" onclick="closeModal('modal-activar')">Cancelar</button>
+                <button class="btn btn-green" onclick="confirmarActivacionModal()">Confirmar y Activar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = 'http://localhost:3006/api';
+        let solicitudesGlobales = [];
+
+        function switchPage(pageId, evt) {
+            document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            
+            if (evt) {
+                evt.target.classList.add('active');
+            } else {
+                if (pageId === 'page-activacion') {
+                    document.getElementById('btn-nav-activacion').classList.add('active');
+                }
+            }
+        }
+
+        function log(data) {
+            document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+        }
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        async function validarEmail() {
+            const email = document.getElementById('v_email').value;
+            const secRegistro = document.getElementById('sec-registro');
+            secRegistro.style.display = 'none';
+
+            const res = await fetch(`${API}/solicitudes/validar-email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+            const data = await res.json();
+            log(data);
+
+            if (!res.ok) {
+                alert(data.error || 'Ocurrió un error.');
+                return;
+            }
+
+            if (data.tipo === 'GMAIL_NUEVO') {
+                document.getElementById('f_email').value = email;
+                secRegistro.style.display = 'block';
+            } else if (data.tipo === 'CORP_ACTIVO') {
+                document.getElementById('sec-password').style.display = 'block';
+                document.getElementById('btn-validar-email').style.display = 'none';
+                document.getElementById('btn-login').style.display = 'block';
+                alert(data.message);
+            } else if (data.tipo === 'CORP_PRE_APROBADO') {
+                alert(data.message);
+                document.getElementById('act_email').value = data.email_corporativo;
+                switchPage('page-activacion');
+            } else if (data.tipo === 'CORP_PENDIENTE_ACTIVACION') {
+                alert(data.message);
+            }
+        }
+
+        async function iniciarSesion() {
+            const email = document.getElementById('v_email').value;
+            const password = document.getElementById('v_password').value;
+
+            const res = await fetch(`${API}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await res.json();
+            log(data);
+
+            if (res.ok) {
+                localStorage.setItem('usuarioSesion', JSON.stringify(data.usuario));
+                alert('Sesión iniciada correctamente. Redirigiendo al Dashboard...');
+                window.location.href = 'dashboard.html';
+            } else {
+                alert(data.error || 'Contraseña incorrecta.');
+            }
+        }
+
+        async function crearSolicitud() {
+            const nombres = document.getElementById('f_nombres').value.trim();
+            const apellidos = document.getElementById('f_apellidos').value.trim();
+            const telefono = document.getElementById('f_telefono').value.trim();
+            const direccion = document.getElementById('f_direccion').value.trim();
+            const educacion = document.getElementById('f_educacion').value.trim();
+            const email_personal = document.getElementById('f_email').value.trim();
+
+            if (!nombres || !apellidos || !telefono || !direccion || !educacion) {
+                alert('Por favor complete todos los campos del formulario.');
+                return;
+            }
+
+            const regexNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/;
+            if (!regexNombre.test(nombres) || !regexNombre.test(apellidos)) {
+                alert('Los nombres y apellidos solo deben contener letras y un mínimo de 2 caracteres.');
+                return;
+            }
+
+            const regexTelefono = /^9\d{8}$/;
+            if (!regexTelefono.test(telefono)) {
+                alert('Ingrese un número de teléfono celular válido de 9 dígitos que inicie con 9.');
+                return;
+            }
+
+            const payload = {
+                email_personal,
+                nombres,
+                apellidos,
+                telefono,
+                direccion,
+                nivel_educacion: educacion
+            };
+
+            const res = await fetch(`${API}/solicitudes/crear`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            log(await res.json());
+            document.getElementById('sec-registro').style.display = 'none';
+        }
+
+        async function cargarSolicitudes() {
+            const res = await fetch(`${API}/admin/solicitudes`);
+            const data = await res.json();
+            solicitudesGlobales = data;
+            log(data);
+
+            const tbody = document.getElementById('tabla-solicitudes');
+            tbody.innerHTML = '';
+
+            data.forEach(item => {
+                const tr = document.createElement('tr');
+
+                const preAprobarDisabled = item.estado !== 'PENDIENTE_PRE_APROBACION';
+                const activarDisabled = item.estado !== 'PENDIENTE_ACTIVACION';
+                const rechazarDisabled = item.estado === 'RECHAZADO' || item.estado === 'ACTIVO';
+
+                tr.innerHTML = `
+                    <td>${item.nombre_completo}</td>
+                    <td>${item.email_personal}</td>
+                    <td>${item.estado}</td>
+                    <td>${item.fase}</td>
+                    <td>
+                        <button class="btn" ${preAprobarDisabled ? 'disabled' : ''} onclick="preAprobarModal('${item.id}')">Pre-Aprobar</button>
+                        <button class="btn btn-green" ${activarDisabled ? 'disabled' : ''} onclick="abrirModalActivar('${item.id}')">Activar</button>
+                        <button class="btn btn-red" ${rechazarDisabled ? 'disabled' : ''} onclick="rechazar('${item.id}')">Rechazar</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function preAprobarModal(id) {
+            const item = solicitudesGlobales.find(s => s.id === id);
+            if (!item) return;
+
+            document.getElementById('modal-solicitud-id').value = id;
+            document.getElementById('modal-user-details').innerHTML = `
+                <p style="margin: 4px 0;"><strong>Nombre:</strong> ${item.nombre_completo}</p>
+                <p style="margin: 4px 0;"><strong>Correo Personal:</strong> ${item.email_personal}</p>
+                <p style="margin: 4px 0;"><strong>Teléfono:</strong> ${item.telefono || 'N/A'}</p>
+            `;
+
+            const sugerencia = item.nombre_completo.toLowerCase().replace(/\s+/g, '.');
+            document.getElementById('modal-corp-user').value = sugerencia;
+
+            openModal('modal-preaprobar');
+        }
+
+        async function confirmarPreAprobacion() {
+            const id = document.getElementById('modal-solicitud-id').value;
+            let prefix = document.getElementById('modal-corp-user').value.trim();
+
+            if (!prefix) return alert('Por favor ingrese el usuario corporativo.');
+            prefix = prefix.replace(/@nexus\.com$/i, '');
+
+            const email_corporativo_asignado = `${prefix}@nexus.com`;
+
+            const res = await fetch(`${API}/admin/pre-aprobar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, email_corporativo_asignado })
+            });
+            log(await res.json());
+            closeModal('modal-preaprobar');
+            cargarSolicitudes();
+        }
+
+        async function solicitarActivacion() {
+            const email_corporativo = document.getElementById('act_email').value;
+            const res = await fetch(`${API}/solicitudes/solicitar-activacion`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email_corporativo })
+            });
+            const data = await res.json();
+            log(data);
+            if (res.ok) {
+                alert(data.message);
+            } else {
+                alert(data.error || 'Error al solicitar activación.');
+            }
+        }
+
+        function abrirModalActivar(id) {
+            const item = solicitudesGlobales.find(s => s.id === id);
+            if (!item) return;
+
+            document.getElementById('modal-act-id').value = id;
+            document.getElementById('modal-act-details').innerHTML = `
+                <p style="margin: 4px 0;"><strong>Nombre:</strong> ${item.nombre_completo}</p>
+                <p style="margin: 4px 0;"><strong>Correo Personal:</strong> ${item.email_personal}</p>
+                <p style="margin: 4px 0;"><strong>Correo Corporativo:</strong> ${item.email}</p>
+            `;
+
+            document.getElementById('modal-act-proyecto').value = "";
+            document.getElementById('modal-act-rol').value = "";
+            document.getElementById('modal-act-cargo').value = "";
+
+            openModal('modal-activar');
+        }
+
+        async function confirmarActivacionModal() {
+            const id = document.getElementById('modal-act-id').value;
+            const proyecto = document.getElementById('modal-act-proyecto').value;
+            const rol = document.getElementById('modal-act-rol').value;
+            const cargo = document.getElementById('modal-act-cargo').value.trim();
+
+            if (!proyecto || !rol || !cargo) {
+                alert('Por favor complete todos los campos (Proyecto, Rol y Cargo).');
+                return;
+            }
+
+            const res = await fetch(`${API}/admin/activar-cuenta`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, rol, proyecto, cargo })
+            });
+
+            const data = await res.json();
+            log(data);
+            if (res.ok) {
+                alert('Cuenta activada exitosamente y notificación enviada por correo.');
+                closeModal('modal-activar');
+                cargarSolicitudes();
+            } else {
+                alert('Error al activar: ' + data.error);
+            }
+        }
+
+        async function rechazar(id) {
+            const res = await fetch(`${API}/admin/rechazar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            log(await res.json());
+            cargarSolicitudes();
+        }
+    </script>
+</body>
+</html>

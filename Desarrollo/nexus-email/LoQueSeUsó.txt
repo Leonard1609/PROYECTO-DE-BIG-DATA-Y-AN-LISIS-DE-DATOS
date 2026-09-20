@@ -1,0 +1,14 @@
+Instalación de dependencias
+1-npm init -y
+
+2-npm install express mysql2 nodemailer dotenv bcryptjs cors uuid
+
+Si no funciona:
+
+npm install express
+
+db.js (Conexión a MySQL XAMPP)
+
+
+dentro de nexus-email:
+npm install multer
