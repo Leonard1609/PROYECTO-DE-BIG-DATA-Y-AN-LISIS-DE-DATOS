@@ -37,7 +37,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/solicitudes/validar-email`, {
+      const response = await fetch(`${API_BASE_URL}/solicitudes/validar-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim() })
