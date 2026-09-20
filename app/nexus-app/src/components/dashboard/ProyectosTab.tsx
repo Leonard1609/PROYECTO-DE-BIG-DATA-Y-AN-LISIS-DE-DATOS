@@ -51,22 +51,21 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
   const [guardando, setGuardando] = useState<boolean>(false);
 
   const navigate = useNavigate();
-  const res = await fetch(`${API_URL}/api/proyectos`);
 
   // Cargar proyectos desde la API backend si no se reciben por props
-  const cargarProyectos = async () => {
-    try {
-      setCargando(true);
-      const res = await fetch(API_URL);
-      if (!res.ok) throw new Error('Error al consultar proyectos');
-      const data = await res.json();
-      setProyectosLocales(data);
-    } catch (err: any) {
-      setError(err.message || 'Error de conexión');
-    } finally {
-      setCargando(false);
-    }
-  };
+const cargarProyectos = async () => {
+  try {
+    setCargando(true);
+    const res = await fetch(`${API_URL}/api/proyectos`);
+    if (!res.ok) throw new Error('Error al consultar proyectos');
+    const data = await res.json();
+    setProyectosLocales(data);
+  } catch (err: any) {
+    setError(err.message || 'Error de conexión');
+  } finally {
+    setCargando(false);
+  }
+};
 
   useEffect(() => {
     if (!proyectosProp || proyectosProp.length === 0) {
