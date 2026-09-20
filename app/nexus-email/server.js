@@ -13,6 +13,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/proyectos', proyectosRouter);
+
 // 1. Validar e ingresar correo
 app.post('/api/solicitudes/validar-email', async (req, res) => {
     const { email } = req.body;
@@ -25,8 +26,8 @@ app.post('/api/solicitudes/validar-email', async (req, res) => {
 
     try {
         if (cleanEmail.endsWith('@gmail.com')) {
-            const [rows] = await db.query(
-                'SELECT * FROM usuarios_solicitudes WHERE email_personal = ?',
+            const { rows } = await db.query(
+                'SELECT * FROM usuarios_solicitudes WHERE email_personal = $1',
                 [cleanEmail]
             );
 
@@ -128,8 +129,8 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     try {
-        const [rows] = await db.query(
-            'SELECT * FROM usuarios_solicitudes WHERE email = ? AND estado = "ACTIVO"',
+        const { rows } = await db.query(
+            "SELECT * FROM usuarios_solicitudes WHERE email = $1 AND estado = 'ACTIVO'",
             [cleanEmail]
         );
         
@@ -176,7 +177,7 @@ app.post('/api/solicitudes/crear', async (req, res) => {
         await db.query(
             `INSERT INTO usuarios_solicitudes 
             (id, email, email_personal, nombre_completo, telefono, direccion, nivel_educacion, estado, fase, origen) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDIENTE_PRE_APROBACION', 2, 'SOLICITUD')`,
+            VALUES ($1, $2, $3, $4, $5, $6, $7, 'PENDIENTE_PRE_APROBACION', 2, 'SOLICITUD')`,
             [id, '', email_personal.trim().toLowerCase(), nombre_completo, telefono, direccion, nivel_educacion]
         );
 
@@ -190,7 +191,7 @@ app.post('/api/solicitudes/crear', async (req, res) => {
 // 4. Obtener todas las solicitudes para el Admin
 app.get('/api/admin/solicitudes', async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT * FROM usuarios_solicitudes ORDER BY creado_en DESC');
+        const { rows } = await db.query('SELECT * FROM usuarios_solicitudes ORDER BY creado_en DESC');
         return res.json(rows);
     } catch (error) {
         console.error('Error al obtener solicitudes:', error);
@@ -207,14 +208,17 @@ app.post('/api/admin/pre-aprobar', async (req, res) => {
     }
 
     try {
-        const [solicitud] = await db.query('SELECT * FROM usuarios_solicitudes WHERE id = ?', [id]);
+        const { rows: solicitud } = await db.query(
+            'SELECT * FROM usuarios_solicitudes WHERE id = $1',
+            [id]
+        );
         if (solicitud.length === 0) return res.status(404).json({ error: 'Solicitud no encontrada.' });
 
         const data = solicitud[0];
         const cleanCorpEmail = email_corporativo_asignado.trim().toLowerCase();
 
         await db.query(
-            'UPDATE usuarios_solicitudes SET email = ?, estado = "PRE_APROBADO", fase = 3 WHERE id = ?',
+            "UPDATE usuarios_solicitudes SET email = $1, estado = 'PRE_APROBADO', fase = 3 WHERE id = $2",
             [cleanCorpEmail, id]
         );
 
@@ -242,8 +246,8 @@ app.post('/api/solicitudes/solicitar-activacion', async (req, res) => {
 
     try {
         const cleanEmail = email_corporativo.trim().toLowerCase();
-        const [rows] = await db.query(
-            'SELECT * FROM usuarios_solicitudes WHERE email = ? AND estado = "PRE_APROBADO"',
+        const { rows } = await db.query(
+            "SELECT * FROM usuarios_solicitudes WHERE email = $1 AND estado = 'PRE_APROBADO'",
             [cleanEmail]
         );
 
@@ -252,7 +256,7 @@ app.post('/api/solicitudes/solicitar-activacion', async (req, res) => {
         }
 
         await db.query(
-            'UPDATE usuarios_solicitudes SET estado = "PENDIENTE_ACTIVACION", fase = 3 WHERE email = ?',
+            "UPDATE usuarios_solicitudes SET estado = 'PENDIENTE_ACTIVACION', fase = 3 WHERE email = $1",
             [cleanEmail]
         );
 
@@ -272,7 +276,7 @@ app.post('/api/admin/activar-cuenta', async (req, res) => {
     }
 
     try {
-        const [solicitud] = await db.query('SELECT * FROM usuarios_solicitudes WHERE id = ?', [id]);
+        const { rows: solicitud } = await db.query('SELECT * FROM usuarios_solicitudes WHERE id = $1', [id]);
         if (solicitud.length === 0) return res.status(404).json({ error: 'Solicitud no encontrada.' });
 
         const data = solicitud[0];
@@ -281,7 +285,7 @@ app.post('/api/admin/activar-cuenta', async (req, res) => {
         const passwordHash = await bcrypt.hash(passwordTemp, 10);
 
         await db.query(
-            'UPDATE usuarios_solicitudes SET rol = ?, proyecto = ?, cargo = ?, password_hash = ?, estado = "ACTIVO", fase = 4 WHERE id = ?',
+            "UPDATE usuarios_solicitudes SET rol = $1, proyecto = $2, cargo = $3, password_hash = $4, estado = 'ACTIVO', fase = 4 WHERE id = $5",
             [rol, proyecto, cargo, passwordHash, id]
         );
 
@@ -310,7 +314,7 @@ app.post('/api/admin/rechazar', async (req, res) => {
     const { id } = req.body;
 
     try {
-        const [solicitud] = await db.query('SELECT * FROM usuarios_solicitudes WHERE id = ?', [id]);
+        const { rows: solicitud } = await db.query('SELECT * FROM usuarios_solicitudes WHERE id = $1', [id]);
         if (solicitud.length === 0) return res.status(404).json({ error: 'Solicitud no encontrada.' });
 
         const data = solicitud[0];
@@ -321,7 +325,7 @@ app.post('/api/admin/rechazar', async (req, res) => {
             console.error('Error enviando notificación de rechazo:', emailErr);
         }
 
-        await db.query('DELETE FROM usuarios_solicitudes WHERE id = ?', [id]);
+        await db.query('DELETE FROM usuarios_solicitudes WHERE id = $1', [id]);
 
         return res.json({ success: true, message: 'Solicitud rechazada y eliminada.' });
     } catch (error) {
