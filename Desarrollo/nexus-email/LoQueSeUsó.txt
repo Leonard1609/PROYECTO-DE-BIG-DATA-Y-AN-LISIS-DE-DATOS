@@ -8,3 +8,7 @@ Si no funciona:
 npm install express
 
 db.js (Conexión a MySQL XAMPP)
+
+
+dentro de nexus-email:
+npm install multer

@@ -295,17 +295,19 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
             {activeTab === 'perfil' && <PerfilTab userEmail={userEmail} />}
             {activeTab === 'mensajes' && <MensajesTab />}
             {activeTab === 'proyectos' && (
-              <ProyectosTab 
-                proyectos={proyectos} 
-                userRole={userRole}
-                onCambiarEstadoProyecto={handleCambiarEstadoProyecto}
-                onSelectProyecto={(id) => {
-                  if (id === 1) {
-                    navigate('/big-data');
-                  }
-                }}
-              />
-            )}
+  <ProyectosTab 
+    userRole={userRole}
+    onSelectProyecto={(id) => {
+      // Si es el proyecto 1 (Big Data), navega a su módulo asignado
+      if (Number(id) === 1) {
+        navigate('/big-data');
+      } else {
+        // Para cualquier otro proyecto nuevo, utiliza la plantilla dinámica
+        navigate(`/proyecto/${id}`);
+      }
+    }}
+  />
+)}
           </main>
 
           <RightSidebar />

@@ -4,6 +4,7 @@ import { authStorage } from '../src/utils/authStorage';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { BigDataModulePage } from './pages/BigDataModulePage';
+import { ProyectoDetallePage } from './pages/ProyectoDetallePage';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -52,6 +53,18 @@ function App() {
         element={
           isAuthenticated ? (
             <DashboardPage userEmail={userEmail} onLogout={handleLogout} />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+
+      {/* Detalle Dinámico de Proyecto */}
+      <Route
+        path="/proyecto/:id"
+        element={
+          isAuthenticated ? (
+            <ProyectoDetallePage />
           ) : (
             <Navigate to="/" replace />
           )

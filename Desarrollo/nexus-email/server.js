@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const db = require('./db');
+const proyectosRouter = require('./proyectos');
 const { enviarCorreoPreAprobacion, enviarCorreoRechazo, enviarCorreoActivacionFinal } = require('./emailService');
 
 const app = express();
@@ -11,6 +12,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.use('/api/proyectos', proyectosRouter);
 // 1. Validar e ingresar correo
 app.post('/api/solicitudes/validar-email', async (req, res) => {
     const { email } = req.body;
