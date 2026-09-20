@@ -64,7 +64,7 @@ app.post('/api/solicitudes/validar-email', async (req, res) => {
         }
 
         if (cleanEmail.endsWith('@nexus.com')) {
-            const [rows] = await db.query(
+            const { rows } = await db.query(
                 'SELECT * FROM usuarios_solicitudes WHERE email = $1',
                 [cleanEmail]
             );
