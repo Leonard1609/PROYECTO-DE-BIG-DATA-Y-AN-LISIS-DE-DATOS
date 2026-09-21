@@ -4,7 +4,7 @@ import { ArrowLeft, Folder, LayoutDashboard, Database, FileText } from 'lucide-r
 import { API_URL } from '../config/api';
 
 interface Proyecto {
-  id: number;
+  id: number | string; // Permite tanto números como UUIDs
   codigo_nrc: string;
   titulo: string;
   lider_nombre: string;
@@ -24,7 +24,9 @@ export const ProyectoDetallePage: React.FC = () => {
         const res = await fetch(`${API_URL}/api/proyectos`);
         if (!res.ok) throw new Error('Error al cargar proyectos');
         const data: Proyecto[] = await res.json();
-        const encontrado = data.find((p) => p.id === Number(id));
+        
+        // Comparación segura convirtiendo ambos valores a String
+        const encontrado = data.find((p) => String(p.id).toLowerCase() === String(id).toLowerCase());
         setProyecto(encontrado || null);
       } catch (error) {
         console.error('Error al obtener el proyecto:', error);
@@ -33,7 +35,9 @@ export const ProyectoDetallePage: React.FC = () => {
       }
     };
 
-    obtenerProyecto();
+    if (id) {
+      obtenerProyecto();
+    }
   }, [id]);
 
   if (cargando) {
