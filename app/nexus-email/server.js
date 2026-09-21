@@ -5,6 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const db = require('./db');
 const proyectosRouter = require('./proyectos');
+const faceRouter = require('./face'); // <--- 1. Importar el módulo face.js
 const { enviarCorreoPreAprobacion, enviarCorreoRechazo, enviarCorreoActivacionFinal } = require('./emailService');
 
 const app = express();
@@ -13,6 +14,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/proyectos', proyectosRouter);
+app.use('/api/face', faceRouter);
 
 // 1. Validar e ingresar correo
 app.post('/api/solicitudes/validar-email', async (req, res) => {

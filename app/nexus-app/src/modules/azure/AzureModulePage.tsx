@@ -4,6 +4,7 @@ import { ResponsibleAIBanner } from './components/ResponsibleAIBanner';
 import { CameraStream } from './components/CameraStream';
 import { MatchMetricsPanel, type LandmarkInfo } from './components/MatchMetricsPanel';
 import { verifyFacialIdentity, type MatchResult } from './services/azureFaceService';
+import { useNavigate } from 'react-router-dom';
 
 interface AzureFacialRecognitionProps {
   userRole?: 'ADMIN' | 'EMPLEADO' | 'ANALISTA';
@@ -12,6 +13,7 @@ interface AzureFacialRecognitionProps {
 export const AzureFacialRecognitionPage: React.FC<AzureFacialRecognitionProps> = ({
   userRole = 'ADMIN'
 }) => {
+  const navigate = useNavigate();
   const [camaraActiva, setCamaraActiva] = useState<boolean>(true);
   const [rostroCentrado, setRostroCentrado] = useState<boolean>(true);
   const [usandoMediaPipe, setUsandoMediaPipe] = useState<boolean>(false);

@@ -1,5 +1,6 @@
 import React from 'react';
-import { UserPlus, CheckCircle2, XCircle, Lock, ShieldAlert } from 'lucide-react';
+import { UserPlus, CheckCircle2, XCircle, Lock, ShieldAlert, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface ResponsibleAIBannerProps {
   usuarioRegistrado: boolean;
@@ -16,6 +17,8 @@ export const ResponsibleAIBanner: React.FC<ResponsibleAIBannerProps> = ({
   usandoMediaPipe,
   userRole
 }) => {
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-6 mb-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -34,6 +37,15 @@ export const ResponsibleAIBanner: React.FC<ResponsibleAIBannerProps> = ({
             Alineación de malla poligonal dinámica sobre contorno facial completo y puntos clave.
           </p>
         </div>
+
+        {/* Botón para retornar al Dashboard principal */}
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-lg text-sm font-medium border border-slate-700 hover:border-slate-600 transition-all shadow-sm shrink-0"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Regresar al Dashboard
+        </button>
       </div>
 
       <div>
