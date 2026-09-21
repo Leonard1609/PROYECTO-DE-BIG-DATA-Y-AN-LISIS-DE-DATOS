@@ -19,7 +19,7 @@ interface DashboardProps {
 export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'perfil' | 'proyectos' | 'mensajes' | 'accesos'>('accesos');
-  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState<boolean>(false);
 
   const [cuentasActivas, setCuentasActivas] = useState<CuentaActiva[]>([]);
   const [invitacionesSolicitudes, setInvitacionesSolicitudes] = useState<InvitacionSolicitud[]>([]);
@@ -28,7 +28,7 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
   const [userRole, setUserRole] = useState<string>('ANALISTA');
 
   // Cargar datos desde el servidor y detectar el rol del usuario actual
-  const cargarDatosServidor = async () => {
+  const cargarDatosServidor = async (): Promise<void> => {
     try {
       const response = await fetch(`${API_URL}/api/admin/solicitudes`);
       if (response.ok) {
@@ -104,7 +104,7 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
   }, [userEmail]);
 
   // Crear invitación / solicitud inicial
-  const handleSendInvite = async (data: any) => {
+  const handleSendInvite = async (data: any): Promise<void> => {
     const emailTarget = typeof data === 'string' ? data : data.emailPersonal;
     try {
       const response = await fetch(`${API_URL}/api/solicitudes/crear`, {
@@ -138,7 +138,7 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
   const handleAprobarActivar = async (
     item: InvitacionSolicitud, 
     datosPersonalizados?: { rol?: string; cargo?: string; proyecto?: string; emailCorporativo?: string }
-  ) => {
+  ): Promise<void> => {
     try {
       const estadoStr = String(item.estado || '').toUpperCase();
 
@@ -192,20 +192,20 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
     }
   };
 
-  const handleEditarProyectoCuenta = (id: number | string) => {
+  const handleEditarProyectoCuenta = (id: number | string): void => {
     const nuevoProyecto = prompt("Ingrese el nuevo proyecto o área de trabajo:", "PROYECTO BIG DATA & ANALÍTICA");
     if (nuevoProyecto) {
-      setCuentasActivas(cuentasActivas.map(c => c.id === id ? { ...c, proyecto: nuevoProyecto } : c));
+      setCuentasActivas(cuentasActivas.map((c: CuentaActiva) => c.id === id ? { ...c, proyecto: nuevoProyecto } : c));
     }
   };
 
-  const handleEliminarCuentaActiva = (id: number | string) => {
+  const handleEliminarCuentaActiva = (id: number | string): void => {
     if (confirm("¿Está seguro de revocar el acceso a este usuario?")) {
-      setCuentasActivas(cuentasActivas.filter(c => c.id !== id));
+      setCuentasActivas(cuentasActivas.filter((c: CuentaActiva) => c.id !== id));
     }
   };
 
-  const handleEliminarInvitacion = async (id: string | number) => {
+  const handleEliminarInvitacion = async (id: string | number): Promise<void> => {
     if (!confirm("¿Desea rechazar/eliminar este registro?")) return;
 
     try {
@@ -275,35 +275,31 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
             {activeTab === 'perfil' && <PerfilTab userEmail={userEmail} />}
             {activeTab === 'mensajes' && <MensajesTab />}
             {activeTab === 'proyectos' && (
-  <ProyectosTab 
-    userRole={userRole}
-    onSelectProyecto={(proyectoData: any) => {
-      // Extraemos id, título y código NRC según la estructura que envíe ProyectosTab
-      const id = typeof proyectoData === 'object' ? proyectoData.id : proyectoData;
-      const titulo = typeof proyectoData === 'object' ? proyectoData.titulo : '';
-      const codigoNrc = typeof proyectoData === 'object' ? proyectoData.codigo_nrc : '';
+              <ProyectosTab 
+                userRole={userRole}
+                onSelectProyecto={(proyectoData: any) => {
+                  const id = typeof proyectoData === 'object' ? proyectoData.id : proyectoData;
+                  const titulo = typeof proyectoData === 'object' ? proyectoData.titulo : '';
+                  const codigoNrc = typeof proyectoData === 'object' ? proyectoData.codigo_nrc : '';
 
-      const strId = String(id || '').toLowerCase();
-      const strTitulo = String(titulo || '').toLowerCase();
-      const strNrc = String(codigoNrc || '').toLowerCase();
+                  const strId = String(id || '').toLowerCase();
+                  const strTitulo = String(titulo || '').toLowerCase();
+                  const strNrc = String(codigoNrc || '').toLowerCase();
 
-      // Validamos si coincide con la UUID de Supabase, el NRC o el Título del proyecto
-      const esBigData = 
-        strId === '1' || 
-        strId.startsWith('64cb9f39') || 
-        strNrc.includes('3860') || 
-        strTitulo.includes('big data');
+                  const esBigData = 
+                    strId === '1' || 
+                    strId.startsWith('64cb9f39') || 
+                    strNrc.includes('3860') || 
+                    strTitulo.includes('big data');
 
-      if (esBigData) {
-        // Redirige al módulo real reestructurado
-        navigate('/big-data');
-      } else {
-        // Redirige a proyectos genéricos
-        navigate(`/proyecto/${id}`);
-      }
-    }}
-  />
-)}
+                  if (esBigData) {
+                    navigate('/big-data');
+                  } else {
+                    navigate(`/proyecto/${id}`);
+                  }
+                }}
+              />
+            )}
           </main>
 
           <RightSidebar />
