@@ -1,3 +1,4 @@
+require('dotenv').config(); // 👈 Carga las variables de tu archivo .env
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
@@ -5,14 +6,18 @@ const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const db = require('./db');
 const proyectosRouter = require('./proyectos');
+const faceRouter = require('./face');
 const { enviarCorreoPreAprobacion, enviarCorreoRechazo, enviarCorreoActivacionFinal } = require('./emailService');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+
+// Elimina el express.json() simple y deja ÚNICAMENTE este con el límite ampliado:
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/proyectos', proyectosRouter);
+app.use('/api/face', faceRouter);
 // 1. Validar e ingresar correo
 app.post('/api/solicitudes/validar-email', async (req, res) => {
     const { email } = req.body;
