@@ -275,19 +275,35 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
             {activeTab === 'perfil' && <PerfilTab userEmail={userEmail} />}
             {activeTab === 'mensajes' && <MensajesTab />}
             {activeTab === 'proyectos' && (
-              <ProyectosTab 
-                userRole={userRole}
-                onSelectProyecto={(id) => {
-                  const targetId = String(id).toLowerCase();
-                  // Detecta si es el proyecto 1, o si contiene el identificador de Big Data
-                  if (targetId === '1' || targetId.includes('big') || targetId.includes('3860')) {
-                    navigate('/big-data');
-                  } else {
-                    navigate(`/proyecto/${id}`);
-                  }
-                }}
-              />
-            )}
+  <ProyectosTab 
+    userRole={userRole}
+    onSelectProyecto={(proyectoData: any) => {
+      // Extraemos id, título y código NRC según la estructura que envíe ProyectosTab
+      const id = typeof proyectoData === 'object' ? proyectoData.id : proyectoData;
+      const titulo = typeof proyectoData === 'object' ? proyectoData.titulo : '';
+      const codigoNrc = typeof proyectoData === 'object' ? proyectoData.codigo_nrc : '';
+
+      const strId = String(id || '').toLowerCase();
+      const strTitulo = String(titulo || '').toLowerCase();
+      const strNrc = String(codigoNrc || '').toLowerCase();
+
+      // Validamos si coincide con la UUID de Supabase, el NRC o el Título del proyecto
+      const esBigData = 
+        strId === '1' || 
+        strId.startsWith('64cb9f39') || 
+        strNrc.includes('3860') || 
+        strTitulo.includes('big data');
+
+      if (esBigData) {
+        // Redirige al módulo real reestructurado
+        navigate('/big-data');
+      } else {
+        // Redirige a proyectos genéricos
+        navigate(`/proyecto/${id}`);
+      }
+    }}
+  />
+)}
           </main>
 
           <RightSidebar />
