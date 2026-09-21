@@ -27,7 +27,22 @@ export const ProyectoDetallePage: React.FC = () => {
         
         // Comparación segura convirtiendo ambos valores a String
         const encontrado = data.find((p) => String(p.id).toLowerCase() === String(id).toLowerCase());
-        setProyecto(encontrado || null);
+
+        if (encontrado) {
+          const esAzure = 
+            encontrado.titulo.toLowerCase().includes('azure') || 
+            String(encontrado.id).toLowerCase() === 'd7dcf898-012a-4d06-a1ab-354d32a132b9' ||
+            encontrado.codigo_nrc?.toLowerCase().includes('8499');
+
+          if (esAzure) {
+            navigate('/azure', { replace: true });
+            return;
+          }
+
+          setProyecto(encontrado);
+        } else {
+          setProyecto(null);
+        }
       } catch (error) {
         console.error('Error al obtener el proyecto:', error);
       } finally {
@@ -38,7 +53,7 @@ export const ProyectoDetallePage: React.FC = () => {
     if (id) {
       obtenerProyecto();
     }
-  }, [id]);
+  }, [id, navigate]);
 
   if (cargando) {
     return <div className="p-8 text-gray-500">Cargando dashboard del proyecto...</div>;

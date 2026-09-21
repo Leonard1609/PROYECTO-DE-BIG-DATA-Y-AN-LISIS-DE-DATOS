@@ -292,8 +292,15 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
                     strNrc.includes('3860') || 
                     strTitulo.includes('big data');
 
+                  const esAzure = 
+                    strId === 'd7dcf898-012a-4d06-a1ab-354d32a132b9' || 
+                    strNrc.includes('8499') || 
+                    strTitulo.includes('azure');
+
                   if (esBigData) {
                     navigate('/big-data');
+                  } else if (esAzure) {
+                    navigate('/azure');
                   } else {
                     navigate(`/proyecto/${id}`);
                   }

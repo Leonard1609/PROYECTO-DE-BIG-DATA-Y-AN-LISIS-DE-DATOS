@@ -4,6 +4,7 @@ import { authStorage } from './utils/authStorage';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { BigDataModulePage } from './modules/big-data/BigDataModulePage';
+import AzureModulePage from './modules/azure/AzureModulePage';
 import { ProyectoDetallePage } from './pages/ProyectoDetallePage';
 
 function App() {
@@ -77,6 +78,18 @@ function App() {
         element={
           isAuthenticated ? (
             <BigDataModulePage />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+
+      {/* Módulo Azure */}
+      <Route
+        path="/azure/*"
+        element={
+          isAuthenticated ? (
+            <AzureModulePage />
           ) : (
             <Navigate to="/" replace />
           )
