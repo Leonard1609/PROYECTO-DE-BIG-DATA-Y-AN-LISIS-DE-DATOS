@@ -1,4 +1,4 @@
-import type { AccountUser, Project } from '../types/auth';
+import type { AccountUser, Project } from '../shared/types/auth';
 
 // 1. Proyectos Iniciales de la Empresa
 export const INITIAL_PROJECTS: Project[] = [

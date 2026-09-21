@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { authStorage } from '../src/utils/authStorage';
+import { authStorage } from './utils/authStorage';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
-import { BigDataModulePage } from './pages/BigDataModulePage';
+import { BigDataModulePage } from './modules/big-data/BigDataModulePage';
 import { ProyectoDetallePage } from './pages/ProyectoDetallePage';
 
 function App() {

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { BrandSidebar } from '../components/login/BrandSidebar';
-import { EmailCheckStep } from '../components/login/EmailCheckStep';
-import { PasswordInputStep } from '../components/login/PasswordInputStep';
-import { RequestFormStep } from '../components/login/RequestFormStep';
-import { RequestActivationStep, StatusScreen } from '../components/login/StatusScreens';
+import { BrandSidebar } from '../shared/components/login/BrandSidebar';
+import { EmailCheckStep } from '../shared/components/login/EmailCheckStep';
+import { PasswordInputStep } from '../shared/components/login/PasswordInputStep';
+import { RequestFormStep } from '../shared/components/login/RequestFormStep';
+import { RequestActivationStep, StatusScreen } from '../shared/components/login/StatusScreens';
 import { API_URL } from '../config/api';
 
 const API_BASE_URL = API_URL;

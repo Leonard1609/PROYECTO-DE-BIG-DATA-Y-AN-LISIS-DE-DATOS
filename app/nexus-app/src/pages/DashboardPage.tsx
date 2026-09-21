@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserPlus } from 'lucide-react';
-import { Sidebar } from '../components/dashboard/Sidebar';
-import { RightSidebar } from '../components/dashboard/RightSidebar';
-import { InviteModal } from '../components/dashboard/InviteModal';
-import { AccesosTab } from '../components/dashboard/AccesosTab';
-import { PerfilTab } from '../components/dashboard/PerfilTab';
-import { MensajesTab } from '../components/dashboard/MensajesTab';
-import { ProyectosTab } from '../components/dashboard/ProyectosTab';
-import type { CuentaActiva, InvitacionSolicitud, Proyecto } from '../types/dashboard.ts';
+import { Sidebar } from '../shared/components/dashboard/Sidebar';
+import { RightSidebar } from '../shared/components/dashboard/RightSidebar';
+import { InviteModal } from '../shared/components/dashboard/InviteModal';
+import { AccesosTab } from '../shared/components/dashboard/AccesosTab';
+import { PerfilTab } from '../shared/components/dashboard/PerfilTab';
+import { MensajesTab } from '../shared/components/dashboard/MensajesTab';
+import { ProyectosTab } from '../shared/components/dashboard/ProyectosTab';
+import type { CuentaActiva, InvitacionSolicitud } from '../shared/types/dashboard';
 import { API_URL } from '../config/api';
 
 interface DashboardProps {
@@ -26,26 +26,6 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
   
   // Estado para gestionar el rol del usuario conectado
   const [userRole, setUserRole] = useState<string>('ANALISTA');
-
-  // Estado dinámico de proyectos para permitir su activación / desactivación
-  const [proyectos, setProyectos] = useState<Proyecto[]>([
-    { 
-      id: 1, 
-      titulo: 'PROYECTO BIG DATA & ANALÍTICA', 
-      nrc: '202620-BD-01-NRC_7540', 
-      estado: 'Activo', 
-      lider: 'CESAR ERINSON CARLOS ZAMB', 
-      bg: 'from-blue-700 to-indigo-900', 
-      colorBar: 'bg-blue-600' 
-    }
-  ]);
-
-  // Manejador para cambiar el estado de un proyecto (Activo, Inactivo, Pendiente)
-  const handleCambiarEstadoProyecto = (id: number, nuevoEstado: 'Activo' | 'Inactivo' | 'Pendiente de activación') => {
-    setProyectos((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, estado: nuevoEstado } : p))
-    );
-  };
 
   // Cargar datos desde el servidor y detectar el rol del usuario actual
   const cargarDatosServidor = async () => {
@@ -295,19 +275,19 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
             {activeTab === 'perfil' && <PerfilTab userEmail={userEmail} />}
             {activeTab === 'mensajes' && <MensajesTab />}
             {activeTab === 'proyectos' && (
-  <ProyectosTab 
-    userRole={userRole}
-    onSelectProyecto={(id) => {
-      // Si es el proyecto 1 (Big Data), navega a su módulo asignado
-      if (Number(id) === 1) {
-        navigate('/big-data');
-      } else {
-        // Para cualquier otro proyecto nuevo, utiliza la plantilla dinámica
-        navigate(`/proyecto/${id}`);
-      }
-    }}
-  />
-)}
+              <ProyectosTab 
+                userRole={userRole}
+                onSelectProyecto={(id) => {
+                  const targetId = String(id).toLowerCase();
+                  // Detecta si es el proyecto 1, o si contiene el identificador de Big Data
+                  if (targetId === '1' || targetId.includes('big') || targetId.includes('3860')) {
+                    navigate('/big-data');
+                  } else {
+                    navigate(`/proyecto/${id}`);
+                  }
+                }}
+              />
+            )}
           </main>
 
           <RightSidebar />
