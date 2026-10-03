@@ -23,18 +23,14 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
 
   const [cuentasActivas, setCuentasActivas] = useState<CuentaActiva[]>([]);
   const [invitacionesSolicitudes, setInvitacionesSolicitudes] = useState<InvitacionSolicitud[]>([]);
-  
-  // Estado para gestionar el rol del usuario conectado
   const [userRole, setUserRole] = useState<string>('ANALISTA');
 
-  // Cargar datos desde el servidor y detectar el rol del usuario actual
   const cargarDatosServidor = async (): Promise<void> => {
     try {
       const response = await fetch(`${API_URL}/api/admin/solicitudes`);
       if (response.ok) {
         const data = await response.json();
 
-        // Mapear cuentas activas
         const activasMapeadas: CuentaActiva[] = data
           .filter((usr: any) => usr.estado === 'ACTIVO')
           .map((usr: any) => ({
@@ -50,7 +46,6 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
             tiempoEstado: 'hace un momento'
           }));
 
-        // Mapear solicitudes / invitaciones pendientes
         const solicitudesMapeadas: InvitacionSolicitud[] = data
           .filter((sol: any) => sol.estado !== 'ACTIVO')
           .map((sol: any) => ({
@@ -77,7 +72,6 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
         setCuentasActivas(activasMapeadas);
         setInvitacionesSolicitudes(solicitudesMapeadas);
 
-        // Detectar el rol del usuario conectado
         const usrActual = data.find((usr: any) => 
           usr.email?.toLowerCase() === userEmail?.toLowerCase() || 
           usr.email_personal?.toLowerCase() === userEmail?.toLowerCase()
@@ -87,7 +81,6 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
           const rolDetectado = usrActual.rol || 'ANALISTA';
           setUserRole(rolDetectado);
 
-          // Si NO es admin, redirigir por defecto a la pestaña 'proyectos'
           const esAdmin = ['ADMIN', 'ADMINISTRADOR', 'SUB_ADMIN'].includes(rolDetectado.toUpperCase());
           if (!esAdmin) {
             setActiveTab('proyectos');
@@ -103,7 +96,6 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
     cargarDatosServidor();
   }, [userEmail]);
 
-  // Crear invitación / solicitud inicial
   const handleSendInvite = async (data: any): Promise<void> => {
     const emailTarget = typeof data === 'string' ? data : data.emailPersonal;
     try {
@@ -134,7 +126,6 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
     }
   };
 
-  // Aprobar (Fase 2) o Activar (Fase 3/4)
   const handleAprobarActivar = async (
     item: InvitacionSolicitud, 
     datosPersonalizados?: { rol?: string; cargo?: string; proyecto?: string; emailCorporativo?: string }
@@ -297,10 +288,17 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
                     strNrc.includes('8499') || 
                     strTitulo.includes('azure');
 
+                  const esCloudOps = 
+                    strId.startsWith('b0da6f34') || 
+                    strNrc.includes('4575') || 
+                    strTitulo.includes('cloud');
+
                   if (esBigData) {
                     navigate('/big-data');
                   } else if (esAzure) {
                     navigate('/azure');
+                  } else if (esCloudOps) {
+                    navigate('/cloud-ops');
                   } else {
                     navigate(`/proyecto/${id}`);
                   }
