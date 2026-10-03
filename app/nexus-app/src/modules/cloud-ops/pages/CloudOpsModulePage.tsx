@@ -18,7 +18,15 @@ import {
   CheckCircle2,
   Cpu,
   HardDrive,
-  Database
+  Database,
+  Lock,
+  Layers,
+  Activity,
+  TrendingUp,
+  Check,
+  ExternalLink,
+  FileText,
+  Zap
 } from 'lucide-react';
 
 export const CloudOpsModulePage: React.FC = () => {
@@ -177,7 +185,6 @@ export const CloudOpsModulePage: React.FC = () => {
             <p className="text-xs text-slate-500 mt-0.5">Sistema Web para Planificación y Análisis Cloud (AWS)</p>
           </div>
 
-          {/* 2. BOTÓN DE REGRESO PRINCIPAL */}
           <button
             onClick={() => navigate('/dashboard')}
             className="flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-all border border-slate-200 shadow-sm"
@@ -189,15 +196,15 @@ export const CloudOpsModulePage: React.FC = () => {
 
         {/* Área de Trabajo */}
         <main className="p-4 sm:p-8 space-y-6 flex-1">
+          
+          {/* 1. DASHBOARD */}
           {activeTab === 'dashboard' && (
             <>
-              {/* Título de la sección */}
               <div>
                 <h2 className="text-xl font-bold text-slate-800">Dashboard de Control Cloud</h2>
                 <p className="text-xs text-slate-500">Resumen general de la arquitectura y estado de la solución AWS.</p>
               </div>
 
-              {/* Grid de Métricas Principales (Responsive: 1 col móvil, 2 tablet, 4 desktop) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
                   <div>
@@ -244,10 +251,7 @@ export const CloudOpsModulePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Secciones de Costos y Alertas (Responsive: Stack vertical en móvil / Grid en desktop) */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                {/* Distribución de Costos */}
                 <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                   <div className="flex justify-between items-center">
                     <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
@@ -300,7 +304,6 @@ export const CloudOpsModulePage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Alertas y Seguridad */}
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                   <h3 className="font-bold text-slate-800 text-base">Alertas y Seguridad</h3>
 
@@ -333,7 +336,6 @@ export const CloudOpsModulePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Servicios Destacados */}
               <div>
                 <h3 className="font-bold text-slate-800 text-base mb-4">Servicios Destacados</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -374,16 +376,340 @@ export const CloudOpsModulePage: React.FC = () => {
             </>
           )}
 
-          {activeTab !== 'dashboard' && (
-            <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-              <h2 className="text-lg font-bold text-slate-800 capitalize">
-                Módulo de {navItems.find(i => i.id === activeTab)?.label}
-              </h2>
-              <p className="text-xs text-slate-500">
-                Esta sección se encuentra configurada y lista para cargar componentes dinámicos de {activeTab}.
-              </p>
+          {/* 2. PLANIFICACIÓN */}
+          {activeTab === 'planificacion' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">Planificación Estratégica Cloud</h2>
+                <p className="text-xs text-slate-500">Hitos de migración, cronograma de arquitectura y adopción de AWS.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                      <ClipboardList className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-slate-800">Fase 1: Evaluación</h4>
+                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Completado</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-600">Auditoría de activos, análisis TCO y definición de VPC base.</p>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
+                      <Zap className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-slate-800">Fase 2: Migración</h4>
+                      <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">En Progreso</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-600">Despliegue de instancias EC2 y migración de base PostgreSQL a RDS.</p>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
+                      <TrendingUp className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm text-slate-800">Fase 3: Optimización</h4>
+                      <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">Pendiente</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-600">Implementación de Auto Scaling, CloudFront CDN y Reserved Instances.</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <h3 className="font-bold text-slate-800 text-sm">Cronograma de Implementación Cloud</h3>
+                <div className="space-y-3">
+                  {[
+                    { task: 'Diseño de Red VPC & Subredes Públicas/Privadas', status: 'Completado', date: 'Semana 1-2' },
+                    { task: 'Configuración de Seguridad IAM & MFA', status: 'Completado', date: 'Semana 3' },
+                    { task: 'Despliegue Servidores Web EC2 y Load Balancer', status: 'En Progreso', date: 'Semana 4' },
+                    { task: 'Migración BD PostgreSQL hacia AWS RDS', status: 'Pendiente', date: 'Semana 5' },
+                    { task: 'Pruebas de Carga y Monitoreo CloudWatch', status: 'Pendiente', date: 'Semana 6' },
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl text-xs border border-slate-100">
+                      <span className="font-medium text-slate-700">{item.task}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-slate-400 font-mono text-[11px]">{item.date}</span>
+                        <span className={`px-2 py-0.5 rounded-full font-semibold text-[10px] ${
+                          item.status === 'Completado' ? 'bg-emerald-100 text-emerald-700' :
+                          item.status === 'En Progreso' ? 'bg-amber-100 text-amber-700' : 'bg-slate-200 text-slate-600'
+                        }`}>
+                          {item.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
+
+          {/* 3. COSTOS */}
+          {activeTab === 'costos' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">Análisis y Gestión de Costos AWS</h2>
+                <p className="text-xs text-slate-500">Estimación presupuestaria, facturación y oportunidades de ahorro.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                  <p className="text-[11px] font-bold text-slate-400 uppercase">Presupuesto Limite</p>
+                  <p className="text-2xl font-bold text-slate-800 mt-1">$500.00 / mes</p>
+                  <p className="text-xs text-emerald-600 mt-1">81% consumido del límite</p>
+                </div>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                  <p className="text-[11px] font-bold text-slate-400 uppercase">Gasto Actual Proyectado</p>
+                  <p className="text-2xl font-bold text-slate-800 mt-1">$407.00 / mes</p>
+                  <p className="text-xs text-slate-500 mt-1">Calculado sobre 730 horas/mes</p>
+                </div>
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                  <p className="text-[11px] font-bold text-slate-400 uppercase">Ahorro Estimado (Savings Plans)</p>
+                  <p className="text-2xl font-bold text-emerald-600 mt-1">-$125.00 / mes</p>
+                  <p className="text-xs text-slate-500 mt-1">Al aplicar compromiso de 1 año</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <h3 className="font-bold text-slate-800 text-sm">Detalle de Facturación por Recurso</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-200 text-slate-400 uppercase text-[10px] font-bold">
+                        <th className="pb-3">Servicio</th>
+                        <th className="pb-3">Especificación</th>
+                        <th className="pb-3">Cantidad</th>
+                        <th className="pb-3">Costo Est./Mes</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-slate-700">
+                      <tr>
+                        <td className="py-3 font-semibold">Amazon EC2</td>
+                        <td className="py-3 text-slate-500">t3.medium (Linux / On-Demand)</td>
+                        <td className="py-3">2 Instancias</td>
+                        <td className="py-3 font-mono font-semibold">$120.00</td>
+                      </tr>
+                      <tr>
+                        <td className="py-3 font-semibold">Amazon RDS</td>
+                        <td className="py-3 text-slate-500">db.t3.large PostgreSQL (Single-AZ)</td>
+                        <td className="py-3">1 Instancia (100GB SSD)</td>
+                        <td className="py-3 font-mono font-semibold">$210.00</td>
+                      </tr>
+                      <tr>
+                        <td className="py-3 font-semibold">Amazon S3</td>
+                        <td className="py-3 text-slate-500">Standard Storage + Solic. PUT/GET</td>
+                        <td className="py-3">1.5 TB / mes</td>
+                        <td className="py-3 font-mono font-semibold">$34.50</td>
+                      </tr>
+                      <tr>
+                        <td className="py-3 font-semibold">Amazon CloudFront</td>
+                        <td className="py-3 text-slate-500">Outbound Data Transfer (Global)</td>
+                        <td className="py-3">500 GB / mes</td>
+                        <td className="py-3 font-mono font-semibold">$42.50</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 4. INFRAESTRUCTURA */}
+          {activeTab === 'infraestructura' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">Recursos de Infraestructura AWS</h2>
+                <p className="text-xs text-slate-500">Instancias activas, estado de salud y métricas de cómputo.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Cpu className="w-5 h-5 text-blue-600" />
+                      <h4 className="font-bold text-slate-800 text-sm">Web-Server-Primary (EC2)</h4>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">Running</span>
+                  </div>
+                  <div className="text-xs text-slate-600 space-y-1 font-mono">
+                    <p><strong>Instance ID:</strong> i-0a8bf92c431d1e</p>
+                    <p><strong>Tipo:</strong> t3.medium (2 vCPU, 4GB RAM)</p>
+                    <p><strong>IP Privada:</strong> 10.0.1.45</p>
+                    <p><strong>IP Pública:</strong> 54.210.12.88</p>
+                  </div>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Database className="w-5 h-5 text-indigo-600" />
+                      <h4 className="font-bold text-slate-800 text-sm">PostgreSQL-Prod (RDS)</h4>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">Available</span>
+                  </div>
+                  <div className="text-xs text-slate-600 space-y-1 font-mono">
+                    <p><strong>DB Identifier:</strong> rds-app-prod-db</p>
+                    <p><strong>Motor:</strong> PostgreSQL 15.3</p>
+                    <p><strong>Endpoint:</strong> rds-app.c3xyz.us-east-1.rds.amazonaws.com</p>
+                    <p><strong>Almacenamiento:</strong> 100 GB GP3</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <h3 className="font-bold text-slate-800 text-sm">Monitoreo de Carga y Rendimiento (CloudWatch)</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <p className="text-xs text-slate-400 font-bold uppercase">Uso de CPU Promedio</p>
+                    <p className="text-2xl font-bold text-slate-800 mt-1">24.5%</p>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <p className="text-xs text-slate-400 font-bold uppercase">Memoria Libre</p>
+                    <p className="text-2xl font-bold text-slate-800 mt-1">2.1 GB</p>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <p className="text-xs text-slate-400 font-bold uppercase">Latencia de Red</p>
+                    <p className="text-2xl font-bold text-slate-800 mt-1">18 ms</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 5. SEGURIDAD */}
+          {activeTab === 'seguridad' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">Centro de Seguridad & Gobernanza IAM</h2>
+                <p className="text-xs text-slate-500">Evaluación de riesgos, cumplimiento Well-Architected y permisos.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                    <h4 className="font-bold text-slate-800 text-sm">Controles de Seguridad Activos</h4>
+                  </div>
+                  <ul className="text-xs text-slate-600 space-y-2">
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                      MFA Habilitado en Usuarios Root y Admins.
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                      Encriptación AES-256 activa en S3 Buckets.
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                      Subredes Privadas para Base de Datos sin IP Pública.
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-amber-600" />
+                    <h4 className="font-bold text-slate-800 text-sm">Revisiones de Seguridad Pendientes</h4>
+                  </div>
+                  <ul className="text-xs text-slate-600 space-y-2">
+                    <li className="flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                      Grupo de Seguridad EC2 tiene puerto 22 SSH abierto a 0.0.0.0/0.
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                      Actualizar política IAM para limitar permisos de creación de usuarios.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 6. ARQUITECTURA RED */}
+          {activeTab === 'arquitectura' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">Arquitectura de Red Cloud (VPC)</h2>
+                <p className="text-xs text-slate-500">Diseño topológico de VPC, subredes, tablas de enrutamiento e Internet Gateway.</p>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                    <Network className="w-5 h-5 text-blue-600" />
+                    VPC Topología (vpc-0a123bc456)
+                  </h3>
+                  <span className="text-xs font-mono bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md">CIDR: 10.0.0.0/16</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                  <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-200/60 space-y-2">
+                    <span className="text-xs font-bold text-blue-800 uppercase">Subredes Públicas (Public Subnets)</span>
+                    <p className="text-xs text-slate-600">Conectadas al Internet Gateway para Frontend y Balanceadores de Carga.</p>
+                    <div className="text-[11px] font-mono text-slate-700 bg-white p-2 rounded border border-blue-100">
+                      • subnet-pub-1a: 10.0.1.0/24 (us-east-1a)<br/>
+                      • subnet-pub-1b: 10.0.2.0/24 (us-east-1b)
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-200/60 space-y-2">
+                    <span className="text-xs font-bold text-emerald-800 uppercase">Subredes Privadas (Private Subnets)</span>
+                    <p className="text-xs text-slate-600">Aisladas sin acceso directo a Internet para la capa de Base de Datos.</p>
+                    <div className="text-[11px] font-mono text-slate-700 bg-white p-2 rounded border border-emerald-100">
+                      • subnet-priv-1a: 10.0.3.0/24 (us-east-1a)<br/>
+                      • subnet-priv-1b: 10.0.4.0/24 (us-east-1b)
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 7. SERVICIOS AWS */}
+          {activeTab === 'servicios' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">Catálogo de Servicios AWS Utilizados</h2>
+                <p className="text-xs text-slate-500">Módulos integrados y acceso a la consola de administración.</p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  { name: 'Amazon EC2', desc: 'Instancias de Cómputo Elástico', cat: 'Compute', icon: Cpu },
+                  { name: 'Amazon S3', desc: 'Almacenamiento de Objetos Seguro', cat: 'Storage', icon: HardDrive },
+                  { name: 'Amazon RDS', desc: 'Base de Datos Relacional Administrada', cat: 'Database', icon: Database },
+                  { name: 'AWS IAM', desc: 'Gestión de Identidades y Accesos', cat: 'Security', icon: Lock },
+                  { name: 'Amazon VPC', desc: 'Redes Virtuales Privadas', cat: 'Networking', icon: Network },
+                  { name: 'Amazon CloudFront', desc: 'Red de Distribución de Contenido (CDN)', cat: 'Content Delivery', icon: Globe },
+                ].map((s, i) => {
+                  const SIcon = s.icon;
+                  return (
+                    <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start gap-3">
+                      <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl shrink-0">
+                        <SIcon className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold text-blue-600 uppercase">{s.cat}</span>
+                        <h4 className="font-bold text-slate-800 text-sm">{s.name}</h4>
+                        <p className="text-xs text-slate-500 mt-0.5">{s.desc}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
         </main>
       </div>
     </div>
