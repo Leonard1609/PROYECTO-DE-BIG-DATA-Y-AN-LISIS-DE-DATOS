@@ -5,6 +5,7 @@ import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { BigDataModulePage } from './modules/big-data/BigDataModulePage';
 import AzureModulePage from './modules/azure/AzureModulePage';
+import CloudOpsModulePage from './pages/CloudOpsModulePage';
 import { ProyectoDetallePage } from './pages/ProyectoDetallePage';
 
 function App() {
@@ -90,6 +91,18 @@ function App() {
         element={
           isAuthenticated ? (
             <AzureModulePage />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+
+      {/* Módulo Cloud Ops */}
+      <Route
+        path="/cloud-ops/*"
+        element={
+          isAuthenticated ? (
+            <CloudOpsModulePage />
           ) : (
             <Navigate to="/" replace />
           )
