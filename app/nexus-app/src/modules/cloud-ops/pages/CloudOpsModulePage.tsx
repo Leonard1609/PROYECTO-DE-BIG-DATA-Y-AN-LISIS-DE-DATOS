@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { DashboardPage } from '../modules/cloud-ops/pages/DashboardPage';
-import { PlanningPage } from '../modules/cloud-ops/pages/PlanningPage';
-import { CostsPage } from '../modules/cloud-ops/pages/CostsPage';
-import { InfrastructurePage } from '../modules/cloud-ops/pages/InfrastructurePage';
-import { SecurityPage } from '../modules/cloud-ops/pages/SecurityPage';
-import { NetworkPage } from '../modules/cloud-ops/pages/NetworkPage';
-import { ServicesPage } from '../modules/cloud-ops/pages/ServicesPage';
+import { DashboardPage } from './DashboardPage';
+import { PlanningPage } from './PlanningPage';
+import { CostsPage } from './CostsPage';
+import { InfrastructurePage } from './InfrastructurePage';
+import { SecurityPage } from './SecurityPage';
+import { NetworkPage } from './NetworkPage';
+import { ServicesPage } from './ServicesPage';
 
 import {
   LayoutDashboard,

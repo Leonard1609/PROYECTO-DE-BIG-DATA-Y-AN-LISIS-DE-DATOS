@@ -5,7 +5,7 @@ import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { BigDataModulePage } from './modules/big-data/BigDataModulePage';
 import AzureModulePage from './modules/azure/AzureModulePage';
-import CloudOpsModulePage from './pages/CloudOpsModulePage';
+import CloudOpsModulePage from './modules/cloud-ops/pages/CloudOpsModulePage';
 import { ProyectoDetallePage } from './pages/ProyectoDetallePage';
 
 function App() {
