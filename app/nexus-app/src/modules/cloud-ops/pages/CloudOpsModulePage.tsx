@@ -22,8 +22,9 @@ import { InfrastructurePage } from './InfrastructurePage';
 import { SecurityPage } from './SecurityPage';
 import { NetworkPage } from './NetworkPage';
 import { ServicesPage } from './ServicesPage';
+import { CloudOpsProvider } from '../context/CloudOpsContext';
 
-export const CloudOpsModulePage: React.FC = () => {
+const CloudOpsModuleContent: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<string>('servicios');
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
@@ -62,6 +63,63 @@ export const CloudOpsModulePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col md:flex-row font-sans">
+      {/* Header en Pantallas Móviles */}
+      <div className="md:hidden bg-[#0f172a] text-white p-4 flex items-center justify-between border-b border-slate-800 z-30">
+        <div className="flex items-center gap-3">
+          <div className="p-1.5 bg-blue-600/20 text-blue-400 rounded-lg">
+            <Cloud className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="font-bold text-sm leading-tight">CloudOps Dashboard</h2>
+            <p className="text-[10px] text-slate-400">AWS Cloud Solutions</p>
+          </div>
+        </div>
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+          aria-label="Menú de navegación"
+        >
+          {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </div>
+
+      {/* Menú Desplegable Móvil */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-[#0f172a] border-b border-slate-800 p-3 space-y-1 z-30">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  isActive
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                }`}
+              >
+                <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                <span className="truncate">{item.label}</span>
+              </button>
+            );
+          })}
+          <div className="pt-2 border-t border-slate-800">
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
+            >
+              <ArrowLeft className="w-4 h-4 shrink-0" />
+              <span>Regresar al Dashboard</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Sidebar Escritorio */}
       <aside
         className={`hidden md:flex flex-col bg-[#0f172a] text-slate-300 border-r border-slate-800 transition-all duration-300 relative z-20 ${
           isCollapsed ? 'w-20' : 'w-64'
@@ -152,6 +210,14 @@ export const CloudOpsModulePage: React.FC = () => {
         </main>
       </div>
     </div>
+  );
+};
+
+export const CloudOpsModulePage: React.FC = () => {
+  return (
+    <CloudOpsProvider>
+      <CloudOpsModuleContent />
+    </CloudOpsProvider>
   );
 };
 

@@ -1,12 +1,14 @@
 import React from 'react';
-import { INITIAL_SERVICES, INITIAL_COSTS, SECURITY_METRICS } from '../data/awsServicesData';
+import { INITIAL_SERVICES, SECURITY_METRICS } from '../data/awsServicesData';
+import { useCloudOps } from '../context/CloudOpsContext';
 import { StatCard } from '../components/StatCard';
 import { SecurityCard } from '../components/SecurityCard';
 import { ServiceCard } from '../components/ServiceCard';
 import { Server, DollarSign, ShieldCheck, Globe, TrendingUp } from 'lucide-react';
 
 export const DashboardPage: React.FC = () => {
-  const totalMonthlyCost = INITIAL_COSTS.reduce((acc, item) => acc + item.monthlyCost, 0);
+  const { costs } = useCloudOps();
+  const totalMonthlyCost = costs.reduce((acc, item) => acc + item.monthlyCost, 0);
   const activeServicesCount = INITIAL_SERVICES.filter(s => s.status === 'En uso').length;
   const warningsCount = SECURITY_METRICS.filter(m => m.status === 'warning').length;
 
@@ -65,8 +67,8 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           <div className="space-y-3 pt-2">
-            {INITIAL_COSTS.map((item) => {
-              const percentage = Math.round((item.monthlyCost / totalMonthlyCost) * 100);
+            {costs.map((item) => {
+              const percentage = totalMonthlyCost > 0 ? Math.round((item.monthlyCost / totalMonthlyCost) * 100) : 0;
               return (
                 <div key={item.id} className="space-y-1">
                   <div className="flex justify-between text-xs font-medium">

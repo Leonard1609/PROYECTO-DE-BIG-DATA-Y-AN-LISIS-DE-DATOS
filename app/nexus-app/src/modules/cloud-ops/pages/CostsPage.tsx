@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { INITIAL_COSTS } from '../data/awsServicesData';
+import { useCloudOps } from '../context/CloudOpsContext';
 import type { CostEstimateItem } from '../types/cloud';
-import { DollarSign, Calculator, Plus, Trash2 } from 'lucide-react';
+import { DollarSign, Calculator, Plus, Trash2, PieChart } from 'lucide-react';
 
 export const CostsPage: React.FC = () => {
-  const [costs, setCosts] = useState<CostEstimateItem[]>(INITIAL_COSTS);
+  const { costs, addCostItem, deleteCostItem } = useCloudOps();
   const [newItem, setNewItem] = useState({
     serviceName: '',
     quantity: 1,
@@ -19,8 +19,7 @@ export const CostsPage: React.FC = () => {
     if (!newItem.serviceName) return;
 
     const monthlyCost = newItem.quantity * 720 * newItem.unitCostPerHour;
-    const item: CostEstimateItem = {
-      id: `c-${Date.now()}`,
+    const item: Omit<CostEstimateItem, 'id'> = {
       serviceId: 'custom',
       serviceName: newItem.serviceName,
       quantity: Number(newItem.quantity),
@@ -30,12 +29,12 @@ export const CostsPage: React.FC = () => {
       annualCost: monthlyCost * 12,
     };
 
-    setCosts([...costs, item]);
+    addCostItem(item);
     setNewItem({ serviceName: '', quantity: 1, unitCostPerHour: 0.05 });
   };
 
   const handleDelete = (id: string) => {
-    setCosts(costs.filter((c) => c.id !== id));
+    deleteCostItem(id);
   };
 
   return (
@@ -102,6 +101,33 @@ export const CostsPage: React.FC = () => {
             Calcular e Insertar
           </button>
         </form>
+      </div>
+
+      {/* Distribución Porcentual del Presupuesto */}
+      <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+          <PieChart className="w-4 h-4 text-blue-600" />
+          Distribución Porcentual del Presupuesto
+        </h3>
+        <div className="space-y-3">
+          {costs.map((item) => {
+            const percentage = totalMonthly > 0 ? Math.round((item.monthlyCost / totalMonthly) * 100) : 0;
+            return (
+              <div key={item.id} className="space-y-1">
+                <div className="flex justify-between text-xs font-medium">
+                  <span className="text-slate-700">{item.serviceName}</span>
+                  <span className="text-slate-800 font-bold">${item.monthlyCost.toFixed(2)} ({percentage}%)</span>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${percentage}%` }}
+                  ></div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Tabla de Detalle de Costos */}

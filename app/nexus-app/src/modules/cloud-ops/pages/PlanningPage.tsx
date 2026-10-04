@@ -1,22 +1,9 @@
 import React, { useState } from 'react';
-import type { CloudProposal } from '../types/cloud';
+import { useCloudOps } from '../context/CloudOpsContext';
 import { ClipboardList, PlusCircle, CheckCircle2, Server, Globe, Users } from 'lucide-react';
 
 export const PlanningPage: React.FC = () => {
-  const [proposals, setProposals] = useState<CloudProposal[]>([
-    {
-      id: 'prop-1',
-      solutionName: 'E-Commerce Enterprise AWS',
-      appType: 'Web & API Microservicios',
-      description: 'Migración de arquitectura monolítica a contenedores escalables con base de datos administrada.',
-      selectedRegion: 'us-east-1 (Norte de Virginia)',
-      estimatedUsers: 50000,
-      availabilityLevel: '99.99%',
-      selectedServices: ['Amazon EC2', 'Amazon RDS', 'Amazon S3', 'Amazon CloudFront'],
-      migrationGoal: 'Mejorar la disponibilidad y reducir latencia en hora pico.',
-      createdAt: '2026-10-01',
-    },
-  ]);
+  const { proposals, addProposal } = useCloudOps();
 
   const [form, setForm] = useState({
     solutionName: '',
@@ -33,8 +20,7 @@ export const PlanningPage: React.FC = () => {
     e.preventDefault();
     if (!form.solutionName || !form.description) return;
 
-    const newProposal: CloudProposal = {
-      id: `prop-${Date.now()}`,
+    addProposal({
       solutionName: form.solutionName,
       appType: form.appType,
       description: form.description,
@@ -43,10 +29,8 @@ export const PlanningPage: React.FC = () => {
       availabilityLevel: form.availabilityLevel,
       selectedServices: form.selectedServices.split(',').map((s) => s.trim()),
       migrationGoal: form.migrationGoal,
-      createdAt: new Date().toISOString().split('T')[0],
-    };
+    });
 
-    setProposals([newProposal, ...proposals]);
     setForm({
       solutionName: '',
       appType: 'Web Application',
