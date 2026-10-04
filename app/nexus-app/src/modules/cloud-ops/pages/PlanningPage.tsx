@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Para redireccionar automáticamente al Dashboard
 import { useCloudOps } from '../context/CloudOpsContext';
 import { ClipboardList, PlusCircle, CheckCircle2, Server, Globe, Users } from 'lucide-react';
 
 export const PlanningPage: React.FC = () => {
   const { proposals, addProposal } = useCloudOps();
+  const navigate = useNavigate();
 
   const [form, setForm] = useState({
     solutionName: '',
@@ -31,16 +33,8 @@ export const PlanningPage: React.FC = () => {
       migrationGoal: form.migrationGoal,
     });
 
-    setForm({
-      solutionName: '',
-      appType: 'Web Application',
-      description: '',
-      selectedRegion: 'us-east-1 (Norte de Virginia)',
-      estimatedUsers: 10000,
-      availabilityLevel: '99.9%',
-      selectedServices: 'Amazon EC2, Amazon S3, Amazon RDS',
-      migrationGoal: '',
-    });
+    // Redirigir al Dashboard Central para mostrar la sincronización
+    navigate('/dashboard');
   };
 
   return (

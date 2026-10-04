@@ -4,19 +4,43 @@ import { useCloudOps } from '../context/CloudOpsContext';
 import { StatCard } from '../components/StatCard';
 import { SecurityCard } from '../components/SecurityCard';
 import { ServiceCard } from '../components/ServiceCard';
-import { Server, DollarSign, ShieldCheck, Globe, TrendingUp } from 'lucide-react';
+import { Server, DollarSign, ShieldCheck, Globe, TrendingUp, RotateCcw, FileText } from 'lucide-react';
 
 export const DashboardPage: React.FC = () => {
-  const { costs } = useCloudOps();
+  const { costs, proposals, clearDashboard } = useCloudOps();
+  const latestProposal = proposals[0];
+
   const totalMonthlyCost = costs.reduce((acc, item) => acc + item.monthlyCost, 0);
-  const activeServicesCount = INITIAL_SERVICES.filter(s => s.status === 'En uso').length;
-  const warningsCount = SECURITY_METRICS.filter(m => m.status === 'warning').length;
+  const activeServicesCount = latestProposal ? latestProposal.selectedServices.length : 0;
+  const warningsCount = SECURITY_METRICS.filter((m) => m.status === 'warning').length;
+
+  const handleExportPDF = () => {
+    window.print(); // Solución rápida e integrada para exportar/imprimir el Dashboard en PDF
+  };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-800">Dashboard de Control Cloud</h2>
-        <p className="text-sm text-slate-500">Resumen general de la arquitectura y estado de la solución AWS.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800">Dashboard de Control Cloud</h2>
+          <p className="text-sm text-slate-500">Resumen general de la arquitectura y estado de la solución AWS.</p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={clearDashboard}
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition-all"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Limpiar Datos
+          </button>
+          <button
+            onClick={handleExportPDF}
+            className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg transition-all shadow-sm"
+          >
+            <FileText className="w-4 h-4" />
+            Reporte PDF
+          </button>
+        </div>
       </div>
 
       {/* Indicadores Principales */}
@@ -24,15 +48,15 @@ export const DashboardPage: React.FC = () => {
         <StatCard
           title="Servicios Activos"
           value={`${activeServicesCount} / ${INITIAL_SERVICES.length}`}
-          subtitle="Desplegados en producción"
+          subtitle={latestProposal ? latestProposal.solutionName : 'Sin propuesta registrada'}
           icon={Server}
           iconBgColor="bg-blue-50"
           iconTextColor="text-blue-600"
         />
         <StatCard
           title="Región Principal"
-          value="us-east-1"
-          subtitle="N. Virginia (EE.UU.)"
+          value={latestProposal ? latestProposal.selectedRegion.split(' ')[0] : 'Sin asignar'}
+          subtitle={latestProposal ? latestProposal.selectedRegion : 'Por favor configure en Planificación'}
           icon={Globe}
           iconBgColor="bg-indigo-50"
           iconTextColor="text-indigo-600"
@@ -55,7 +79,7 @@ export const DashboardPage: React.FC = () => {
         />
       </div>
 
-      {/* Distribución de Costos e Indicadores Visuales */}
+      {/* Distribución de Costos */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
@@ -67,23 +91,27 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           <div className="space-y-3 pt-2">
-            {costs.map((item) => {
-              const percentage = totalMonthlyCost > 0 ? Math.round((item.monthlyCost / totalMonthlyCost) * 100) : 0;
-              return (
-                <div key={item.id} className="space-y-1">
-                  <div className="flex justify-between text-xs font-medium">
-                    <span className="text-slate-700">{item.serviceName}</span>
-                    <span className="text-slate-800 font-bold">${item.monthlyCost.toFixed(2)} ({percentage}%)</span>
+            {costs.length === 0 ? (
+              <p className="text-xs text-slate-400 italic py-4 text-center">No hay datos registrados. Registre una propuesta en Planificación Cloud.</p>
+            ) : (
+              costs.map((item) => {
+                const percentage = totalMonthlyCost > 0 ? Math.round((item.monthlyCost / totalMonthlyCost) * 100) : 0;
+                return (
+                  <div key={item.id} className="space-y-1">
+                    <div className="flex justify-between text-xs font-medium">
+                      <span className="text-slate-700">{item.serviceName}</span>
+                      <span className="text-slate-800 font-bold">${item.monthlyCost.toFixed(2)} ({percentage}%)</span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                      <div
+                        className="bg-blue-600 h-2.5 rounded-full transition-all duration-500"
+                        style={{ width: `${percentage}%` }}
+                      ></div>
+                    </div>
                   </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                    <div
-                      className="bg-blue-600 h-2.5 rounded-full transition-all duration-500"
-                      style={{ width: `${percentage}%` }}
-                    ></div>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -92,16 +120,6 @@ export const DashboardPage: React.FC = () => {
           <h3 className="font-bold text-slate-800 text-base">Alertas y Seguridad</h3>
           {SECURITY_METRICS.slice(0, 2).map((metric) => (
             <SecurityCard key={metric.id} metric={metric} />
-          ))}
-        </div>
-      </div>
-
-      {/* Vista rápida de Servicios */}
-      <div className="space-y-3">
-        <h3 className="font-bold text-slate-800 text-base">Servicios Destacados</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {INITIAL_SERVICES.slice(0, 3).map((service) => (
-            <ServiceCard key={service.id} service={service} />
           ))}
         </div>
       </div>

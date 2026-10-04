@@ -1,15 +1,62 @@
 import React from 'react';
 import { INITIAL_REGIONS } from '../data/awsServicesData';
 import { RegionCard } from '../components/RegionCard';
-import { Globe2, Server, ShieldCheck } from 'lucide-react';
+import { useCloudOps } from '../context/CloudOpsContext';
+import { Globe2, Server, ShieldCheck, AlertTriangle, ArrowRight, Activity } from 'lucide-react';
 
 export const InfrastructurePage: React.FC = () => {
+  const { isFailoverActive, toggleFailover } = useCloudOps();
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-800">Infraestructura Global AWS</h2>
-        <p className="text-sm text-slate-500">Visualización de Regiones, Zonas de Disponibilidad y Ubicaciones Edge.</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800">Infraestructura Global AWS</h2>
+          <p className="text-sm text-slate-500">Visualización de Regiones, Zonas de Disponibilidad y Failover.</p>
+        </div>
+        <button
+          onClick={toggleFailover}
+          className={`px-4 py-2 rounded-lg font-bold text-xs flex items-center gap-2 transition-all ${
+            isFailoverActive
+              ? 'bg-amber-600 hover:bg-amber-700 text-white'
+              : 'bg-red-600 hover:bg-red-700 text-white'
+          }`}
+        >
+          <AlertTriangle className="w-4 h-4" />
+          {isFailoverActive ? 'Restablecer Infraestructura' : 'Simular Falla (Failover)'}
+        </button>
       </div>
+
+      {/* Banner de Lógica Failover */}
+      {isFailoverActive && (
+        <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl space-y-3">
+          <div className="flex items-center gap-2 text-amber-800 font-bold text-sm">
+            <Activity className="w-5 h-5 text-amber-600 animate-pulse" />
+            <span>Alerta de Conmutación por Error (Failover Activado)</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-white p-3 rounded-lg border border-amber-100 text-xs">
+            <div>
+              <span className="text-slate-400 block font-semibold">Región Caída:</span>
+              <span className="font-bold text-red-600">sa-east-1 (São Paulo)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <ArrowRight className="w-4 h-4 text-slate-400 hidden md:block" />
+              <div>
+                <span className="text-slate-400 block font-semibold">Salto a Región Destino:</span>
+                <span className="font-bold text-emerald-600">us-east-1 (N. Virginia)</span>
+              </div>
+            </div>
+            <div>
+              <span className="text-slate-400 block font-semibold">Impacto en Latencia y Costo:</span>
+              <span className="font-semibold text-slate-700">+18ms | Diferencial Costo: +5%</span>
+            </div>
+            <div>
+              <span className="text-slate-400 block font-semibold">Trazabilidad de Estado:</span>
+              <span className="font-bold text-blue-600">Transacción Segura (100% Sincronizado)</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-3">

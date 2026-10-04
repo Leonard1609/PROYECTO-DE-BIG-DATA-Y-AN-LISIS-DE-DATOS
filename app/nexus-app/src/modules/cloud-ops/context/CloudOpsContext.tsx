@@ -5,9 +5,12 @@ import type { CostEstimateItem, CloudProposal } from '../types/cloud';
 interface CloudOpsContextType {
   costs: CostEstimateItem[];
   proposals: CloudProposal[];
+  isFailoverActive: boolean;
   addCostItem: (item: Omit<CostEstimateItem, 'id'>) => void;
   deleteCostItem: (id: string) => void;
   addProposal: (proposal: Omit<CloudProposal, 'id' | 'createdAt'>) => void;
+  clearDashboard: () => void;
+  toggleFailover: () => void;
 }
 
 const CloudOpsContext = createContext<CloudOpsContextType | undefined>(undefined);
@@ -20,21 +23,25 @@ export const CloudOpsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const [proposals, setProposals] = useState<CloudProposal[]>(() => {
     const saved = localStorage.getItem('cloudops_proposals');
-    return saved ? JSON.parse(saved) : [
-      {
-        id: 'prop-1',
-        solutionName: 'E-Commerce Enterprise AWS',
-        appType: 'Web & API Microservicios',
-        description: 'Migración de arquitectura monolítica a contenedores escalables.',
-        selectedRegion: 'us-east-1 (Norte de Virginia)',
-        estimatedUsers: 50000,
-        availabilityLevel: '99.99%',
-        selectedServices: ['Amazon EC2', 'Amazon RDS', 'Amazon S3', 'Amazon CloudFront'],
-        migrationGoal: 'Mejorar disponibilidad y reducir latencia.',
-        createdAt: '2026-10-01',
-      }
-    ];
+    return saved
+      ? JSON.parse(saved)
+      : [
+          {
+            id: 'prop-1',
+            solutionName: 'E-Commerce Enterprise AWS',
+            appType: 'Web & API Microservicios',
+            description: 'Migración de arquitectura monolítica a contenedores escalables.',
+            selectedRegion: 'us-east-1 (Norte de Virginia)',
+            estimatedUsers: 50000,
+            availabilityLevel: '99.99%',
+            selectedServices: ['Amazon EC2', 'Amazon RDS', 'Amazon S3', 'Amazon CloudFront'],
+            migrationGoal: 'Mejorar disponibilidad y reducir latencia.',
+            createdAt: '2026-10-01',
+          },
+        ];
   });
+
+  const [isFailoverActive, setIsFailoverActive] = useState<boolean>(false);
 
   useEffect(() => {
     localStorage.setItem('cloudops_costs', JSON.stringify(costs));
@@ -65,8 +72,31 @@ export const CloudOpsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setProposals((prev) => [newProp, ...prev]);
   };
 
+  const clearDashboard = () => {
+    setCosts([]);
+    setProposals([]);
+    setIsFailoverActive(false);
+    localStorage.removeItem('cloudops_costs');
+    localStorage.removeItem('cloudops_proposals');
+  };
+
+  const toggleFailover = () => {
+    setIsFailoverActive((prev) => !prev);
+  };
+
   return (
-    <CloudOpsContext.Provider value={{ costs, proposals, addCostItem, deleteCostItem, addProposal }}>
+    <CloudOpsContext.Provider
+      value={{
+        costs,
+        proposals,
+        isFailoverActive,
+        addCostItem,
+        deleteCostItem,
+        addProposal,
+        clearDashboard,
+        toggleFailover,
+      }}
+    >
       {children}
     </CloudOpsContext.Provider>
   );
