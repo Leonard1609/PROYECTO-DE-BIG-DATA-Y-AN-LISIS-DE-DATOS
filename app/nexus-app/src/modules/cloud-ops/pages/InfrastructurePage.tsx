@@ -1,11 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { INITIAL_REGIONS } from '../data/awsServicesData';
 import { RegionCard } from '../components/RegionCard';
 import { useCloudOps } from '../context/CloudOpsContext';
 import { Globe2, Server, ShieldCheck, AlertTriangle, ArrowRight, Activity } from 'lucide-react';
+// 1. Importar el mapa y los tipos/datos mock
+import { GlobalMap } from '../components/GlobalMap';
+import { MOCK_REGIONS, MOCK_CONNECTIONS } from '../data/mockInfrastructure';
+import type { RegionNode } from '../types/infrastructure';
 
 export const InfrastructurePage: React.FC = () => {
   const { isFailoverActive, toggleFailover } = useCloudOps();
+  const [selectedRegion, setSelectedRegion] = useState<RegionNode | null>(null);
 
   return (
     <div className="space-y-6">
@@ -88,6 +93,16 @@ export const InfrastructurePage: React.FC = () => {
             <p className="text-xs text-slate-500">Caché de baja latencia con CloudFront</p>
           </div>
         </div>
+      </div>
+
+      {/* 2. Sección del Mapa Global Interactivo */}
+      <div className="space-y-3">
+        <h3 className="font-bold text-slate-800 text-base">Mapa de Red y Resiliencia Multirregión</h3>
+        <GlobalMap
+          regions={MOCK_REGIONS}
+          connections={MOCK_CONNECTIONS}
+          onSelectRegion={(region) => setSelectedRegion(region)}
+        />
       </div>
 
       <div className="space-y-3">

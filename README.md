@@ -58,3 +58,5 @@ Mapeo de objetos JSON para simular respuestas de API (cuentasActivas, invitacion
 Preparación de controladores de eventos (handleAprobarActivar, handleSendInvite, handleEditarProyectoCuenta) capaces de alternar entre almacenamiento en memoria/local y llamadas fetch a endpoints REST (API_URL).
 
 Enrutamiento Dinámico por Tipo de Proyecto: Matriz de decisiones que evalúa variables como id, titulo o codigo_nrc para redirigir automáticamente al módulo correspondiente (Big Data, Azure o CloudOps).
+
+-- (MAPAS) npm install react-simple-maps d3-geo
