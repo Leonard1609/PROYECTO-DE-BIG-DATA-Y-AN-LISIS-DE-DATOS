@@ -335,52 +335,49 @@ h1, h2, .font-display { font-family: Syne, Outfit, sans-serif; }
   margin-top: 0.25rem;
 }
 
+/* Reemplazar al final de index.css */
 @media print {
   @page {
-    size: A4;
-    margin: 14mm 12mm;
+    size: A4 landscape;
+    margin: 10mm;
   }
 
-  body {
-    background: #fff !important;
-    color: #0f172a !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  body * {
-    visibility: hidden !important;
-  }
-
-  #bigdata-report,
-  #bigdata-report * {
+  /* Mostrar todo el contenido por defecto */
+  *,
+  *::before,
+  *::after {
     visibility: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
-  #bigdata-report {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    padding: 0 !important;
-    background: #fff !important;
-  }
-
+  /* Ocultar elementos de navegación y botones */
+  aside,
+  nav,
+  button,
   .no-print {
     display: none !important;
   }
 
-  .report-page-break {
-    break-before: page;
-    page-break-before: always;
+  /* Desbloquear scroll y alturas de la vista */
+  html,
+  body,
+  #root,
+  main,
+  div {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    position: static !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
   }
 
+  /* Evitar saltos de página dentro de tarjetas */
+  .nx-card,
   .report-section {
     break-inside: avoid;
     page-break-inside: avoid;
-  }
-
-  .report-charts .report-chart-box {
-    break-inside: avoid;
+    box-shadow: none !important;
   }
 }

@@ -1,16 +1,13 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
-// Importaciones con rutas y llaves correctas según tus archivos
+// Importaciones con rutas y llaves correctas
 import { authStorage } from './utils/authStorage';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
-
-// Importación del Dashboard de CloudOps (ajusta el nombre interno si en su archivo no se llama DashboardPage)
 import { DashboardPage as CloudOpsDashboard } from './modules/cloud-ops/pages/DashboardPage';
 
 export default function App() {
-  // Inicialización síncrona: evalúa la sesión guardada en localStorage antes del primer renderizado
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     const session = authStorage.get();
     return !!session?.email;
@@ -21,7 +18,6 @@ export default function App() {
     return session?.email || '';
   });
 
-  // Re-evaluación por seguridad al montar el componente
   useEffect(() => {
     const session = authStorage.get();
     if (session?.email) {
@@ -43,50 +39,48 @@ export default function App() {
   };
 
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Ruta raíz / Login */}
-        <Route
-          path="/"
-          element={
-            isAuthenticated ? (
-              <Navigate to="/dashboard" replace />
-            ) : (
-              <LoginPage onLoginSuccess={handleLogin} />
-            )
-          }
-        />
+    <Routes>
+      {/* Ruta raíz / Login */}
+      <Route
+        path="/"
+        element={
+          isAuthenticated ? (
+            <Navigate to="/dashboard" replace />
+          ) : (
+            <LoginPage onLoginSuccess={handleLogin} />
+          )
+        }
+      />
 
-        {/* Dashboard principal */}
-        <Route
-          path="/dashboard"
-          element={
-            isAuthenticated ? (
-              <DashboardPage userEmail={userEmail} onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
+      {/* Dashboard principal */}
+      <Route
+        path="/dashboard"
+        element={
+          isAuthenticated ? (
+            <DashboardPage userEmail={userEmail} onLogout={handleLogout} />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
 
-        {/* Módulo CloudOps */}
-        <Route
-          path="/cloud-ops"
-          element={
-            isAuthenticated ? (
-              <CloudOpsDashboard />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
+      {/* Módulo CloudOps */}
+      <Route
+        path="/cloud-ops"
+        element={
+          isAuthenticated ? (
+            <CloudOpsDashboard />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
 
-        {/* Redirección para cualquier otra ruta no encontrada */}
-        <Route
-          path="*"
-          element={<Navigate to={isAuthenticated ? '/dashboard' : '/'} replace />}
-        />
-      </Routes>
-    </BrowserRouter>
+      {/* Redirección por defecto */}
+      <Route
+        path="*"
+        element={<Navigate to={isAuthenticated ? '/dashboard' : '/'} replace />}
+      />
+    </Routes>
   );
 }
