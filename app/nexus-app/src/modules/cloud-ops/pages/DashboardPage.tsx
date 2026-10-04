@@ -4,6 +4,7 @@ import { useCloudOps } from '../context/CloudOpsContext';
 import { StatCard } from '../components/StatCard';
 import { SecurityCard } from '../components/SecurityCard';
 import { ServiceCard } from '../components/ServiceCard';
+import { Printer /* , otros íconos que uses */ } from 'lucide-react';
 import { Server, DollarSign, ShieldCheck, Globe, TrendingUp, RotateCcw, FileText } from 'lucide-react';
 
 export const DashboardPage: React.FC = () => {
@@ -34,12 +35,12 @@ export const DashboardPage: React.FC = () => {
             Limpiar Datos
           </button>
           <button
-            onClick={handleExportPDF}
-            className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg transition-all shadow-sm"
-          >
-            <FileText className="w-4 h-4" />
-            Reporte PDF
-          </button>
+  onClick={() => window.print()}
+  className="no-print bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-semibold transition-all"
+>
+  <Printer className="w-4 h-4" />
+  Reporte PDF
+</button>
         </div>
       </div>
 

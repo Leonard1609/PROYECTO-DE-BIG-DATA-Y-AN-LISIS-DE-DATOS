@@ -11,6 +11,7 @@ import { ProyectoDetallePage } from './pages/ProyectoDetallePage';
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [userEmail, setUserEmail] = useState<string>('');
+  
 
   // 1. AUTO-LOGIN al cargar la aplicación desde authStorage
   useEffect(() => {

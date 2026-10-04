@@ -182,3 +182,53 @@
     border-right-color: var(--border);
   }
 }
+
+/* ==========================================================================
+   Configuración de Impresión / Exportación a PDF
+   ========================================================================== */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Ocultar barra lateral, navegación, menús y botones */
+  aside,
+  nav,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Permitir visibilidad global del contenido */
+  body * {
+    visibility: visible !important;
+  }
+
+  /* Resetear contenedores con scroll para permitir impresión completa */
+  html,
+  body,
+  #root,
+  main,
+  div {
+    position: static !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  /* Evitar que las tarjetas se corten entre páginas */
+  .card,
+  div[class*="bg-"] {
+    break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #e5e7eb !important;
+  }
+}
