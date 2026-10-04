@@ -1,19 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+
+// Importaciones con rutas y llaves correctas según tus archivos
 import { authStorage } from './utils/authStorage';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
-import { BigDataModulePage } from './modules/big-data/BigDataModulePage';
-import AzureModulePage from './modules/azure/AzureModulePage';
-import CloudOpsModulePage from './modules/cloud-ops/pages/CloudOpsModulePage';
-import { ProyectoDetallePage } from './pages/ProyectoDetallePage';
 
-function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [userEmail, setUserEmail] = useState<string>('');
-  
+// Importación del Dashboard de CloudOps (ajusta el nombre interno si en su archivo no se llama DashboardPage)
+import { DashboardPage as CloudOpsDashboard } from './modules/cloud-ops/pages/DashboardPage';
 
-  // 1. AUTO-LOGIN al cargar la aplicación desde authStorage
+export default function App() {
+  // Inicialización síncrona: evalúa la sesión guardada en localStorage antes del primer renderizado
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    const session = authStorage.get();
+    return !!session?.email;
+  });
+
+  const [userEmail, setUserEmail] = useState<string>(() => {
+    const session = authStorage.get();
+    return session?.email || '';
+  });
+
+  // Re-evaluación por seguridad al montar el componente
   useEffect(() => {
     const session = authStorage.get();
     if (session?.email) {
@@ -22,14 +30,12 @@ function App() {
     }
   }, []);
 
-  // 2. MANEJAR LOGIN EXITOSO
-  const handleLoginSuccess = (email: string, usuarioData?: any) => {
-    authStorage.set(email, usuarioData);
+  const handleLogin = (email: string) => {
+    authStorage.set(email);
     setUserEmail(email);
     setIsAuthenticated(true);
   };
 
-  // 3. MANEJAR CERRAR SESIÓN
   const handleLogout = () => {
     authStorage.clear();
     setIsAuthenticated(false);
@@ -37,83 +43,50 @@ function App() {
   };
 
   return (
-    <Routes>
-      {/* Ruta de Login */}
-      <Route
-        path="/"
-        element={
-          isAuthenticated ? (
-            <Navigate to="/dashboard" replace />
-          ) : (
-            <LoginPage onLoginSuccess={handleLoginSuccess} />
-          )
-        }
-      />
+    <BrowserRouter>
+      <Routes>
+        {/* Ruta raíz / Login */}
+        <Route
+          path="/"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <LoginPage onLoginSuccess={handleLogin} />
+            )
+          }
+        />
 
-      {/* Dashboard Principal */}
-      <Route
-        path="/dashboard"
-        element={
-          isAuthenticated ? (
-            <DashboardPage userEmail={userEmail} onLogout={handleLogout} />
-          ) : (
-            <Navigate to="/" replace />
-          )
-        }
-      />
+        {/* Dashboard principal */}
+        <Route
+          path="/dashboard"
+          element={
+            isAuthenticated ? (
+              <DashboardPage userEmail={userEmail} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
 
-      {/* Detalle Dinámico de Proyecto */}
-      <Route
-        path="/proyecto/:id"
-        element={
-          isAuthenticated ? (
-            <ProyectoDetallePage />
-          ) : (
-            <Navigate to="/" replace />
-          )
-        }
-      />
+        {/* Módulo CloudOps */}
+        <Route
+          path="/cloud-ops"
+          element={
+            isAuthenticated ? (
+              <CloudOpsDashboard />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
 
-      {/* Módulo Big Data Analytics */}
-      <Route
-        path="/big-data/*"
-        element={
-          isAuthenticated ? (
-            <BigDataModulePage />
-          ) : (
-            <Navigate to="/" replace />
-          )
-        }
-      />
-
-      {/* Módulo Azure */}
-      <Route
-        path="/azure/*"
-        element={
-          isAuthenticated ? (
-            <AzureModulePage />
-          ) : (
-            <Navigate to="/" replace />
-          )
-        }
-      />
-
-      {/* Módulo Cloud Ops */}
-      <Route
-        path="/cloud-ops/*"
-        element={
-          isAuthenticated ? (
-            <CloudOpsModulePage />
-          ) : (
-            <Navigate to="/" replace />
-          )
-        }
-      />
-
-      {/* Fallback general */}
-      <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/"} replace />} />
-    </Routes>
+        {/* Redirección para cualquier otra ruta no encontrada */}
+        <Route
+          path="*"
+          element={<Navigate to={isAuthenticated ? '/dashboard' : '/'} replace />}
+        />
+      </Routes>
+    </BrowserRouter>
   );
 }
-
-export default App;
