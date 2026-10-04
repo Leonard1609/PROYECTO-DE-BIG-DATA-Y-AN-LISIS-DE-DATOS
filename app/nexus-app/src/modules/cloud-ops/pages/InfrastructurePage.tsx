@@ -1,16 +1,29 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { INITIAL_REGIONS } from '../data/awsServicesData';
 import { RegionCard } from '../components/RegionCard';
 import { useCloudOps } from '../context/CloudOpsContext';
 import { Globe2, Server, ShieldCheck, AlertTriangle, ArrowRight, Activity } from 'lucide-react';
-// 1. Importar el mapa y los tipos/datos mock
 import { GlobalMap } from '../components/GlobalMap';
 import { MOCK_REGIONS, MOCK_CONNECTIONS } from '../data/mockInfrastructure';
-import type { RegionNode } from '../types/infrastructure';
 
 export const InfrastructurePage: React.FC = () => {
   const { isFailoverActive, toggleFailover } = useCloudOps();
-  const [selectedRegion, setSelectedRegion] = useState<RegionNode | null>(null);
+
+  // Calcular el estado dinámico del mapa según el botón de Failover
+  const currentRegions = MOCK_REGIONS.map((region) => {
+    if (isFailoverActive) {
+      if (region.id === 'sa-east-1') return { ...region, status: 'down' as const };
+      if (region.id === 'us-east-1') return { ...region, status: 'failover' as const, latencyMs: region.latencyMs + 18 };
+    }
+    return region;
+  });
+
+  const currentConnections = MOCK_CONNECTIONS.map((conn) => {
+    if (isFailoverActive && conn.fromRegionId === 'us-east-1' && conn.toRegionId === 'sa-east-1') {
+      return { ...conn, status: 'active_failover' as const };
+    }
+    return conn;
+  });
 
   return (
     <div className="space-y-6">
@@ -32,7 +45,7 @@ export const InfrastructurePage: React.FC = () => {
         </button>
       </div>
 
-      {/* Banner de Lógica Failover */}
+      {/* Banner de Failover */}
       {isFailoverActive && (
         <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl space-y-3">
           <div className="flex items-center gap-2 text-amber-800 font-bold text-sm">
@@ -63,6 +76,7 @@ export const InfrastructurePage: React.FC = () => {
         </div>
       )}
 
+      {/* Tarjetas Superiores */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-3">
           <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
@@ -95,13 +109,12 @@ export const InfrastructurePage: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Sección del Mapa Global Interactivo */}
+      {/* Mapa Interactivo con datos reactivos */}
       <div className="space-y-3">
         <h3 className="font-bold text-slate-800 text-base">Mapa de Red y Resiliencia Multirregión</h3>
         <GlobalMap
-          regions={MOCK_REGIONS}
-          connections={MOCK_CONNECTIONS}
-          onSelectRegion={(region) => setSelectedRegion(region)}
+          regions={currentRegions}
+          connections={currentConnections}
         />
       </div>
 
