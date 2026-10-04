@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Menu, X } from 'lucide-react';
 import { Sidebar } from '../shared/components/dashboard/Sidebar';
 import { RightSidebar } from '../shared/components/dashboard/RightSidebar';
 import { InviteModal } from '../shared/components/dashboard/InviteModal';
@@ -20,6 +20,7 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'perfil' | 'proyectos' | 'mensajes' | 'accesos'>('accesos');
   const [showInviteModal, setShowInviteModal] = useState<boolean>(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
   const [cuentasActivas, setCuentasActivas] = useState<CuentaActiva[]>([]);
   const [invitacionesSolicitudes, setInvitacionesSolicitudes] = useState<InvitacionSolicitud[]>([]);
@@ -219,38 +220,70 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
     }
   };
 
-  return (
-    <div className="min-h-screen bg-[#f4f6f8] text-slate-800 flex font-sans text-sm">
-      <Sidebar 
-        userEmail={userEmail}
-        userRole={userRole}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onLogout={onLogout}
-      />
+  const handleSelectTab = (tab: 'perfil' | 'proyectos' | 'mensajes' | 'accesos') => {
+    setActiveTab(tab);
+    setIsMobileMenuOpen(false); // Cierra menú lateral al cambiar de tab en móvil
+  };
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between min-h-[57px]">
-          <h1 className="text-xl font-bold text-slate-800 capitalize">
-            {activeTab === 'perfil' && 'Perfil de Usuario'}
-            {activeTab === 'proyectos' && 'Proyectos'}
-            {activeTab === 'mensajes' && 'Mensajes e Informes de Proyectos'}
-            {activeTab === 'accesos' && 'Gestión Unificada de Accesos e Invitaciones'}
-          </h1>
+  return (
+    <div className="min-h-screen bg-[#f4f6f8] text-slate-800 flex font-sans text-sm relative overflow-x-hidden">
+      {/* Overlay Backdrop para menú móvil */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden transition-opacity"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Contenedor del Sidebar con comportamiento Drawer en móvil */}
+      <div className={`
+        fixed inset-y-0 left-0 z-50 transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-auto
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        <Sidebar 
+          userEmail={userEmail}
+          userRole={userRole}
+          activeTab={activeTab}
+          setActiveTab={handleSelectTab}
+          onLogout={onLogout}
+        />
+      </div>
+
+      <div className="flex-1 flex flex-col min-w-0 w-full">
+        {/* Header Responsive */}
+        <header className="bg-white border-b border-slate-200 px-4 sm:px-8 py-3 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 min-h-[57px]">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            {/* Botón Hamburguesa para Mobile */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="lg:hidden p-1.5 rounded-md text-slate-600 hover:bg-slate-100 focus:outline-none"
+              aria-label="Abrir menú"
+            >
+              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+
+            <h1 className="text-lg sm:text-xl font-bold text-slate-800 capitalize truncate">
+              {activeTab === 'perfil' && 'Perfil de Usuario'}
+              {activeTab === 'proyectos' && 'Proyectos'}
+              {activeTab === 'mensajes' && 'Mensajes e Informes de Proyectos'}
+              {activeTab === 'accesos' && 'Gestión Unificada de Accesos'}
+            </h1>
+          </div>
           
           {activeTab === 'accesos' && (
             <button 
               onClick={() => setShowInviteModal(true)}
-              className="px-3.5 py-2 bg-[#0056d2] text-white rounded-md text-xs font-semibold hover:bg-blue-700 flex items-center gap-2 shadow-sm transition-all"
+              className="w-full sm:w-auto px-3.5 py-2 bg-[#0056d2] text-white rounded-md text-xs font-semibold hover:bg-blue-700 flex items-center justify-center gap-2 shadow-sm transition-all"
             >
-              <UserPlus className="w-4 h-4" />
+              <UserPlus className="w-4 h-4 shrink-0" />
               <span>Generar Nueva Invitación / Cargo</span>
             </button>
           )}
         </header>
 
+        {/* Área Principal + Sidebar Derecha */}
         <div className="flex-1 flex overflow-hidden">
-          <main className="flex-1 p-6 overflow-y-auto space-y-6">
+          <main className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6 w-full">
             {activeTab === 'accesos' && (
               <AccesosTab 
                 cuentasActivas={cuentasActivas}
@@ -307,7 +340,10 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
             )}
           </main>
 
-          <RightSidebar />
+          {/* Oculto en móviles y pantallas medianas, visible solo desde xl */}
+          <div className="hidden xl:block">
+            <RightSidebar />
+          </div>
         </div>
       </div>
 
