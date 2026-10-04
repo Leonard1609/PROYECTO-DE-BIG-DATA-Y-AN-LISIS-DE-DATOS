@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
-// Importaciones con rutas y llaves correctas
+// Almacenamiento de sesión
 import { authStorage } from './utils/authStorage';
+
+// Páginas Principales
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
-import { DashboardPage as CloudOpsDashboard } from './modules/cloud-ops/pages/DashboardPage';
+import { ProyectoDetallePage } from './pages/ProyectoDetallePage';
+
+// Módulos
+import { BigDataModulePage } from './modules/big-data/BigDataModulePage';
+import { AzureFacialRecognitionPage } from './modules/azure/AzureModulePage';
+import CloudOpsModulePage from './modules/cloud-ops/pages/CloudOpsModulePage';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -40,7 +47,7 @@ export default function App() {
 
   return (
     <Routes>
-      {/* Ruta raíz / Login */}
+      {/* 1. Login / Raíz */}
       <Route
         path="/"
         element={
@@ -52,7 +59,7 @@ export default function App() {
         }
       />
 
-      {/* Dashboard principal */}
+      {/* 2. Dashboard Principal */}
       <Route
         path="/dashboard"
         element={
@@ -64,19 +71,39 @@ export default function App() {
         }
       />
 
-      {/* Módulo CloudOps */}
+      {/* 3. Módulo Big Data (El /* es indispensable para sus subrutas /cargas, /analisis, etc.) */}
       <Route
-        path="/cloud-ops"
+        path="/big-data/*"
         element={
-          isAuthenticated ? (
-            <CloudOpsDashboard />
-          ) : (
-            <Navigate to="/" replace />
-          )
+          isAuthenticated ? <BigDataModulePage /> : <Navigate to="/" replace />
         }
       />
 
-      {/* Redirección por defecto */}
+      {/* 4. Módulo CloudOps */}
+      <Route
+        path="/cloud-ops"
+        element={
+          isAuthenticated ? <CloudOpsModulePage /> : <Navigate to="/" replace />
+        }
+      />
+
+      {/* 5. Módulo Azure */}
+      <Route
+        path="/azure"
+        element={
+          isAuthenticated ? <AzureFacialRecognitionPage /> : <Navigate to="/" replace />
+        }
+      />
+
+      {/* 6. Detalle de Proyectos genéricos */}
+      <Route
+        path="/proyecto/:id"
+        element={
+          isAuthenticated ? <ProyectoDetallePage /> : <Navigate to="/" replace />
+        }
+      />
+
+      {/* 7. Redirección para rutas no encontradas (404) */}
       <Route
         path="*"
         element={<Navigate to={isAuthenticated ? '/dashboard' : '/'} replace />}
