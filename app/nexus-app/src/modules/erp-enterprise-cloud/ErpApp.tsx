@@ -14,7 +14,10 @@ export const ErpApp: React.FC = () => {
 
       <Routes>
         <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<h1 className="text-xl font-bold">ERP · Dashboard</h1>} />
+        <Route
+            path="dashboard"
+            element={<h1 className="text-xl font-bold text-slate-900">ERP · Dashboard</h1>}
+        />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Routes>
     </div>
