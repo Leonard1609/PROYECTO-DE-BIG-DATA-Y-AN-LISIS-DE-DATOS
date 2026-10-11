@@ -334,16 +334,16 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
 
 
                   if (esErp) {
-                    navigate('/erp-enterprise-cloud');
-                  if (esBigData) 
-                    navigate('/big-data');
+                      navigate('/erp-enterprise-cloud');
+                  } else if (esBigData) {
+                     navigate('/big-data');
                   } else if (esAzure) {
                     navigate('/azure');
                   } else if (esCloudOps) {
-                    navigate('/cloud-ops');
+                   navigate('/cloud-ops');
                   } else {
-                    navigate(`/proyecto/${id}`);
-                  }
+                  navigate(`/proyecto/${id}`);
+                }
                 }}
               />
             )}

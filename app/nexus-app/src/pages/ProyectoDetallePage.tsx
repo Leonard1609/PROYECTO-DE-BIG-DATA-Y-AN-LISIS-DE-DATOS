@@ -47,12 +47,11 @@ export const ProyectoDetallePage: React.FC = () => {
             strId.startsWith('b0da6f34') ||
             strNrc.includes('4575');
 
-
           if (esErp) {
             navigate('/erp-enterprise-cloud', { replace: true });
             return;
           }
-          
+
           if (esAzure) {
             navigate('/azure', { replace: true });
             return;
