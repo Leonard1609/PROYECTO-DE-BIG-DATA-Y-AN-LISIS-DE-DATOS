@@ -4,10 +4,14 @@ import { ErpLayout } from './layouts/ErpLayout';
 import { ModuloPlaceholder } from './core/components/ModuloPlaceholder';
 import { ERP_MODULOS } from './core/config/navigation';
 import { MantenimientoPage } from './modules/mantenimiento/pages/MantenimientoPage';
+import { ComercialPage } from './modules/comercial/pages/ComercialPage';
+import { ComprasPage } from './modules/compras/pages/ComprasPage';
 
 /** Páginas ya construidas. Los módulos que no aparecen aquí muestran la página provisional. */
 const PAGINAS: Record<string, ReactElement> = {
   mantenimiento: <MantenimientoPage />,
+  comercial: <ComercialPage />,
+  compras: <ComprasPage />,
 };
 
 export const ErpApp: React.FC = () => (

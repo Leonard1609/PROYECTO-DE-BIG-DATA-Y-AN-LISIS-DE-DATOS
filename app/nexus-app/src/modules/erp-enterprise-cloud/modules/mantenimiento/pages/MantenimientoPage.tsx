@@ -12,7 +12,7 @@ export const MantenimientoPage: React.FC = () => {
         Aquí se registran una sola vez los datos base. Comercial y Compras no los crean, solo los seleccionan.
       </p>
 
-      <div role="tablist" aria-label="Datos maestros" className="flex gap-1 overflow-x-auto border-b border-slate-200">
+      <div role="tablist" aria-label="Datos maestros" className="flex gap-1 overflow-x-auto overflow-y-hidden border-b border-slate-200">
         {MAESTROS.map((m) => {
           const seleccionada = m.coleccion === activa;
           return (
