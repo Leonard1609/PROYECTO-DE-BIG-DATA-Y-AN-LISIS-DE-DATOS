@@ -23,10 +23,11 @@ import { SecurityPage } from './SecurityPage';
 import { NetworkPage } from './NetworkPage';
 import { ServicesPage } from './ServicesPage';
 import { CloudOpsProvider } from '../context/CloudOpsContext';
+import { useCloudOps } from '../context/CloudOpsContext';
 
 const CloudOpsModuleContent: React.FC = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<string>('servicios');
+  const { activeTab, setActiveTab } = useCloudOps(); // <-- Usamos el contexto
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
