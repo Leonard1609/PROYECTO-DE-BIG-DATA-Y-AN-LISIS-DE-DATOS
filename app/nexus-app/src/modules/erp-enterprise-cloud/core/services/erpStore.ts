@@ -8,8 +8,9 @@ import { crearEstadoInicial } from './seed';
 export const LIMITE_REGISTROS = 1;
 export const IGV = 0.18;
 const STORAGE_KEY = 'erp-enterprise-cloud:v1';
-const USUARIO_SIMULADO = 'Administrador';
-const BUCKET_S3 = 's3://erp-enterprise-cloud-docs';
+export const USUARIO_ACTUAL_ID = 'USR-001';
+export const DIAS_CREDITO = 30;
+export const BUCKET_S3 = 's3://erp-enterprise-cloud-docs';
 
 /* ───────── Núcleo del store ───────── */
 
@@ -30,7 +31,7 @@ type Evento = Omit<Auditoria, 'id' | 'fecha' | 'usuario'>;
 
 function commit(next: ErpState, evento?: Evento): void {
   const auditoria = evento
-    ? [...next.auditoria, { ...evento, id: nuevoId('AUD'), fecha: ahora(), usuario: USUARIO_SIMULADO }]
+    ? [...next.auditoria, { ...evento, id: nuevoId('AUD'), fecha: ahora(), usuario: next.usuarios.find((u) => u.id === USUARIO_ACTUAL_ID)?.nombre ?? 'Administrador' }]
     : next.auditoria;
   state = { ...next, auditoria };
   try {
@@ -79,6 +80,7 @@ const META: Record<ColeccionMaestra, { prefijo: string; etiqueta: string }> = {
   marcas: { prefijo: 'MAR', etiqueta: 'marcas' },
   unidades: { prefijo: 'UND', etiqueta: 'unidades' },
   monedas: { prefijo: 'MON', etiqueta: 'monedas' },
+  usuarios: { prefijo: 'USR', etiqueta: 'usuarios' },
 };
 
 function enUso(col: ColeccionMaestra, id: string, s: ErpState): boolean {
@@ -95,6 +97,7 @@ function enUso(col: ColeccionMaestra, id: string, s: ErpState): boolean {
     case 'marcas': return s.productos.some((p) => p.marcaId === id);
     case 'unidades': return s.productos.some((p) => p.unidadId === id);
     case 'monedas': return s.productos.some((p) => p.monedaId === id);
+    case 'usuarios': return false;
   }
 }
 
@@ -127,6 +130,9 @@ function actualizarMaestro<K extends ColeccionMaestra>(
 
 function eliminarMaestro(col: ColeccionMaestra, id: string): Resultado {
   const { etiqueta } = META[col];
+  if (col === 'usuarios' && id === USUARIO_ACTUAL_ID) {
+    return rechazar('Administración', 'Eliminar en usuarios', 'No puedes eliminar al usuario de la sesión actual.');
+  }
   if (enUso(col, id, state)) {
     return rechazar('Mantenimiento', `Eliminar en ${etiqueta}`,
       'No se puede eliminar: el registro ya fue usado en otros módulos.');
@@ -212,7 +218,7 @@ function registrarVenta(d: DatosVenta): Resultado {
     cuentas: d.condicion === 'Crédito'
       ? [...s.cuentas, {
           id: nuevoId('CXC'), tipo: 'Cobrar', documentoNumero: numero, terceroId: d.clienteId,
-          monto: total, saldo: total, vencimiento: sumarDias(fecha, 30), estado: 'Pendiente',
+          monto: total, saldo: total, vencimiento: sumarDias(fecha, DIAS_CREDITO), estado: 'Pendiente',
         }]
       : s.cuentas,
     caja: d.condicion === 'Contado'
@@ -271,7 +277,7 @@ function registrarCompra(d: DatosCompra): Resultado {
     cuentas: d.condicion === 'Crédito'
       ? [...s.cuentas, {
           id: nuevoId('CXP'), tipo: 'Pagar', documentoNumero: numero, terceroId: d.proveedorId,
-          monto: total, saldo: total, vencimiento: sumarDias(fecha, 30), estado: 'Pendiente',
+          monto: total, saldo: total, vencimiento: sumarDias(fecha, DIAS_CREDITO), estado: 'Pendiente',
         }]
       : s.cuentas,
     caja: d.condicion === 'Contado'
@@ -338,6 +344,74 @@ function liquidarCuenta(cuentaId: string): Resultado {
   return { ok: true, id: cuentaId };
 }
 
+/* ───────── Documentos ───────── */
+
+export interface DatosDocumento {
+  nombre: string; tamanoKb: number; tipo: 'Contrato' | 'Otro';
+  entidad: 'Venta' | 'Compra' | 'Otro'; entidadId: string;
+}
+
+export const EXTENSIONES_PERMITIDAS = ['pdf', 'png', 'jpg', 'jpeg', 'docx', 'xlsx'];
+export const MAX_ARCHIVO_KB = 5120;
+const esManual = (tipo: string): boolean => tipo === 'Contrato' || tipo === 'Otro';
+
+function registrarDocumento(d: DatosDocumento): Resultado {
+  const M = 'Documentos', A = 'Subir documento';
+  const s = state;
+  const nombre = d.nombre.trim();
+  const ext = nombre.split('.').pop()?.toLowerCase() ?? '';
+  if (nombre === '') return rechazar(M, A, 'Selecciona un archivo.');
+  if (!EXTENSIONES_PERMITIDAS.includes(ext)) return rechazar(M, A, `Formato no permitido. Usa: ${EXTENSIONES_PERMITIDAS.join(', ')}.`);
+  if (d.tamanoKb > MAX_ARCHIVO_KB) return rechazar(M, A, 'El archivo supera los 5 MB permitidos.');
+  if (s.documentos.filter((x) => esManual(x.tipo)).length >= LIMITE_REGISTROS) {
+    return rechazar(M, A, `Se alcanzó el límite de ${LIMITE_REGISTROS} registro en documentos subidos.`);
+  }
+  if (d.entidad === 'Venta' && !s.ventas.some((v) => v.id === d.entidadId)) return rechazar(M, A, 'La venta indicada no existe.');
+  if (d.entidad === 'Compra' && !s.compras.some((c) => c.id === d.entidadId)) return rechazar(M, A, 'La compra indicada no existe.');
+
+  const id = nuevoId('DOC');
+  commit({
+    ...s,
+    documentos: [...s.documentos, {
+      id, nombre, tipo: d.tipo, tamanoKb: d.tamanoKb, fecha: ahora(), entidad: d.entidad,
+      entidadId: d.entidad === 'Otro' ? '' : d.entidadId,
+      rutaS3: `${BUCKET_S3}/archivos/${nombre.replace(/[^\w.-]+/g, '_')}`,
+    }],
+  }, { modulo: M, accion: A, registroId: nombre, resultado: 'Exitoso' });
+  return { ok: true, id };
+}
+
+function eliminarDocumento(id: string): Resultado {
+  const M = 'Documentos', A = 'Eliminar documento';
+  const doc = state.documentos.find((x) => x.id === id);
+  if (!doc) return rechazar(M, A, 'El documento no existe.');
+  if (!esManual(doc.tipo)) return rechazar(M, A, 'Los comprobantes y facturas los genera el sistema y no se eliminan.');
+  commit({ ...state, documentos: state.documentos.filter((x) => x.id !== id) },
+    { modulo: M, accion: A, registroId: doc.nombre, resultado: 'Exitoso' });
+  return { ok: true, id };
+}
+
+/* ───────── Administración ───────── */
+
+export const MODULOS_CON_PERMISO = [
+  'mantenimiento', 'comercial', 'compras', 'inventario', 'finanzas',
+  'documentos', 'reportes', 'administracion', 'cloud',
+];
+
+function actualizarPermisos(rolId: string, permisos: string[]): Resultado {
+  const M = 'Administración', A = 'Cambiar permisos';
+  const rol = state.roles.find((r) => r.id === rolId);
+  if (!rol) return rechazar(M, A, 'El rol no existe.');
+  if (permisos.some((p) => !MODULOS_CON_PERMISO.includes(p))) return rechazar(M, A, 'Hay un permiso que no corresponde a ningún módulo.');
+  const usuario = state.usuarios.find((u) => u.id === USUARIO_ACTUAL_ID);
+  if (usuario?.rolId === rolId && !permisos.includes('administracion')) {
+    return rechazar(M, A, 'No puedes quitar el acceso a Administración al rol de la sesión actual.');
+  }
+  commit({ ...state, roles: state.roles.map((r) => (r.id === rolId ? { ...r, permisos } : r)) },
+    { modulo: M, accion: A, registroId: rol.nombre, resultado: 'Exitoso', detalle: `${permisos.length} módulos permitidos` });
+  return { ok: true, id: rolId };
+}
+
 /* ───────── API pública ───────── */
 
 function restablecer(): void {
@@ -352,6 +426,7 @@ export const erpStore = {
   },
   acciones: {
     crearMaestro, actualizarMaestro, eliminarMaestro,
-    registrarVenta, registrarCompra, registrarAjuste, liquidarCuenta, restablecer,
+    registrarVenta, registrarCompra, registrarAjuste, liquidarCuenta,
+    registrarDocumento, eliminarDocumento, actualizarPermisos, restablecer,
   },
 };

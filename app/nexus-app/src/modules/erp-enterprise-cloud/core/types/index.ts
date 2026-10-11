@@ -205,6 +205,6 @@ export interface ErpState {
 
 export type ColeccionMaestra =
   | 'clientes' | 'proveedores' | 'productos' | 'almacenes' | 'vendedores'
-  | 'categorias' | 'marcas' | 'unidades' | 'monedas';
+  | 'categorias' | 'marcas' | 'unidades' | 'monedas' | 'usuarios';
 
 export type Resultado = { ok: true; id: string } | { ok: false; error: string };
