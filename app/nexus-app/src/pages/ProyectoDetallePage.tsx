@@ -32,6 +32,11 @@ export const ProyectoDetallePage: React.FC = () => {
           const strId = String(encontrado.id).toLowerCase();
           const strNrc = (encontrado.codigo_nrc || '').toLowerCase();
 
+          const esErp =
+          strTitulo.includes('erp') ||
+          strId.startsWith('902094cc') ||
+          strNrc.includes('7411');
+
           const esAzure = 
             strTitulo.includes('azure') || 
             strId === 'd7dcf898-012a-4d06-a1ab-354d32a132b9' ||
@@ -42,6 +47,12 @@ export const ProyectoDetallePage: React.FC = () => {
             strId.startsWith('b0da6f34') ||
             strNrc.includes('4575');
 
+
+          if (esErp) {
+            navigate('/erp-enterprise-cloud', { replace: true });
+            return;
+          }
+          
           if (esAzure) {
             navigate('/azure', { replace: true });
             return;

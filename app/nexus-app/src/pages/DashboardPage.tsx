@@ -309,7 +309,8 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
                   const strId = String(id || '').toLowerCase();
                   const strTitulo = String(titulo || '').toLowerCase();
                   const strNrc = String(codigoNrc || '').toLowerCase();
-
+                  
+                
                   const esBigData = 
                     strId === '1' || 
                     strId.startsWith('64cb9f39') || 
@@ -320,13 +321,21 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
                     strId === 'd7dcf898-012a-4d06-a1ab-354d32a132b9' || 
                     strNrc.includes('8499') || 
                     strTitulo.includes('azure');
+                    
 
                   const esCloudOps = 
                     strId.startsWith('b0da6f34') || 
                     strNrc.includes('4575') || 
                     strTitulo.includes('cloud');
 
-                  if (esBigData) {
+                  const esErp =
+                    strId.startsWith('902094cc') ||
+                    strNrc.includes('7411') ||
+                    strTitulo.includes('erp');
+
+                  if (esErp) {
+                    navigate('/erp-enterprise-cloud');
+                  if (esBigData) 
                     navigate('/big-data');
                   } else if (esAzure) {
                     navigate('/azure');

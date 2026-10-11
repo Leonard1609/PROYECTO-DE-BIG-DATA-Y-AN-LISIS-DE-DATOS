@@ -13,6 +13,7 @@ import { ProyectoDetallePage } from './pages/ProyectoDetallePage';
 import { BigDataModulePage } from './modules/big-data/BigDataModulePage';
 import { AzureFacialRecognitionPage } from './modules/azure/AzureModulePage';
 import CloudOpsModulePage from './modules/cloud-ops/pages/CloudOpsModulePage';
+import { ErpApp } from './modules/erp-enterprise-cloud';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -95,7 +96,15 @@ export default function App() {
         }
       />
 
-      {/* 6. Detalle de Proyectos genéricos */}
+      {/* 6. Módulo ERP EnterpriseCloud */}
+      <Route
+        path="/erp-enterprise-cloud/*"
+        element={
+          isAuthenticated ? <ErpApp /> : <Navigate to="/" replace />
+        }
+      />
+
+      {/* 7. Detalle de Proyectos genéricos */}
       <Route
         path="/proyecto/:id"
         element={
@@ -103,7 +112,7 @@ export default function App() {
         }
       />
 
-      {/* 7. Redirección para rutas no encontradas (404) */}
+      {/* 8. Redirección para rutas no encontradas (404) */}
       <Route
         path="*"
         element={<Navigate to={isAuthenticated ? '/dashboard' : '/'} replace />}
