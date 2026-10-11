@@ -28,19 +28,18 @@ export interface CloudOpsLog {
 }
 
 interface CloudOpsContextType {
-  costs: CostEstimateItem[];
+  costs: (CostEstimateItem & { region?: string })[];
   proposals: CloudProposal[];
   isFailoverActive: boolean;
   activeTab: string;
-  selectedRegion: string; // <-- Nuevo estado global
+  selectedRegion: string;
   setActiveTab: (tab: string) => void;
-  setSelectedRegion: (region: string) => void; // <-- Nueva función global
-  addCostItem: (item: Omit<CostEstimateItem, 'id'>) => void;
+  setSelectedRegion: (region: string) => void;
+  addCostItem: (item: Omit<CostEstimateItem, 'id'> & { region?: string }) => void;
   deleteCostItem: (id: string) => void;
   addProposal: (proposal: Omit<CloudProposal, 'id' | 'createdAt'>) => void;
   clearDashboard: () => void;
   toggleFailover: () => void;
-
   metrics: MetricSummary;
   instances: InstanceEC2[];
   setInstances: React.Dispatch<React.SetStateAction<InstanceEC2[]>>;
@@ -51,7 +50,7 @@ interface CloudOpsContextType {
 const CloudOpsContext = createContext<CloudOpsContextType | undefined>(undefined);
 
 export const CloudOpsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [costs, setCosts] = useState<CostEstimateItem[]>(() => {
+  const [costs, setCosts] = useState<(CostEstimateItem & { region?: string })[]>(() => {
     const saved = localStorage.getItem('cloudops_costs');
     return saved ? JSON.parse(saved) : [];
   });
@@ -62,7 +61,7 @@ export const CloudOpsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   });
 
   const [activeTab, setActiveTab] = useState<string>('dashboard');
-  const [selectedRegion, setSelectedRegion] = useState<string>('us-east-1 (Norte de Virginia)'); // <-- Valor por defecto
+  const [selectedRegion, setSelectedRegion] = useState<string>('us-east-1 (Norte de Virginia)');
   const [isFailoverActive, setIsFailoverActive] = useState<boolean>(false);
 
   const [metrics] = useState<MetricSummary>({
@@ -84,8 +83,8 @@ export const CloudOpsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem('cloudops_proposals', JSON.stringify(proposals));
   }, [proposals]);
 
-  const addCostItem = (itemData: Omit<CostEstimateItem, 'id'>) => {
-    const newItem: CostEstimateItem = {
+  const addCostItem = (itemData: Omit<CostEstimateItem, 'id'> & { region?: string }) => {
+    const newItem = {
       ...itemData,
       id: `c-${Date.now()}`,
     };
@@ -104,23 +103,24 @@ export const CloudOpsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
     setProposals((prev) => [newProp, ...prev]);
 
-    // Sincronizar automáticamente la región global con la propuesta creada
     if (proposalData.selectedRegion) {
       setSelectedRegion(proposalData.selectedRegion);
     }
 
     const serviceName = proposalData.selectedServices[0] || 'Amazon EC2';
     const estimatedMonthlyCost = 120.00;
-    const newCostItem: Omit<CostEstimateItem, 'id'> = {
+    
+    // Asociamos la región al costo registrado
+    addCostItem({
       serviceId: 'custom-prop',
       serviceName: `${serviceName} (${proposalData.solutionName})`,
-      quantity: 2,
+      quantity: proposalData.selectedServices.length,
       hoursPerMonth: 720,
       unitCostPerHour: 0.0833,
-      monthlyCost: estimatedMonthlyCost,
-      annualCost: estimatedMonthlyCost * 12,
-    };
-    addCostItem(newCostItem);
+      monthlyCost: estimatedMonthlyCost * proposalData.selectedServices.length,
+      annualCost: estimatedMonthlyCost * proposalData.selectedServices.length * 12,
+      region: proposalData.selectedRegion,
+    });
   };
 
   const clearDashboard = () => {

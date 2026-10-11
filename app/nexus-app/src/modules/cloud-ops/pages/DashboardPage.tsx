@@ -7,10 +7,15 @@ import { Server, DollarSign, ShieldCheck, Globe, TrendingUp, RotateCcw, Printer 
 
 export const DashboardPage: React.FC = () => {
   const { costs, proposals, clearDashboard, selectedRegion, setSelectedRegion } = useCloudOps();
-  const latestProposal = proposals[0];
 
-  const totalMonthlyCost = costs.reduce((acc, item) => acc + item.monthlyCost, 0);
-  const activeServicesCount = latestProposal ? latestProposal.selectedServices.length : 0;
+  // Filtramos las propuestas y costos que coinciden estrictamente con la región seleccionada
+  const regionProposals = proposals.filter((p) => p.selectedRegion === selectedRegion);
+  const currentProposal = regionProposals[0]; // Propuesta activa para esta región
+
+  const regionCosts = costs.filter((c) => c.region === selectedRegion || !c.region);
+  const totalMonthlyCost = regionCosts.reduce((acc, item) => acc + item.monthlyCost, 0);
+
+  const activeServicesCount = currentProposal ? currentProposal.selectedServices.length : 0;
   const warningsCount = SECURITY_METRICS.filter((m) => m.status === 'warning').length;
 
   return (
@@ -60,7 +65,7 @@ export const DashboardPage: React.FC = () => {
         <StatCard
           title="Servicios Activos"
           value={`${activeServicesCount} / ${INITIAL_SERVICES.length}`}
-          subtitle={latestProposal ? latestProposal.solutionName : 'Sin propuesta registrada'}
+          subtitle={currentProposal ? currentProposal.solutionName : 'Sin propuesta en esta región'}
           icon={Server}
           iconBgColor="bg-blue-50"
           iconTextColor="text-blue-600"
@@ -97,16 +102,16 @@ export const DashboardPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-blue-600" />
-              Distribución de Costos por Servicio
+              Distribución de Costos por Servicio ({selectedRegion.split(' ')[0]})
             </h3>
             <span className="text-xs text-slate-400 font-mono">USD / Mes</span>
           </div>
 
           <div className="space-y-3 pt-2">
-            {costs.length === 0 ? (
-              <p className="text-xs text-slate-400 italic py-4 text-center">No hay datos registrados. Registre una propuesta en Planificación Cloud.</p>
+            {regionCosts.length === 0 ? (
+              <p className="text-xs text-slate-400 italic py-4 text-center">No hay costos registrados para esta región.</p>
             ) : (
-              costs.map((item) => {
+              regionCosts.map((item) => {
                 const percentage = totalMonthlyCost > 0 ? Math.round((item.monthlyCost / totalMonthlyCost) * 100) : 0;
                 return (
                   <div key={item.id} className="space-y-1">
