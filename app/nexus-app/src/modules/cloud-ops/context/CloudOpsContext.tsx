@@ -1,9 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { CostEstimateItem, CloudProposal } from '../types/cloud';
 
-// ==========================================
-// 1. Tipos de datos para CloudOps
-// ==========================================
 export interface InstanceEC2 {
   id: string;
   name: string;
@@ -30,15 +27,14 @@ export interface CloudOpsLog {
   level: 'INFO' | 'WARN' | 'ERROR';
 }
 
-// ==========================================
-// 2. Interfaz del Contexto (con navegación y costos sincronizados)
-// ==========================================
 interface CloudOpsContextType {
   costs: CostEstimateItem[];
   proposals: CloudProposal[];
   isFailoverActive: boolean;
   activeTab: string;
+  selectedRegion: string; // <-- Nuevo estado global
   setActiveTab: (tab: string) => void;
+  setSelectedRegion: (region: string) => void; // <-- Nueva función global
   addCostItem: (item: Omit<CostEstimateItem, 'id'>) => void;
   deleteCostItem: (id: string) => void;
   addProposal: (proposal: Omit<CloudProposal, 'id' | 'createdAt'>) => void;
@@ -47,6 +43,7 @@ interface CloudOpsContextType {
 
   metrics: MetricSummary;
   instances: InstanceEC2[];
+  setInstances: React.Dispatch<React.SetStateAction<InstanceEC2[]>>;
   logs: CloudOpsLog[];
   toggleInstanceStatus: (id: string) => void;
 }
@@ -54,7 +51,6 @@ interface CloudOpsContextType {
 const CloudOpsContext = createContext<CloudOpsContextType | undefined>(undefined);
 
 export const CloudOpsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Inicializamos vacíos o limpios como solicitó el profesor
   const [costs, setCosts] = useState<CostEstimateItem[]>(() => {
     const saved = localStorage.getItem('cloudops_costs');
     return saved ? JSON.parse(saved) : [];
@@ -66,6 +62,7 @@ export const CloudOpsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   });
 
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [selectedRegion, setSelectedRegion] = useState<string>('us-east-1 (Norte de Virginia)'); // <-- Valor por defecto
   const [isFailoverActive, setIsFailoverActive] = useState<boolean>(false);
 
   const [metrics] = useState<MetricSummary>({
@@ -107,9 +104,13 @@ export const CloudOpsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
     setProposals((prev) => [newProp, ...prev]);
 
-    // Sincronización automática: Agregar costo estimado basado en el servicio seleccionado
+    // Sincronizar automáticamente la región global con la propuesta creada
+    if (proposalData.selectedRegion) {
+      setSelectedRegion(proposalData.selectedRegion);
+    }
+
     const serviceName = proposalData.selectedServices[0] || 'Amazon EC2';
-    const estimatedMonthlyCost = 120.00; // Costo base activo de simulación
+    const estimatedMonthlyCost = 120.00;
     const newCostItem: Omit<CostEstimateItem, 'id'> = {
       serviceId: 'custom-prop',
       serviceName: `${serviceName} (${proposalData.solutionName})`,
@@ -126,6 +127,7 @@ export const CloudOpsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setCosts([]);
     setProposals([]);
     setIsFailoverActive(false);
+    setSelectedRegion('us-east-1 (Norte de Virginia)');
     localStorage.removeItem('cloudops_costs');
     localStorage.removeItem('cloudops_proposals');
   };
@@ -135,7 +137,7 @@ export const CloudOpsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const toggleInstanceStatus = (id: string) => {
-    setInstances((prev: any[]) =>
+    setInstances((prev) =>
       prev.map((inst) => {
         if (inst.id === id) {
           const nextStatus = inst.status === 'running' ? 'stopped' : 'running';
@@ -157,7 +159,9 @@ export const CloudOpsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         proposals,
         isFailoverActive,
         activeTab,
+        selectedRegion,
         setActiveTab,
+        setSelectedRegion,
         addCostItem,
         deleteCostItem,
         addProposal,
@@ -165,6 +169,7 @@ export const CloudOpsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         toggleFailover,
         metrics,
         instances,
+        setInstances,
         logs,
         toggleInstanceStatus,
       }}

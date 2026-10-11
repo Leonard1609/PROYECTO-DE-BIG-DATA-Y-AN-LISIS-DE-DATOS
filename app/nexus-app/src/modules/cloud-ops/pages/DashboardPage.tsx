@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { INITIAL_SERVICES, SECURITY_METRICS } from '../data/awsServicesData';
 import { useCloudOps } from '../context/CloudOpsContext';
 import { StatCard } from '../components/StatCard';
@@ -6,20 +6,8 @@ import { SecurityCard } from '../components/SecurityCard';
 import { Server, DollarSign, ShieldCheck, Globe, TrendingUp, RotateCcw, Printer } from 'lucide-react';
 
 export const DashboardPage: React.FC = () => {
-  const { costs, proposals, clearDashboard } = useCloudOps();
+  const { costs, proposals, clearDashboard, selectedRegion, setSelectedRegion } = useCloudOps();
   const latestProposal = proposals[0];
-
-  // Estado de la región sincronizado automáticamente con la última propuesta registrada
-  const [selectedDashboardRegion, setSelectedDashboardRegion] = useState<string>(
-    latestProposal ? latestProposal.selectedRegion : 'us-east-1 (Norte de Virginia)'
-  );
-
-  // Cada vez que se registre o cambie una propuesta, actualiza la región del Dashboard en tiempo real
-  useEffect(() => {
-    if (latestProposal && latestProposal.selectedRegion) {
-      setSelectedDashboardRegion(latestProposal.selectedRegion);
-    }
-  }, [latestProposal]);
 
   const totalMonthlyCost = costs.reduce((acc, item) => acc + item.monthlyCost, 0);
   const activeServicesCount = latestProposal ? latestProposal.selectedServices.length : 0;
@@ -34,12 +22,12 @@ export const DashboardPage: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-3">
-          {/* Selector de Región Sincronizado */}
+          {/* Selector de Región Global Sincronizado */}
           <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm text-xs">
             <Globe className="w-4 h-4 text-blue-600" />
             <select
-              value={selectedDashboardRegion}
-              onChange={(e) => setSelectedDashboardRegion(e.target.value)}
+              value={selectedRegion}
+              onChange={(e) => setSelectedRegion(e.target.value)}
               className="bg-transparent font-semibold text-slate-700 focus:outline-none cursor-pointer"
             >
               <option value="us-east-1 (Norte de Virginia)">us-east-1 (Norte de Virginia)</option>
@@ -79,8 +67,8 @@ export const DashboardPage: React.FC = () => {
         />
         <StatCard
           title="Región Principal"
-          value={selectedDashboardRegion.split(' ')[0]}
-          subtitle={selectedDashboardRegion}
+          value={selectedRegion.split(' ')[0]}
+          subtitle={selectedRegion}
           icon={Globe}
           iconBgColor="bg-indigo-50"
           iconTextColor="text-indigo-600"
