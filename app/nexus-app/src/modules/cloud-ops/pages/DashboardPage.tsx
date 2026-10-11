@@ -1,23 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { INITIAL_SERVICES, SECURITY_METRICS } from '../data/awsServicesData';
 import { useCloudOps } from '../context/CloudOpsContext';
 import { StatCard } from '../components/StatCard';
 import { SecurityCard } from '../components/SecurityCard';
-import { ServiceCard } from '../components/ServiceCard';
-import { Printer /* , otros íconos que uses */ } from 'lucide-react';
-import { Server, DollarSign, ShieldCheck, Globe, TrendingUp, RotateCcw, FileText } from 'lucide-react';
+import { Server, DollarSign, ShieldCheck, Globe, TrendingUp, RotateCcw, Printer } from 'lucide-react';
 
 export const DashboardPage: React.FC = () => {
   const { costs, proposals, clearDashboard } = useCloudOps();
-  const latestProposal = proposals[0];
+  const [selectedDashboardRegion, setSelectedDashboardRegion] = useState<string>('us-east-1 (Norte de Virginia)');
 
+  const latestProposal = proposals[0];
   const totalMonthlyCost = costs.reduce((acc, item) => acc + item.monthlyCost, 0);
   const activeServicesCount = latestProposal ? latestProposal.selectedServices.length : 0;
   const warningsCount = SECURITY_METRICS.filter((m) => m.status === 'warning').length;
-
-  const handleExportPDF = () => {
-    window.print(); // Solución rápida e integrada para exportar/imprimir el Dashboard en PDF
-  };
 
   return (
     <div className="space-y-6">
@@ -26,7 +21,23 @@ export const DashboardPage: React.FC = () => {
           <h2 className="text-2xl font-bold text-slate-800">Dashboard de Control Cloud</h2>
           <p className="text-sm text-slate-500">Resumen general de la arquitectura y estado de la solución AWS.</p>
         </div>
-        <div className="flex gap-2">
+        
+        <div className="flex items-center gap-3">
+          {/* Selector de Región en el Dashboard */}
+          <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm text-xs">
+            <Globe className="w-4 h-4 text-blue-600" />
+            <select
+              value={selectedDashboardRegion}
+              onChange={(e) => setSelectedDashboardRegion(e.target.value)}
+              className="bg-transparent font-semibold text-slate-700 focus:outline-none cursor-pointer"
+            >
+              <option value="us-east-1 (Norte de Virginia)">us-east-1 (Norte de Virginia)</option>
+              <option value="us-west-2 (Oregón)">us-west-2 (Oregón)</option>
+              <option value="sa-east-1 (São Paulo)">sa-east-1 (São Paulo)</option>
+              <option value="eu-west-1 (Irlanda)">eu-west-1 (Irlanda)</option>
+            </select>
+          </div>
+
           <button
             onClick={clearDashboard}
             className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition-all"
@@ -34,13 +45,14 @@ export const DashboardPage: React.FC = () => {
             <RotateCcw className="w-4 h-4" />
             Limpiar Datos
           </button>
+          
           <button
-  onClick={() => window.print()}
-  className="no-print bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-semibold transition-all"
->
-  <Printer className="w-4 h-4" />
-  Reporte PDF
-</button>
+            onClick={() => window.print()}
+            className="no-print bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-semibold transition-all"
+          >
+            <Printer className="w-4 h-4" />
+            Reporte PDF
+          </button>
         </div>
       </div>
 
@@ -56,8 +68,8 @@ export const DashboardPage: React.FC = () => {
         />
         <StatCard
           title="Región Principal"
-          value={latestProposal ? latestProposal.selectedRegion.split(' ')[0] : 'Sin asignar'}
-          subtitle={latestProposal ? latestProposal.selectedRegion : 'Por favor configure en Planificación'}
+          value={selectedDashboardRegion.split(' ')[0]}
+          subtitle={selectedDashboardRegion}
           icon={Globe}
           iconBgColor="bg-indigo-50"
           iconTextColor="text-indigo-600"

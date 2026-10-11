@@ -19,20 +19,17 @@ const AWS_SERVICES_CATALOG: ServiceOption[] = [
 export const PlanningPage: React.FC = () => {
   const { proposals, addProposal, setActiveTab } = useCloudOps();
 
-  // Formulario inicia estrictamente VACÍO
   const [form, setForm] = useState({
     solutionName: '',
     appType: '',
     selectedRegion: '',
-    estimatedUsers: 0,
+    estimatedUsers: '' as number | '',
     availabilityLevel: '',
     migrationGoal: '',
   });
 
-  // Estado para la selección múltiple de servicios
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
 
-  // Alternar la selección/deselección de servicios
   const toggleService = (serviceName: string) => {
     setSelectedServices((prev) =>
       prev.includes(serviceName)
@@ -41,7 +38,6 @@ export const PlanningPage: React.FC = () => {
     );
   };
 
-  // Generar la descripción concatenada en tiempo real según los servicios marcados
   const generatedDescription = selectedServices.length > 0
     ? selectedServices
         .map((sName) => {
@@ -53,23 +49,32 @@ export const PlanningPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.solutionName || !form.selectedRegion || selectedServices.length === 0) {
-      alert('Por favor complete el nombre, seleccione una región y al menos un servicio.');
+
+    // Validación estricta exigida por el profesor
+    if (
+      !form.solutionName ||
+      !form.appType ||
+      !form.selectedRegion ||
+      selectedServices.length === 0 ||
+      !form.estimatedUsers ||
+      !form.availabilityLevel ||
+      !form.migrationGoal
+    ) {
+      alert('Por favor complete todos los campos obligatorios: Nombre, Tipo de Aplicación, Región AWS, al menos un servicio, Usuarios Estimados, SLA Requerido y Objetivo de la Migración.');
       return;
     }
 
     addProposal({
       solutionName: form.solutionName,
-      appType: form.appType || 'Web Application',
+      appType: form.appType,
       description: generatedDescription,
       selectedRegion: form.selectedRegion,
       estimatedUsers: Number(form.estimatedUsers),
-      availabilityLevel: form.availabilityLevel || '99.9%',
+      availabilityLevel: form.availabilityLevel,
       selectedServices: selectedServices,
-      migrationGoal: form.migrationGoal || 'Optimización de infraestructura y costos.',
+      migrationGoal: form.migrationGoal,
     });
 
-    // Redirigir automáticamente al apartado de Costos
     setActiveTab('costos');
   };
 
@@ -81,7 +86,6 @@ export const PlanningPage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Formulario de Registro */}
         <div className="lg:col-span-1 bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
           <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
             <PlusCircle className="w-5 h-5 text-blue-600" />
@@ -90,7 +94,7 @@ export const PlanningPage: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Nombre de Solución</label>
+              <label className="font-semibold text-slate-700 block mb-1">Nombre de Solución *</label>
               <input
                 type="text"
                 required
@@ -102,7 +106,7 @@ export const PlanningPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Tipo de Aplicación</label>
+              <label className="font-semibold text-slate-700 block mb-1">Tipo de Aplicación *</label>
               <select
                 required
                 value={form.appType}
@@ -118,7 +122,7 @@ export const PlanningPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Región AWS</label>
+              <label className="font-semibold text-slate-700 block mb-1">Región AWS *</label>
               <select
                 required
                 value={form.selectedRegion}
@@ -133,10 +137,9 @@ export const PlanningPage: React.FC = () => {
               </select>
             </div>
 
-            {/* Selector Múltiple de Servicios */}
             <div>
               <label className="font-semibold text-slate-700 block mb-1">
-                Servicios AWS Incluidos (Selección Múltiple)
+                Servicios AWS Incluidos (Selección Múltiple) *
               </label>
               <div className="grid grid-cols-2 gap-1.5 p-2 bg-slate-50 border border-slate-200 rounded-lg max-h-36 overflow-y-auto">
                 {AWS_SERVICES_CATALOG.map((srv) => {
@@ -162,19 +165,22 @@ export const PlanningPage: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">Usuarios Est.</label>
+                <label className="font-semibold text-slate-700 block mb-1">Usuarios Est. *</label>
                 <input
                   type="number"
+                  required
+                  min="1"
                   placeholder="ej. 5000"
-                  value={form.estimatedUsers || ''}
-                  onChange={(e) => setForm({ ...form, estimatedUsers: Number(e.target.value) })}
+                  value={form.estimatedUsers}
+                  onChange={(e) => setForm({ ...form, estimatedUsers: e.target.value ? Number(e.target.value) : '' })}
                   className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="font-semibold text-slate-700 block mb-1">SLA Requerido</label>
+                <label className="font-semibold text-slate-700 block mb-1">SLA Requerido *</label>
                 <input
                   type="text"
+                  required
                   placeholder="ej. 99.99%"
                   value={form.availabilityLevel}
                   onChange={(e) => setForm({ ...form, availabilityLevel: e.target.value })}
@@ -183,7 +189,6 @@ export const PlanningPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Campo de Descripción Automática (No Editable) */}
             <div>
               <label className="font-semibold text-slate-700 block mb-1">Descripción del Servicio (Autogenerada)</label>
               <textarea
@@ -194,11 +199,11 @@ export const PlanningPage: React.FC = () => {
               ></textarea>
             </div>
 
-            {/* Campo Libre: Objetivo de la Migración */}
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Objetivo de la Migración</label>
+              <label className="font-semibold text-slate-700 block mb-1">Objetivo de la Migración *</label>
               <textarea
                 rows={2}
+                required
                 placeholder="ej. Reducir costos de infraestructura física y mejorar disponibilidad multi-zona."
                 value={form.migrationGoal}
                 onChange={(e) => setForm({ ...form, migrationGoal: e.target.value })}
@@ -215,7 +220,6 @@ export const PlanningPage: React.FC = () => {
           </form>
         </div>
 
-        {/* Lista de Propuestas Registradas */}
         <div className="lg:col-span-2 space-y-4">
           <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
             <ClipboardList className="w-5 h-5 text-slate-700" />
