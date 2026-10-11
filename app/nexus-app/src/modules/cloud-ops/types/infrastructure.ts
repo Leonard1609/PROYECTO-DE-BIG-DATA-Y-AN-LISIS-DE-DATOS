@@ -3,16 +3,18 @@ export interface CloudService {
   type: string;
   instances?: number;
   status: 'active' | 'degraded' | 'inactive';
+  description?: string; // <-- Agregado para solucionar el error
 }
 
 export interface RegionNode {
   id: string;
   name: string;
-  coordinates: [number, number]; // [Longitud, Latitud] para react-simple-maps
+  coordinates: [number, number];
   status: 'active' | 'failover' | 'down';
   costMonthly: number;
   latencyMs: number;
   azsCount: number;
+  availableZones?: string[]; // <-- Agregado para las Zonas de Disponibilidad
   services: CloudService[];
 }
 

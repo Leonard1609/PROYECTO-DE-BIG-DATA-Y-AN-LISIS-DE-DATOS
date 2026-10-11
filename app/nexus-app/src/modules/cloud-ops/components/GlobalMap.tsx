@@ -7,7 +7,7 @@ import {
   Line
 } from 'react-simple-maps';
 import type { RegionNode, ConnectionLink } from '../types/infrastructure';
-import { Server, Activity, DollarSign, X, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Server, X, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
@@ -21,7 +21,6 @@ export const GlobalMap: React.FC<GlobalMapProps> = ({ regions, connections }) =>
 
   return (
     <div className="relative w-full bg-[#0f172a] rounded-xl p-2 border border-slate-800 shadow-2xl overflow-hidden">
-      {/* Contenedor con altura fija para controlar el tamaño del mapa */}
       <div className="w-full h-[380px] flex items-center justify-center">
         <ComposableMap
           projectionConfig={{ scale: 145, center: [0, 10] }}
@@ -45,7 +44,6 @@ export const GlobalMap: React.FC<GlobalMapProps> = ({ regions, connections }) =>
             }
           </Geographies>
 
-          {/* Enlaces / Conexiones entre Regiones */}
           {connections.map((conn, idx) => {
             const origin = regions.find(r => r.id === conn.fromRegionId);
             const target = regions.find(r => r.id === conn.toRegionId);
@@ -65,14 +63,13 @@ export const GlobalMap: React.FC<GlobalMapProps> = ({ regions, connections }) =>
             );
           })}
 
-          {/* Nodos de Región */}
           {regions.map((region) => {
             const isDown = region.status === 'down';
             const isFailover = region.status === 'failover';
 
-            let nodeColor = '#22c55e'; // Verde (Activo)
-            if (isDown) nodeColor = '#ef4444'; // Rojo (Caído)
-            if (isFailover) nodeColor = '#3b82f6'; // Azul (Respaldo activo)
+            let nodeColor = '#22c55e';
+            if (isDown) nodeColor = '#ef4444';
+            if (isFailover) nodeColor = '#3b82f6';
 
             return (
               <Marker
@@ -101,9 +98,8 @@ export const GlobalMap: React.FC<GlobalMapProps> = ({ regions, connections }) =>
         </ComposableMap>
       </div>
 
-      {/* Modal / Popover al hacer clic en un nodo */}
       {selectedRegion && (
-        <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 z-20 animate-fadeIn">
+        <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 z-20">
           <div className="bg-slate-900 border border-slate-700 rounded-xl max-w-md w-full p-5 text-slate-100 shadow-2xl relative space-y-4">
             <button
               onClick={() => setSelectedRegion(null)}
@@ -139,14 +135,32 @@ export const GlobalMap: React.FC<GlobalMapProps> = ({ regions, connections }) =>
               </div>
             </div>
 
+            {/* Zonas de Disponibilidad (AZs) solicitadas por el profesor */}
+            {selectedRegion.availableZones && (
+              <div className="space-y-1 bg-slate-800/40 p-2.5 rounded-lg border border-slate-800">
+                <span className="text-[11px] font-semibold text-slate-400 block">Zonas de Disponibilidad Disponibles (AZs):</span>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {selectedRegion.availableZones.map((az, idx) => (
+                    <span key={idx} className="bg-blue-600/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded text-[10px] font-mono">
+                      {az}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
               <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Servicios Desplegados</h4>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
                 {selectedRegion.services.map((srv, idx) => (
-                  <div key={idx} className="flex items-center gap-2 bg-slate-800/40 p-2 rounded border border-slate-700/50 text-xs">
-                    <Server className="w-3.5 h-3.5 text-blue-400" />
-                    <span className="font-medium text-slate-200">{srv.name}</span>
-                    {srv.instances && <span className="ml-auto text-[10px] bg-slate-700 px-1.5 py-0.5 rounded text-slate-300">{srv.instances} Inst.</span>}
+                  <div key={idx} className="bg-slate-800/40 p-2.5 rounded border border-slate-700/50 text-xs space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Server className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                      <span className="font-bold text-slate-200">{srv.name}</span>
+                      <span className="text-[10px] text-slate-400">({srv.type})</span>
+                      {srv.instances && <span className="ml-auto text-[10px] bg-slate-700 px-1.5 py-0.5 rounded text-slate-300">{srv.instances} Inst.</span>}
+                    </div>
+                    {srv.description && <p className="text-[11px] text-slate-400 pl-5">{srv.description}</p>}
                   </div>
                 ))}
               </div>
