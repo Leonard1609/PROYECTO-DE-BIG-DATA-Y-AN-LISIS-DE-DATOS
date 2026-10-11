@@ -1,25 +1,20 @@
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { ErpLayout } from './layouts/ErpLayout';
+import { ModuloPlaceholder } from './core/components/ModuloPlaceholder';
+import { ERP_MODULOS } from './core/config/navigation';
 
-export const ErpApp: React.FC = () => {
-  const navigate = useNavigate();
-
-  return (
-    <div className="min-h-screen bg-slate-50 p-8">
-      <button
-        onClick={() => navigate('/dashboard')}
-        className="text-sm text-slate-600 hover:text-slate-900 mb-4"
-      >
-        ← Volver a Nexus
-      </button>
-
-      <Routes>
-        <Route index element={<Navigate to="dashboard" replace />} />
+export const ErpApp: React.FC = () => (
+  <Routes>
+    <Route element={<ErpLayout />}>
+      <Route index element={<Navigate to="dashboard" replace />} />
+      {ERP_MODULOS.map((modulo) => (
         <Route
-            path="dashboard"
-            element={<h1 className="text-xl font-bold text-slate-900">ERP · Dashboard</h1>}
+          key={modulo.path}
+          path={`${modulo.path}/*`}
+          element={<ModuloPlaceholder modulo={modulo} />}
         />
-        <Route path="*" element={<Navigate to="dashboard" replace />} />
-      </Routes>
-    </div>
-  );
-};
+      ))}
+      <Route path="*" element={<Navigate to="dashboard" replace />} />
+    </Route>
+  </Routes>
+);
