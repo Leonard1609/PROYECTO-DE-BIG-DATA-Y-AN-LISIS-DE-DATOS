@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { INITIAL_SERVICES, SECURITY_METRICS } from '../data/awsServicesData';
 import { useCloudOps } from '../context/CloudOpsContext';
 import { StatCard } from '../components/StatCard';
@@ -7,9 +7,20 @@ import { Server, DollarSign, ShieldCheck, Globe, TrendingUp, RotateCcw, Printer 
 
 export const DashboardPage: React.FC = () => {
   const { costs, proposals, clearDashboard } = useCloudOps();
-  const [selectedDashboardRegion, setSelectedDashboardRegion] = useState<string>('us-east-1 (Norte de Virginia)');
-
   const latestProposal = proposals[0];
+
+  // Estado de la región sincronizado automáticamente con la última propuesta registrada
+  const [selectedDashboardRegion, setSelectedDashboardRegion] = useState<string>(
+    latestProposal ? latestProposal.selectedRegion : 'us-east-1 (Norte de Virginia)'
+  );
+
+  // Cada vez que se registre o cambie una propuesta, actualiza la región del Dashboard en tiempo real
+  useEffect(() => {
+    if (latestProposal && latestProposal.selectedRegion) {
+      setSelectedDashboardRegion(latestProposal.selectedRegion);
+    }
+  }, [latestProposal]);
+
   const totalMonthlyCost = costs.reduce((acc, item) => acc + item.monthlyCost, 0);
   const activeServicesCount = latestProposal ? latestProposal.selectedServices.length : 0;
   const warningsCount = SECURITY_METRICS.filter((m) => m.status === 'warning').length;
@@ -23,7 +34,7 @@ export const DashboardPage: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-3">
-          {/* Selector de Región en el Dashboard */}
+          {/* Selector de Región Sincronizado */}
           <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm text-xs">
             <Globe className="w-4 h-4 text-blue-600" />
             <select
