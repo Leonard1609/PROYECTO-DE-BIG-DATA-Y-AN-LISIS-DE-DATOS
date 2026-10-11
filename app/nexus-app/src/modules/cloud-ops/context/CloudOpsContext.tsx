@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import type { CostEstimateItem, CloudProposal } from '../types/cloud';
 
 export interface InstanceEC2 {
@@ -27,6 +27,78 @@ export interface CloudOpsLog {
   level: 'INFO' | 'WARN' | 'ERROR';
 }
 
+// ---- Métricas en vivo (simuladas, sin base de datos) ----
+export interface LivePoint {
+  time: string;
+  cpu: number;
+  requests: number;
+  latency: number;
+}
+
+export interface LiveMetrics {
+  cpu: number;
+  requests: number;
+  latencyMs: number;
+  updatedAt: number;
+  series: LivePoint[];
+}
+
+const LIVE_KEY = 'cloudops_live';
+const LIVE_INTERVAL_MS = 3000;
+const MAX_POINTS = 24;
+const MAX_LOGS = 8;
+
+const createInitialLive = (): LiveMetrics => ({
+  cpu: 42,
+  requests: 1200,
+  latencyMs: 85,
+  updatedAt: Date.now(),
+  series: [],
+});
+
+const loadLive = (): LiveMetrics => {
+  try {
+    const raw = localStorage.getItem(LIVE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as LiveMetrics;
+      if (typeof parsed.cpu === 'number' && Array.isArray(parsed.series)) {
+        return { ...parsed, updatedAt: Date.now() };
+      }
+    }
+  } catch {
+    // Datos corruptos en localStorage: se reinician las métricas.
+  }
+  return createInitialLive();
+};
+
+const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+const drift = (v: number, step: number, min: number, max: number) =>
+  clamp(v + (Math.random() - 0.5) * step, min, max);
+
+const formatClock = (ts: number) =>
+  new Date(ts).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+const EVENT_POOL: Omit<CloudOpsLog, 'id' | 'timestamp'>[] = [
+  { service: 'EC2', event: 'Auto Scaling evaluó la capacidad del grupo', level: 'INFO' },
+  { service: 'RDS', event: 'Copia de seguridad automática completada', level: 'INFO' },
+  { service: 'CloudFront', event: 'Invalidación de caché finalizada', level: 'INFO' },
+  { service: 'S3', event: 'Replicación entre regiones sincronizada', level: 'INFO' },
+  { service: 'Route 53', event: 'Chequeo de salud del dominio: correcto', level: 'INFO' },
+  { service: 'IAM', event: 'Rol con acceso amplio detectado para auditoría', level: 'WARN' },
+];
+
+const buildLogEntry = (now: number, cpu: number): CloudOpsLog | null => {
+  const base = { id: `log-${now}`, timestamp: formatClock(now) };
+  if (cpu > 80) {
+    return { ...base, service: 'EC2', event: `CPU alta (${Math.round(cpu)}%) en el grupo de instancias`, level: 'WARN' };
+  }
+  if (Math.random() < 0.45) {
+    const picked = EVENT_POOL[Math.floor(Math.random() * EVENT_POOL.length)];
+    return { ...base, ...picked };
+  }
+  return null;
+};
+
 interface CloudOpsContextType {
   costs: (CostEstimateItem & { region?: string })[];
   proposals: CloudProposal[];
@@ -45,6 +117,9 @@ interface CloudOpsContextType {
   setInstances: React.Dispatch<React.SetStateAction<InstanceEC2[]>>;
   logs: CloudOpsLog[];
   toggleInstanceStatus: (id: string) => void;
+  liveMetrics: LiveMetrics;
+  isLive: boolean;
+  toggleLive: () => void;
 }
 
 const CloudOpsContext = createContext<CloudOpsContextType | undefined>(undefined);
@@ -73,7 +148,11 @@ export const CloudOpsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   });
 
   const [instances, setInstances] = useState<InstanceEC2[]>([]);
-  const [logs] = useState<CloudOpsLog[]>([]);
+  const [logs, setLogs] = useState<CloudOpsLog[]>([]);
+
+  const [liveMetrics, setLiveMetrics] = useState<LiveMetrics>(loadLive);
+  const [isLive, setIsLive] = useState<boolean>(true);
+  const liveRef = useRef<LiveMetrics>(liveMetrics);
 
   useEffect(() => {
     localStorage.setItem('cloudops_costs', JSON.stringify(costs));
@@ -82,6 +161,45 @@ export const CloudOpsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     localStorage.setItem('cloudops_proposals', JSON.stringify(proposals));
   }, [proposals]);
+
+  useEffect(() => {
+    liveRef.current = liveMetrics;
+    try {
+      localStorage.setItem(LIVE_KEY, JSON.stringify(liveMetrics));
+    } catch {
+      // Sin espacio o storage bloqueado: la simulación sigue en memoria.
+    }
+  }, [liveMetrics]);
+
+  // Motor de simulación: cada 3 s genera una nueva lectura y, a veces, un evento.
+  useEffect(() => {
+    if (!isLive) return;
+    const id = window.setInterval(() => {
+      const prev = liveRef.current;
+      const now = Date.now();
+      const cpu = drift(prev.cpu, 12, 15, 92);
+      const requests = Math.round(drift(prev.requests, 360, 400, 3200));
+      const latencyMs = Math.round(drift(prev.latencyMs, 24, 35, 240));
+
+      const next: LiveMetrics = {
+        cpu,
+        requests,
+        latencyMs,
+        updatedAt: now,
+        series: [
+          ...prev.series,
+          { time: formatClock(now), cpu: Math.round(cpu), requests, latency: latencyMs },
+        ].slice(-MAX_POINTS),
+      };
+      liveRef.current = next;
+      setLiveMetrics(next);
+
+      const entry = buildLogEntry(now, cpu);
+      if (entry) setLogs((p) => [entry, ...p].slice(0, MAX_LOGS));
+    }, LIVE_INTERVAL_MS);
+
+    return () => window.clearInterval(id);
+  }, [isLive]);
 
   const addCostItem = (itemData: Omit<CostEstimateItem, 'id'> & { region?: string }) => {
     const newItem = {
@@ -109,7 +227,7 @@ export const CloudOpsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     const serviceName = proposalData.selectedServices[0] || 'Amazon EC2';
     const estimatedMonthlyCost = 120.00;
-    
+
     // Asociamos la región al costo registrado
     addCostItem({
       serviceId: 'custom-prop',
@@ -128,12 +246,19 @@ export const CloudOpsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setProposals([]);
     setIsFailoverActive(false);
     setSelectedRegion('us-east-1 (Norte de Virginia)');
+    setLogs([]);
+    setLiveMetrics(createInitialLive());
     localStorage.removeItem('cloudops_costs');
     localStorage.removeItem('cloudops_proposals');
+    localStorage.removeItem(LIVE_KEY);
   };
 
   const toggleFailover = () => {
     setIsFailoverActive((prev) => !prev);
+  };
+
+  const toggleLive = () => {
+    setIsLive((prev) => !prev);
   };
 
   const toggleInstanceStatus = (id: string) => {
@@ -172,6 +297,9 @@ export const CloudOpsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setInstances,
         logs,
         toggleInstanceStatus,
+        liveMetrics,
+        isLive,
+        toggleLive,
       }}
     >
       {children}
