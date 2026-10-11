@@ -10,9 +10,10 @@ import { ServicesPage } from './ServicesPage';
 import { Sidebar } from '../components/Sidebar';
 import { Header } from '../components/Header';
 import { CloudOpsProvider, useCloudOps } from '../context/CloudOpsContext';
+import '../styles/cloudops-theme.css';
 
 const CloudOpsModuleContent: React.FC = () => {
-  const { activeTab } = useCloudOps();
+  const { activeTab, resolvedTheme } = useCloudOps();
   const [mobileOpen, setMobileOpen] = useState<boolean>(false);
 
   const renderActivePage = () => {
@@ -36,7 +37,7 @@ const CloudOpsModuleContent: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#f8fafc] font-sans text-slate-800">
+    <div data-mode={resolvedTheme} className="cloudops-root flex min-h-screen font-sans">
       <Sidebar mobileOpen={mobileOpen} onCloseMobile={() => setMobileOpen(false)} />
 
       <div className="flex min-w-0 flex-1 flex-col">

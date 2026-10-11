@@ -1,14 +1,24 @@
 import React from 'react';
-import { Menu } from 'lucide-react';
+import { Menu, Monitor, Moon, Sun } from 'lucide-react';
 import { CLOUDOPS_NAV } from '../data/cloudOpsNav';
 import { useCloudOps } from '../context/CloudOpsContext';
+import type { ThemeMode } from '../context/CloudOpsContext';
 
 interface HeaderProps {
   onOpenMobileMenu: () => void;
 }
 
+const THEME_CYCLE: ThemeMode[] = ['system', 'light', 'dark'];
+const THEME_META = {
+  system: { label: 'Sistema', icon: Monitor },
+  light: { label: 'Claro', icon: Sun },
+  dark: { label: 'Oscuro', icon: Moon },
+} as const;
+
 export const Header: React.FC<HeaderProps> = ({ onOpenMobileMenu }) => {
-  const { activeTab, isLive, toggleLive, liveMetrics } = useCloudOps();
+  const { activeTab, isLive, toggleLive, liveMetrics, theme, setTheme } = useCloudOps();
+  const ThemeIcon = THEME_META[theme].icon;
+  const nextTheme = THEME_CYCLE[(THEME_CYCLE.indexOf(theme) + 1) % THEME_CYCLE.length];
   const currentLabel = CLOUDOPS_NAV.find((item) => item.id === activeTab)?.label ?? 'Dashboard';
   const lastUpdate = new Date(liveMetrics.updatedAt).toLocaleTimeString('es-PE', {
     hour: '2-digit',
@@ -44,6 +54,15 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileMenu }) => {
         <span className="hidden text-xs text-slate-400 sm:inline">
           Actualizado <span className="font-mono text-slate-500">{lastUpdate}</span>
         </span>
+        <button
+          onClick={() => setTheme(nextTheme)}
+          title={`Tema: ${THEME_META[theme].label}. Clic para cambiar a ${THEME_META[nextTheme].label}`}
+          aria-label={`Tema actual: ${THEME_META[theme].label}. Cambiar a ${THEME_META[nextTheme].label}`}
+          className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-100"
+        >
+          <ThemeIcon className="h-4 w-4" />
+          <span className="hidden sm:inline">{THEME_META[theme].label}</span>
+        </button>
         <button
           onClick={toggleLive}
           aria-pressed={isLive}

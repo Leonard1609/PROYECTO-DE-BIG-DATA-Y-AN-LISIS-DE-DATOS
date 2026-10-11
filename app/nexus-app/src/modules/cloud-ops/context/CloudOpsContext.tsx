@@ -43,6 +43,26 @@ export interface LiveMetrics {
   series: LivePoint[];
 }
 
+// ---- Tema (Sistema / Claro / Oscuro) ----
+export type ThemeMode = 'system' | 'light' | 'dark';
+export type ResolvedTheme = 'light' | 'dark';
+
+const THEME_KEY = 'cloudops_theme';
+const DARK_QUERY = '(prefers-color-scheme: dark)';
+
+const loadTheme = (): ThemeMode => {
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === 'light' || saved === 'dark' || saved === 'system') return saved;
+  } catch {
+    // localStorage bloqueado: se usa el tema del sistema.
+  }
+  return 'system';
+};
+
+const systemPrefersDark = () =>
+  typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(DARK_QUERY).matches;
+
 const LIVE_KEY = 'cloudops_live';
 const LIVE_INTERVAL_MS = 3000;
 const MAX_POINTS = 24;
@@ -120,6 +140,9 @@ interface CloudOpsContextType {
   liveMetrics: LiveMetrics;
   isLive: boolean;
   toggleLive: () => void;
+  theme: ThemeMode;
+  resolvedTheme: ResolvedTheme;
+  setTheme: (mode: ThemeMode) => void;
 }
 
 const CloudOpsContext = createContext<CloudOpsContextType | undefined>(undefined);
@@ -153,6 +176,28 @@ export const CloudOpsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [liveMetrics, setLiveMetrics] = useState<LiveMetrics>(loadLive);
   const [isLive, setIsLive] = useState<boolean>(true);
   const liveRef = useRef<LiveMetrics>(liveMetrics);
+
+  const [theme, setThemeState] = useState<ThemeMode>(loadTheme);
+  const [systemDark, setSystemDark] = useState<boolean>(systemPrefersDark);
+  const resolvedTheme: ResolvedTheme = theme === 'system' ? (systemDark ? 'dark' : 'light') : theme;
+
+  // Si el usuario cambia el tema del sistema operativo, el módulo lo sigue al instante.
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia(DARK_QUERY);
+    const onChange = (e: MediaQueryListEvent) => setSystemDark(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  const setTheme = (mode: ThemeMode) => {
+    setThemeState(mode);
+    try {
+      localStorage.setItem(THEME_KEY, mode);
+    } catch {
+      // Sin persistencia: la preferencia vale solo para esta sesión.
+    }
+  };
 
   useEffect(() => {
     localStorage.setItem('cloudops_costs', JSON.stringify(costs));
@@ -300,6 +345,9 @@ export const CloudOpsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         liveMetrics,
         isLive,
         toggleLive,
+        theme,
+        resolvedTheme,
+        setTheme,
       }}
     >
       {children}
