@@ -17,7 +17,8 @@ const AWS_SERVICES_CATALOG: ServiceOption[] = [
 ];
 
 export const PlanningPage: React.FC = () => {
-  const { proposals, addProposal, setActiveTab } = useCloudOps();
+  // Extraemos setSelectedRegion del contexto
+  const { proposals, addProposal, setActiveTab, setSelectedRegion } = useCloudOps();
 
   const [form, setForm] = useState({
     solutionName: '',
@@ -50,7 +51,6 @@ export const PlanningPage: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validación estricta exigida por el profesor
     if (
       !form.solutionName ||
       !form.appType ||
@@ -64,6 +64,7 @@ export const PlanningPage: React.FC = () => {
       return;
     }
 
+    // 1. Agregar la propuesta al estado
     addProposal({
       solutionName: form.solutionName,
       appType: form.appType,
@@ -75,6 +76,10 @@ export const PlanningPage: React.FC = () => {
       migrationGoal: form.migrationGoal,
     });
 
+    // 2. Sincronizar de forma inmediata la Región Global para el Dashboard
+    setSelectedRegion(form.selectedRegion);
+
+    // 3. Redirigir a Costos
     setActiveTab('costos');
   };
 
