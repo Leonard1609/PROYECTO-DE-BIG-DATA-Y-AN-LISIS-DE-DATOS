@@ -322,16 +322,16 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
                     strNrc.includes('8499') || 
                     strTitulo.includes('azure');
                     
+                  const esErp =
+                    strId.startsWith('902094cc') ||
+                    strNrc.includes('7411') ||
+                    strTitulo.includes('erp');
 
                   const esCloudOps = 
                     strId.startsWith('b0da6f34') || 
                     strNrc.includes('4575') || 
                     strTitulo.includes('cloud');
 
-                  const esErp =
-                    strId.startsWith('902094cc') ||
-                    strNrc.includes('7411') ||
-                    strTitulo.includes('erp');
 
                   if (esErp) {
                     navigate('/erp-enterprise-cloud');
