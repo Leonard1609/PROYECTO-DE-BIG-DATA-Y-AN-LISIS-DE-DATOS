@@ -1,13 +1,14 @@
 const VERDE = 'bg-emerald-50 text-emerald-700';
 const AMBAR = 'bg-amber-50 text-amber-700';
+const ROJO = 'bg-red-50 text-red-700';
 const GRIS = 'bg-slate-100 text-slate-600';
 
 const ESTILOS: Record<string, string> = {
-  Activo: VERDE, Emitida: VERDE, Recibida: VERDE, Cancelada: VERDE,
+  Activo: VERDE, Emitida: VERDE, Recibida: VERDE, Cancelada: VERDE, Normal: VERDE, Ingreso: VERDE,
   Inactivo: 'bg-slate-100 text-slate-500',
-  Crédito: AMBAR, Pendiente: AMBAR,
-  Contado: GRIS,
-  Anulada: 'bg-red-50 text-red-700',
+  Crédito: AMBAR, Pendiente: AMBAR, 'Stock bajo': AMBAR,
+  Anulada: ROJO, Vencida: ROJO, 'Sin stock': ROJO, Egreso: ROJO,
+  Contado: GRIS, Compra: GRIS, Venta: GRIS, Ajuste: GRIS,
 };
 
 export const Insignia: React.FC<{ texto: string }> = ({ texto }) => (
