@@ -1,6 +1,20 @@
 import React, { useState } from 'react';
 import { useCloudOps } from '../context/CloudOpsContext';
-import { ClipboardList, PlusCircle, CheckCircle2, Server, Globe, Users } from 'lucide-react';
+import { ClipboardList, PlusCircle, CheckCircle2, Server, Globe, Users, Target } from 'lucide-react';
+
+interface ServiceOption {
+  name: string;
+  desc: string;
+}
+
+const AWS_SERVICES_CATALOG: ServiceOption[] = [
+  { name: 'Amazon EC2', desc: 'Servidores virtuales elásticos para cómputo escalable.' },
+  { name: 'Amazon S3', desc: 'Almacenamiento de objetos seguro, duradero y altamente escalable.' },
+  { name: 'Amazon RDS', desc: 'Base de datos relacional administrada para PostgreSQL/MySQL.' },
+  { name: 'Amazon CloudFront', desc: 'Red de entrega de contenido (CDN) global de baja latencia.' },
+  { name: 'AWS Lambda', desc: 'Ejecución de código sin servidor orientada a eventos.' },
+  { name: 'Amazon VPC', desc: 'Red virtual aislada para subredes públicas y privadas.' },
+];
 
 export const PlanningPage: React.FC = () => {
   const { proposals, addProposal, setActiveTab } = useCloudOps();
@@ -8,47 +22,54 @@ export const PlanningPage: React.FC = () => {
   // Formulario inicia estrictamente VACÍO
   const [form, setForm] = useState({
     solutionName: '',
-    appType: 'Web Application',
-    description: '',
-    selectedRegion: '', // Vacío para que el usuario seleccione obligatoriamente
+    appType: '',
+    selectedRegion: '',
     estimatedUsers: 0,
     availabilityLevel: '',
-    selectedService: 'Amazon EC2', // Menú desplegable en vez de texto libre
     migrationGoal: '',
   });
 
-  const awsServiceOptions = [
-    { name: 'Amazon EC2', desc: 'Servidor virtual elástico en la nube para cómputo escalable.' },
-    { name: 'Amazon S3', desc: 'Almacenamiento de objetos seguro y de alta durabilidad.' },
-    { name: 'Amazon RDS', desc: 'Base de datos relacional administrada (PostgreSQL/MySQL).' },
-    { name: 'Amazon CloudFront', desc: 'Red de entrega de contenido (CDN) global de baja latencia.' },
-  ];
+  // Estado para la selección múltiple de servicios
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
 
-  const handleServiceChange = (serviceName: string) => {
-    const found = awsServiceOptions.find(s => s.name === serviceName);
-    setForm({
-      ...form,
-      selectedService: serviceName,
-      description: found ? found.desc : '',
-    });
+  // Alternar la selección/deselección de servicios
+  const toggleService = (serviceName: string) => {
+    setSelectedServices((prev) =>
+      prev.includes(serviceName)
+        ? prev.filter((s) => s !== serviceName)
+        : [...prev, serviceName]
+    );
   };
+
+  // Generar la descripción concatenada en tiempo real según los servicios marcados
+  const generatedDescription = selectedServices.length > 0
+    ? selectedServices
+        .map((sName) => {
+          const found = AWS_SERVICES_CATALOG.find((item) => item.name === sName);
+          return found ? `${found.name}: ${found.desc}` : sName;
+        })
+        .join(' | ')
+    : 'Seleccione uno o más servicios para generar la descripción técnica...';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.solutionName || !form.selectedRegion) return;
+    if (!form.solutionName || !form.selectedRegion || selectedServices.length === 0) {
+      alert('Por favor complete el nombre, seleccione una región y al menos un servicio.');
+      return;
+    }
 
     addProposal({
       solutionName: form.solutionName,
-      appType: form.appType,
-      description: form.description || 'Arquitectura cloud propuesta.',
+      appType: form.appType || 'Web Application',
+      description: generatedDescription,
       selectedRegion: form.selectedRegion,
       estimatedUsers: Number(form.estimatedUsers),
       availabilityLevel: form.availabilityLevel || '99.9%',
-      selectedServices: [form.selectedService],
-      migrationGoal: form.migrationGoal,
+      selectedServices: selectedServices,
+      migrationGoal: form.migrationGoal || 'Optimización de infraestructura y costos.',
     });
 
-    // Redirigir automáticamente al apartado de Costos como indicó el profesor
+    // Redirigir automáticamente al apartado de Costos
     setActiveTab('costos');
   };
 
@@ -60,14 +81,14 @@ export const PlanningPage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Formulario */}
+        {/* Formulario de Registro */}
         <div className="lg:col-span-1 bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
           <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
             <PlusCircle className="w-5 h-5 text-blue-600" />
             Nueva Propuesta Cloud
           </h3>
 
-          <form onSubmit={handleSubmit} className="space-y-3 text-xs">
+          <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
             <div>
               <label className="font-semibold text-slate-700 block mb-1">Nombre de Solución</label>
               <input
@@ -83,13 +104,15 @@ export const PlanningPage: React.FC = () => {
             <div>
               <label className="font-semibold text-slate-700 block mb-1">Tipo de Aplicación</label>
               <select
+                required
                 value={form.appType}
                 onChange={(e) => setForm({ ...form, appType: e.target.value })}
                 className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
               >
+                <option value="">-- Seleccione Tipo de Aplicación --</option>
                 <option value="Web Application">Web Application</option>
                 <option value="Mobile Backend">Mobile Backend API</option>
-                <option value="Data Processing">Procesamiento de Datos / Analytics</option>
+                <option value="Procesamiento de Datos / Analytics">Procesamiento de Datos / Analytics</option>
                 <option value="Microservicios">Arquitectura Microservicios</option>
               </select>
             </div>
@@ -110,17 +133,31 @@ export const PlanningPage: React.FC = () => {
               </select>
             </div>
 
+            {/* Selector Múltiple de Servicios */}
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Servicio AWS (Selector)</label>
-              <select
-                value={form.selectedService}
-                onChange={(e) => handleServiceChange(e.target.value)}
-                className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white font-medium"
-              >
-                {awsServiceOptions.map((srv, idx) => (
-                  <option key={idx} value={srv.name}>{srv.name}</option>
-                ))}
-              </select>
+              <label className="font-semibold text-slate-700 block mb-1">
+                Servicios AWS Incluidos (Selección Múltiple)
+              </label>
+              <div className="grid grid-cols-2 gap-1.5 p-2 bg-slate-50 border border-slate-200 rounded-lg max-h-36 overflow-y-auto">
+                {AWS_SERVICES_CATALOG.map((srv) => {
+                  const isChecked = selectedServices.includes(srv.name);
+                  return (
+                    <button
+                      type="button"
+                      key={srv.name}
+                      onClick={() => toggleService(srv.name)}
+                      className={`flex items-center gap-1.5 px-2 py-1.5 rounded text-[11px] font-medium border text-left transition-all ${
+                        isChecked
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <Server className={`w-3 h-3 ${isChecked ? 'text-white' : 'text-slate-400'}`} />
+                      <span className="truncate">{srv.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -146,14 +183,26 @@ export const PlanningPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Campo de Descripción Automática (No Editable) */}
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Descripción del Servicio</label>
+              <label className="font-semibold text-slate-700 block mb-1">Descripción del Servicio (Autogenerada)</label>
+              <textarea
+                rows={3}
+                readOnly
+                value={generatedDescription}
+                className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-100 text-slate-600 text-[11px] cursor-not-allowed focus:outline-none"
+              ></textarea>
+            </div>
+
+            {/* Campo Libre: Objetivo de la Migración */}
+            <div>
+              <label className="font-semibold text-slate-700 block mb-1">Objetivo de la Migración</label>
               <textarea
                 rows={2}
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50 text-slate-600"
-                placeholder="Seleccione un servicio para autocompletar..."
+                placeholder="ej. Reducir costos de infraestructura física y mejorar disponibilidad multi-zona."
+                value={form.migrationGoal}
+                onChange={(e) => setForm({ ...form, migrationGoal: e.target.value })}
+                className="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
               ></textarea>
             </div>
 
@@ -166,7 +215,7 @@ export const PlanningPage: React.FC = () => {
           </form>
         </div>
 
-        {/* Lista de Propuestas */}
+        {/* Lista de Propuestas Registradas */}
         <div className="lg:col-span-2 space-y-4">
           <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
             <ClipboardList className="w-5 h-5 text-slate-700" />
@@ -192,6 +241,15 @@ export const PlanningPage: React.FC = () => {
                   </div>
 
                   <p className="text-xs text-slate-600">{prop.description}</p>
+
+                  {prop.migrationGoal && (
+                    <div className="text-xs bg-amber-50 border border-amber-200/60 p-2.5 rounded-lg text-amber-900 flex items-start gap-2">
+                      <Target className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <strong>Objetivo:</strong> {prop.migrationGoal}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-3 gap-2 bg-slate-50 p-3 rounded-lg text-xs">
                     <div className="flex items-center gap-1.5 text-slate-700">
