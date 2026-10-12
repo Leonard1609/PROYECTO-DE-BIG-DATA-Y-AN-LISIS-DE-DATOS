@@ -44,7 +44,7 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const ThemeProviderInner: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [mode, setModeState] = useState<ThemeMode>(readMode);
   const [systemDark, setSystemDark] = useState<boolean>(systemPrefersDark);
 
@@ -84,6 +84,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [theme, mode]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+};
+
+// Si ya hay un ThemeProvider más arriba (por ejemplo en main.tsx) se reutiliza; así nunca hay dos a la vez
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const parent = useContext(ThemeContext);
+  return parent ? <>{children}</> : <ThemeProviderInner>{children}</ThemeProviderInner>;
 };
 
 export function useTheme() {

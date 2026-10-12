@@ -6,6 +6,7 @@ import { authStorage } from './utils/authStorage';
 
 // Estilos del selector de tema y modo oscuro del dashboard
 import './shared/styles/nexus-theme.css';
+import { ThemeProvider } from './shared/context/ThemeContext';
 
 // Páginas Principales
 import { LoginPage } from './pages/LoginPage';
@@ -21,7 +22,7 @@ import { ErpApp } from './modules/erp-enterprise-cloud';
 // Pantalla a la que se llega al entrar o al salir de un módulo
 const HOME_PATH = '/dashboard/proyectos';
 
-export default function App() {
+function AppRoutes() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     const session = authStorage.get();
     return !!session?.email;
@@ -125,5 +126,14 @@ export default function App() {
         element={<Navigate to={isAuthenticated ? HOME_PATH : '/'} replace />}
       />
     </Routes>
+  );
+}
+
+// El ThemeProvider envuelve toda la app: el selector de apariencia lo necesita en cualquier pantalla
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppRoutes />
+    </ThemeProvider>
   );
 }
