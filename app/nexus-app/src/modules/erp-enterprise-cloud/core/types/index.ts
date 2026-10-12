@@ -114,6 +114,7 @@ export interface MovimientoInventario {
   almacenId: string;
   cantidad: number;
   saldo: number;
+  motivo?: string;
 }
 
 /* ───────── Finanzas ───────── */

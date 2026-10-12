@@ -6,12 +6,16 @@ import { ERP_MODULOS } from './core/config/navigation';
 import { MantenimientoPage } from './modules/mantenimiento/pages/MantenimientoPage';
 import { ComercialPage } from './modules/comercial/pages/ComercialPage';
 import { ComprasPage } from './modules/compras/pages/ComprasPage';
+import { InventarioPage } from './modules/inventario/pages/InventarioPage';
+import { FinanzasPage } from './modules/finanzas/pages/FinanzasPage';
 
 /** Páginas ya construidas. Los módulos que no aparecen aquí muestran la página provisional. */
 const PAGINAS: Record<string, ReactElement> = {
   mantenimiento: <MantenimientoPage />,
   comercial: <ComercialPage />,
   compras: <ComprasPage />,
+  inventario: <InventarioPage />,
+  finanzas: <FinanzasPage />,
 };
 
 export const ErpApp: React.FC = () => (

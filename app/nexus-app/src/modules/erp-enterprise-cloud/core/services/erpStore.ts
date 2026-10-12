@@ -286,7 +286,38 @@ function registrarCompra(d: DatosCompra): Resultado {
   return { ok: true, id: compraId };
 }
 
+/* ───────── Inventario ───────── */
+
+export interface DatosAjuste {
+  productoId: string; almacenId: string; tipo: 'Entrada' | 'Salida'; cantidad: number; motivo: string;
+}
+
+function registrarAjuste(d: DatosAjuste): Resultado {
+  const M = 'Inventario', A = 'Registrar ajuste';
+  const s = state;
+  if (!s.productos.some((p) => p.id === d.productoId && p.estado === 'Activo')) return rechazar(M, A, 'Selecciona un producto activo.');
+  if (!s.almacenes.some((a) => a.id === d.almacenId && a.estado === 'Activo')) return rechazar(M, A, 'Selecciona un almacén activo.');
+  if (!Number.isInteger(d.cantidad) || d.cantidad <= 0) return rechazar(M, A, 'La cantidad debe ser un entero mayor que cero.');
+  if (d.motivo.trim() === '') return rechazar(M, A, 'Indica el motivo del ajuste.');
+
+  const actual = stockDe(s.movimientos, d.productoId, d.almacenId);
+  if (d.tipo === 'Salida' && d.cantidad > actual) return rechazar(M, A, `Stock insuficiente. Disponible: ${actual}.`);
+
+  const numero = `AJ-${String(s.movimientos.filter((m) => m.origen === 'Ajuste').length + 1).padStart(4, '0')}`;
+  const id = nuevoId('MOV');
+  commit({
+    ...s,
+    movimientos: [...s.movimientos, {
+      id, fecha: ahora(), tipo: d.tipo, origen: 'Ajuste', documentoNumero: numero,
+      productoId: d.productoId, almacenId: d.almacenId, cantidad: d.cantidad,
+      saldo: d.tipo === 'Entrada' ? actual + d.cantidad : actual - d.cantidad, motivo: d.motivo.trim(),
+    }],
+  }, { modulo: M, accion: A, registroId: numero, resultado: 'Exitoso', detalle: d.motivo.trim() });
+  return { ok: true, id };
+}
+
 /* ───────── Finanzas ───────── */
+
 
 function liquidarCuenta(cuentaId: string): Resultado {
   const M = 'Finanzas';
@@ -321,6 +352,6 @@ export const erpStore = {
   },
   acciones: {
     crearMaestro, actualizarMaestro, eliminarMaestro,
-    registrarVenta, registrarCompra, liquidarCuenta, restablecer,
+    registrarVenta, registrarCompra, registrarAjuste, liquidarCuenta, restablecer,
   },
 };
