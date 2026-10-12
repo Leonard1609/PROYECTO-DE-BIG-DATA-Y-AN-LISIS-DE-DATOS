@@ -4,10 +4,10 @@ const ROJO = 'bg-red-50 text-red-700';
 const GRIS = 'bg-slate-100 text-slate-600';
 
 const ESTILOS: Record<string, string> = {
-  Activo: VERDE, Emitida: VERDE, Recibida: VERDE, Cancelada: VERDE, Normal: VERDE, Ingreso: VERDE,
+  Activo: VERDE, Emitida: VERDE, Recibida: VERDE, Cancelada: VERDE, Normal: VERDE, Ingreso: VERDE, Exitoso: VERDE,
   Inactivo: 'bg-slate-100 text-slate-500',
   Crédito: AMBAR, Pendiente: AMBAR, 'Stock bajo': AMBAR,
-  Anulada: ROJO, Vencida: ROJO, 'Sin stock': ROJO, Egreso: ROJO,
+  Anulada: ROJO, Vencida: ROJO, 'Sin stock': ROJO, Egreso: ROJO, Rechazado: ROJO,
   Contado: GRIS, Compra: GRIS, Venta: GRIS, Ajuste: GRIS,
 };
 
