@@ -4,6 +4,9 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 // Almacenamiento de sesión
 import { authStorage } from './utils/authStorage';
 
+// Estilos del selector de tema y modo oscuro del dashboard
+import './shared/styles/nexus-theme.css';
+
 // Páginas Principales
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';

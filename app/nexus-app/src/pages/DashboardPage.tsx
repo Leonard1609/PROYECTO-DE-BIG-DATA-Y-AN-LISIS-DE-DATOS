@@ -10,6 +10,7 @@ import { MensajesTab } from '../shared/components/dashboard/MensajesTab';
 import { ProyectosTab } from '../shared/components/dashboard/ProyectosTab';
 import type { CuentaActiva, InvitacionSolicitud } from '../shared/types/dashboard';
 import { API_URL } from '../config/api';
+import { ThemeToggle } from '../shared/components/ThemeToggle';
 
 interface DashboardProps {
   userEmail: string;
@@ -250,7 +251,7 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
     activeTab === tab && (!SOLO_ADMIN.includes(tab) || (rolCargado && esAdmin));
 
   return (
-    <div className="min-h-screen bg-[#f4f6f8] text-slate-800 flex font-sans text-sm relative overflow-x-hidden">
+    <div className="nx-dash min-h-screen bg-[#f4f6f8] text-slate-800 flex font-sans text-sm relative overflow-x-hidden">
       {/* Overlay Backdrop para menú móvil */}
       {isMobileMenuOpen && (
         <div
@@ -294,15 +295,18 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
             </h1>
           </div>
 
-          {activeTab === 'accesos' && esAdmin && (
-            <button
-              onClick={() => setShowInviteModal(true)}
-              className="w-full sm:w-auto px-3.5 py-2 bg-[#0056d2] text-white rounded-md text-xs font-semibold hover:bg-blue-700 flex items-center justify-center gap-2 shadow-sm transition-all"
-            >
-              <UserPlus className="w-4 h-4 shrink-0" />
-              <span>Generar Nueva Invitación / Cargo</span>
-            </button>
-          )}
+          <div className="flex w-full sm:w-auto items-center justify-between sm:justify-end gap-3">
+            {activeTab === 'accesos' && esAdmin && (
+              <button
+                onClick={() => setShowInviteModal(true)}
+                className="flex-1 sm:flex-none px-3.5 py-2 bg-[#0056d2] text-white rounded-md text-xs font-semibold hover:bg-blue-700 flex items-center justify-center gap-2 shadow-sm transition-all"
+              >
+                <UserPlus className="w-4 h-4 shrink-0" />
+                <span>Generar Nueva Invitación / Cargo</span>
+              </button>
+            )}
+            <ThemeToggle />
+          </div>
         </header>
 
         {/* Área Principal + Sidebar Derecha */}
