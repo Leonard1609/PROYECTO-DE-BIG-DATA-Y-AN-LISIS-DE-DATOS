@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { UserPlus, Menu, X } from 'lucide-react';
 import { Sidebar } from '../shared/components/dashboard/Sidebar';
 import { RightSidebar } from '../shared/components/dashboard/RightSidebar';
@@ -16,15 +16,28 @@ interface DashboardProps {
   onLogout: () => void;
 }
 
+// Cada sección del dashboard tiene su propia URL: /dashboard/<sección>
+type Tab = 'perfil' | 'proyectos' | 'mensajes' | 'accesos';
+const TABS: Tab[] = ['perfil', 'proyectos', 'mensajes', 'accesos'];
+const SOLO_ADMIN: Tab[] = ['mensajes', 'accesos'];
+const ROLES_ADMIN = ['ADMIN', 'ADMINISTRADOR', 'SUB_ADMIN'];
+const RUTA_INICIO = '/dashboard/proyectos';
+const esTabValido = (s?: string): s is Tab => TABS.includes(s as Tab);
+
 export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout }) => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'perfil' | 'proyectos' | 'mensajes' | 'accesos'>('accesos');
+  const { section } = useParams<{ section: string }>();
+  const activeTab: Tab = esTabValido(section) ? section : 'proyectos';
   const [showInviteModal, setShowInviteModal] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
   const [cuentasActivas, setCuentasActivas] = useState<CuentaActiva[]>([]);
   const [invitacionesSolicitudes, setInvitacionesSolicitudes] = useState<InvitacionSolicitud[]>([]);
   const [userRole, setUserRole] = useState<string>('ANALISTA');
+  // Hasta que no llega la respuesta del servidor no se sabe el rol real del usuario
+  const [rolCargado, setRolCargado] = useState<boolean>(false);
+
+  const esAdmin = ROLES_ADMIN.includes(userRole.toUpperCase());
 
   const cargarDatosServidor = async (): Promise<void> => {
     try {
@@ -52,10 +65,10 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
           .map((sol: any) => ({
             id: sol.id,
             origen: sol.origen === 'INVITACION' ? 'Invitación' : 'Solicitud',
-            fase: sol.fase === 3 
-              ? 'Fase 3/4 (Solicitud de Activación)' 
-              : sol.fase === 2 
-              ? 'Fase 2/4 (Visto Bueno Gestión)' 
+            fase: sol.fase === 3
+              ? 'Fase 3/4 (Solicitud de Activación)'
+              : sol.fase === 2
+              ? 'Fase 2/4 (Visto Bueno Gestión)'
               : `Fase ${sol.fase || 2}/4`,
             destinatario: sol.nombre_completo || sol.email_personal || 'Solicitante Web',
             cargo: sol.cargo || 'Analista / Colaborador',
@@ -73,29 +86,34 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
         setCuentasActivas(activasMapeadas);
         setInvitacionesSolicitudes(solicitudesMapeadas);
 
-        const usrActual = data.find((usr: any) => 
-          usr.email?.toLowerCase() === userEmail?.toLowerCase() || 
+        const usrActual = data.find((usr: any) =>
+          usr.email?.toLowerCase() === userEmail?.toLowerCase() ||
           usr.email_personal?.toLowerCase() === userEmail?.toLowerCase()
         );
 
         if (usrActual) {
-          const rolDetectado = usrActual.rol || 'ANALISTA';
-          setUserRole(rolDetectado);
-
-          const esAdmin = ['ADMIN', 'ADMINISTRADOR', 'SUB_ADMIN'].includes(rolDetectado.toUpperCase());
-          if (!esAdmin) {
-            setActiveTab('proyectos');
-          }
+          setUserRole(usrActual.rol || 'ANALISTA');
         }
       }
     } catch (error) {
       console.error('Error al cargar datos del backend:', error);
+    } finally {
+      setRolCargado(true);
     }
   };
 
   useEffect(() => {
     cargarDatosServidor();
   }, [userEmail]);
+
+  // Guarda de navegación: sección inexistente o sin permisos -> Proyectos
+  useEffect(() => {
+    const seccionInvalida = !esTabValido(section);
+    const sinPermiso = rolCargado && !esAdmin && SOLO_ADMIN.includes(activeTab);
+    if (seccionInvalida || sinPermiso) {
+      navigate(RUTA_INICIO, { replace: true });
+    }
+  }, [section, activeTab, rolCargado, esAdmin, navigate]);
 
   const handleSendInvite = async (data: any): Promise<void> => {
     const emailTarget = typeof data === 'string' ? data : data.emailPersonal;
@@ -128,7 +146,7 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
   };
 
   const handleAprobarActivar = async (
-    item: InvitacionSolicitud, 
+    item: InvitacionSolicitud,
     datosPersonalizados?: { rol?: string; cargo?: string; proyecto?: string; emailCorporativo?: string }
   ): Promise<void> => {
     try {
@@ -220,16 +238,22 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
     }
   };
 
-  const handleSelectTab = (tab: 'perfil' | 'proyectos' | 'mensajes' | 'accesos') => {
-    setActiveTab(tab);
+  // Cambiar de sección = cambiar de URL (/dashboard/<sección>)
+  const handleSelectTab = (tab: Tab) => {
+    navigate(`/dashboard/${tab}`);
     setIsMobileMenuOpen(false); // Cierra menú lateral al cambiar de tab en móvil
   };
+
+  // Las secciones de administración solo se muestran cuando el rol ya está confirmado como admin
+  const permisosPendientes = SOLO_ADMIN.includes(activeTab) && !rolCargado;
+  const mostrarTab = (tab: Tab): boolean =>
+    activeTab === tab && (!SOLO_ADMIN.includes(tab) || (rolCargado && esAdmin));
 
   return (
     <div className="min-h-screen bg-[#f4f6f8] text-slate-800 flex font-sans text-sm relative overflow-x-hidden">
       {/* Overlay Backdrop para menú móvil */}
       {isMobileMenuOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden transition-opacity"
           onClick={() => setIsMobileMenuOpen(false)}
         />
@@ -240,7 +264,7 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
         fixed inset-y-0 left-0 z-50 transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-auto
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <Sidebar 
+        <Sidebar
           userEmail={userEmail}
           userRole={userRole}
           activeTab={activeTab}
@@ -266,12 +290,12 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
               {activeTab === 'perfil' && 'Perfil de Usuario'}
               {activeTab === 'proyectos' && 'Proyectos'}
               {activeTab === 'mensajes' && 'Mensajes e Informes de Proyectos'}
-              {activeTab === 'accesos' && 'Gestión Unificada de Accesos'}
+              {activeTab === 'accesos' && 'Gestión de Accesos'}
             </h1>
           </div>
-          
-          {activeTab === 'accesos' && (
-            <button 
+
+          {activeTab === 'accesos' && esAdmin && (
+            <button
               onClick={() => setShowInviteModal(true)}
               className="w-full sm:w-auto px-3.5 py-2 bg-[#0056d2] text-white rounded-md text-xs font-semibold hover:bg-blue-700 flex items-center justify-center gap-2 shadow-sm transition-all"
             >
@@ -284,8 +308,12 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
         {/* Área Principal + Sidebar Derecha */}
         <div className="flex-1 flex overflow-hidden">
           <main className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6 w-full">
-            {activeTab === 'accesos' && (
-              <AccesosTab 
+            {permisosPendientes && (
+              <div className="p-6 text-slate-500">Verificando permisos...</div>
+            )}
+
+            {mostrarTab('accesos') && (
+              <AccesosTab
                 cuentasActivas={cuentasActivas}
                 invitacionesSolicitudes={invitacionesSolicitudes}
                 onOpenInviteModal={() => setShowInviteModal(true)}
@@ -296,10 +324,10 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
               />
             )}
 
-            {activeTab === 'perfil' && <PerfilTab userEmail={userEmail} />}
-            {activeTab === 'mensajes' && <MensajesTab />}
-            {activeTab === 'proyectos' && (
-              <ProyectosTab 
+            {mostrarTab('perfil') && <PerfilTab userEmail={userEmail} />}
+            {mostrarTab('mensajes') && <MensajesTab />}
+            {mostrarTab('proyectos') && (
+              <ProyectosTab
                 userRole={userRole}
                 onSelectProyecto={(proyectoData: any) => {
                   const id = typeof proyectoData === 'object' ? proyectoData.id : proyectoData;
@@ -309,27 +337,27 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
                   const strId = String(id || '').toLowerCase();
                   const strTitulo = String(titulo || '').toLowerCase();
                   const strNrc = String(codigoNrc || '').toLowerCase();
-                  
-                
-                  const esBigData = 
-                    strId === '1' || 
-                    strId.startsWith('64cb9f39') || 
-                    strNrc.includes('3860') || 
+
+
+                  const esBigData =
+                    strId === '1' ||
+                    strId.startsWith('64cb9f39') ||
+                    strNrc.includes('3860') ||
                     strTitulo.includes('big data');
 
-                  const esAzure = 
-                    strId === 'd7dcf898-012a-4d06-a1ab-354d32a132b9' || 
-                    strNrc.includes('8499') || 
+                  const esAzure =
+                    strId === 'd7dcf898-012a-4d06-a1ab-354d32a132b9' ||
+                    strNrc.includes('8499') ||
                     strTitulo.includes('azure');
-                    
+
                   const esErp =
                     strId.startsWith('902094cc') ||
                     strNrc.includes('7411') ||
                     strTitulo.includes('erp');
 
-                  const esCloudOps = 
-                    strId.startsWith('b0da6f34') || 
-                    strNrc.includes('4575') || 
+                  const esCloudOps =
+                    strId.startsWith('b0da6f34') ||
+                    strNrc.includes('4575') ||
                     strTitulo.includes('cloud');
 
 
@@ -357,7 +385,7 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
       </div>
 
       {showInviteModal && (
-        <InviteModal 
+        <InviteModal
           isOpen={showInviteModal}
           onClose={() => setShowInviteModal(false)}
           onSendInvite={handleSendInvite}

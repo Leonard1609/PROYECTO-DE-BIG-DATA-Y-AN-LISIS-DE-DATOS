@@ -15,6 +15,9 @@ import { AzureFacialRecognitionPage } from './modules/azure/AzureModulePage';
 import CloudOpsModulePage from './modules/cloud-ops/pages/CloudOpsModulePage';
 import { ErpApp } from './modules/erp-enterprise-cloud';
 
+// Pantalla a la que se llega al entrar o al salir de un módulo
+const HOME_PATH = '/dashboard/proyectos';
+
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     const session = authStorage.get();
@@ -53,16 +56,17 @@ export default function App() {
         path="/"
         element={
           isAuthenticated ? (
-            <Navigate to="/dashboard" replace />
+            <Navigate to={HOME_PATH} replace />
           ) : (
             <LoginPage onLoginSuccess={handleLogin} />
           )
         }
       />
 
-      {/* 2. Dashboard Principal */}
+      {/* 2. Dashboard Principal: una URL por sección (proyectos, accesos, mensajes, perfil) */}
+      <Route path="/dashboard" element={<Navigate to={HOME_PATH} replace />} />
       <Route
-        path="/dashboard"
+        path="/dashboard/:section"
         element={
           isAuthenticated ? (
             <DashboardPage userEmail={userEmail} onLogout={handleLogout} />
@@ -115,7 +119,7 @@ export default function App() {
       {/* 8. Redirección para rutas no encontradas (404) */}
       <Route
         path="*"
-        element={<Navigate to={isAuthenticated ? '/dashboard' : '/'} replace />}
+        element={<Navigate to={isAuthenticated ? HOME_PATH : '/'} replace />}
       />
     </Routes>
   );
