@@ -1,217 +1,293 @@
 import { useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
-import type { CondicionPago, ErpState, Resultado } from '../../types';
-import { IGV, stockDe } from '../../services/erpStore';
-import { formatMoneda } from '../../utils/format';
+import { Search, Trash2, Plus } from 'lucide-react';
+import type { ErpState, CondicionPago, LineaDetalle } from '../../../core/types';
+import { formatMoneda } from '../../../core/utils/format';
 
 export type Modo = 'venta' | 'compra';
 
 export interface DatosFormulario {
-  terceroId: string;
-  vendedorId: string;
+  terceroId: string;    // clienteId o proveedorId
+  vendedorId: string;   // solo ventas
   almacenId: string;
   condicion: CondicionPago;
-  detalle: { productoId: string; cantidad: number; precioUnitario: number }[];
+  detalle: LineaDetalle[];
 }
-
-interface LineaForm { productoId: string; cantidad: string; precio: string }
 
 interface Props {
   modo: Modo;
   state: ErpState;
-  onGuardar: (datos: DatosFormulario) => Resultado;
+  onGuardar: (d: DatosFormulario) => void;
   onExito: () => void;
   onCancelar: () => void;
 }
 
-const activos = <T extends { estado: string }>(lista: T[]): T[] => lista.filter((x) => x.estado === 'Activo');
-const unico = <T extends { id: string; estado: string }>(lista: T[]): string => {
-  const a = activos(lista);
-  return a.length === 1 ? a[0].id : '';
-};
-
 export const FormularioOperacion: React.FC<Props> = ({ modo, state, onGuardar, onExito, onCancelar }) => {
   const esVenta = modo === 'venta';
-  const terceros = esVenta
-    ? activos(state.clientes).map((c) => ({ id: c.id, nombre: c.razonSocial }))
-    : activos(state.proveedores).map((p) => ({ id: p.id, nombre: p.razonSocial }));
-  const productos = activos(state.productos);
-  const almacenes = activos(state.almacenes);
-  const vendedores = activos(state.vendedores);
 
-  const [terceroId, setTerceroId] = useState(esVenta ? unico(state.clientes) : unico(state.proveedores));
-  const [vendedorId, setVendedorId] = useState(unico(state.vendedores));
-  const [almacenId, setAlmacenId] = useState(unico(state.almacenes));
+  // Estados del formulario
+  const [terceroId, setTerceroId] = useState('');
+  const [vendedorId, setVendedorId] = useState(state.vendedores.filter(v => v.estado === 'Activo')[0]?.id || '');
+  const [almacenId, setAlmacenId] = useState(state.almacenes.filter(a => a.estado === 'Activo')[0]?.id || '');
   const [condicion, setCondicion] = useState<CondicionPago>('Contado');
-  const [lineas, setLineas] = useState<LineaForm[]>([{ productoId: '', cantidad: '1', precio: '' }]);
-  const [errores, setErrores] = useState<Record<string, string>>({});
-  const [errorGeneral, setErrorGeneral] = useState<string | null>(null);
+  const [detalle, setDetalle] = useState<LineaDetalle[]>([
+    {
+      productoId: state.productos.filter(p => p.estado === 'Activo')[0]?.id || '',
+      cantidad: 1,
+      precioUnitario: state.productos.filter(p => p.estado === 'Activo')[0]?.precioVenta || 0,
+      subtotal: state.productos.filter(p => p.estado === 'Activo')[0]?.precioVenta || 0,
+    }
+  ]);
 
-  const precioBase = (productoId: string): string => {
-    const p = productos.find((x) => x.id === productoId);
-    return p ? String(esVenta ? p.precioVenta : p.precioCompra) : '';
-  };
+  // Estados para los Buscadores (Autocomplete)
+  const [busquedaTercero, setBusquedaTercero] = useState('');
+  const [mostrarDropdownTercero, setMostrarDropdownTercero] = useState(false);
 
-  const cambiarLinea = (i: number, cambios: Partial<LineaForm>) =>
-    setLineas((ls) => ls.map((l, idx) => (idx === i ? { ...l, ...cambios } : l)));
+  // Filtrar clientes o proveedores activos según el texto ingresado
+  const tercerosDisponibles = esVenta
+    ? state.clientes.filter(c => c.estado === 'Activo' && (c.razonSocial.toLowerCase().includes(busquedaTercero.toLowerCase()) || c.numeroDocumento.includes(busquedaTercero)))
+    : state.proveedores.filter(p => p.estado === 'Activo' && (p.razonSocial.toLowerCase().includes(busquedaTercero.toLowerCase()) || p.ruc.includes(busquedaTercero)));
 
-  const subtotal = lineas.reduce((a, l) => a + (Number(l.cantidad) || 0) * (Number(l.precio) || 0), 0);
-  const igv = subtotal * IGV;
-  const total = subtotal + igv;
+  const terceroSeleccionado = esVenta
+    ? state.clientes.find(c => c.id === terceroId)
+    : state.proveedores.find(p => p.id === terceroId);
 
-  const cliente = esVenta ? state.clientes.find((c) => c.id === terceroId) : undefined;
-  const excedeCredito = esVenta && condicion === 'Crédito' && cliente !== undefined && total > cliente.limiteCredito;
+  // Manejo de líneas de productos
+  const actualizarLinea = (index: number, campo: keyof LineaDetalle, valor: number | string) => {
+    const nuevoDetalle = [...detalle];
+    const linea = { ...nuevoDetalle[index], [campo]: valor };
 
-  const enviar = (e: React.FormEvent) => {
-    e.preventDefault();
-    const nuevos: Record<string, string> = {};
-    if (!terceroId) nuevos.tercero = `Selecciona un ${esVenta ? 'cliente' : 'proveedor'}.`;
-    if (esVenta && !vendedorId) nuevos.vendedor = 'Selecciona un vendedor.';
-    if (!almacenId) nuevos.almacen = 'Selecciona un almacén.';
-
-    lineas.forEach((l, i) => {
-      const cant = Number(l.cantidad);
-      if (!l.productoId) nuevos[`l${i}`] = 'Selecciona un producto.';
-      else if (lineas.findIndex((x) => x.productoId === l.productoId) !== i) nuevos[`l${i}`] = 'Este producto ya está en otra línea.';
-      else if (!Number.isInteger(cant) || cant <= 0) nuevos[`l${i}`] = 'La cantidad debe ser un entero mayor que cero.';
-      else if (!(Number(l.precio) >= 0) || l.precio === '') nuevos[`l${i}`] = 'Ingresa un precio válido.';
-      else if (esVenta && almacenId) {
-        const disponible = stockDe(state.movimientos, l.productoId, almacenId);
-        if (cant > disponible) nuevos[`l${i}`] = `Stock insuficiente. Disponible: ${disponible}.`;
+    if (campo === 'productoId') {
+      const prod = state.productos.find(p => p.id === valor);
+      if (prod) {
+        linea.precioUnitario = esVenta ? prod.precioVenta : prod.precioCompra;
       }
-    });
+    }
 
-    setErrores(nuevos);
-    setErrorGeneral(null);
-    if (Object.keys(nuevos).length > 0) return;
-
-    const r = onGuardar({
-      terceroId, vendedorId, almacenId, condicion,
-      detalle: lineas.map((l) => ({ productoId: l.productoId, cantidad: Number(l.cantidad), precioUnitario: Number(l.precio) })),
-    });
-    if (r.ok) onExito();
-    else setErrorGeneral(r.error);
+    linea.subtotal = Number((linea.cantidad * linea.precioUnitario).toFixed(2));
+    nuevoDetalle[index] = linea;
+    setDetalle(nuevoDetalle);
   };
 
-  const base = 'w-full rounded-lg border px-3 py-2 text-sm text-slate-800 bg-white outline-none focus:ring-2 focus:ring-teal-500/20';
-  const clase = (k: string) => `${base} ${errores[k] ? 'border-red-400 focus:border-red-500' : 'border-slate-300 focus:border-teal-500'}`;
-  const etiqueta = 'block text-sm font-medium text-slate-700 mb-1';
+  const agregarLinea = () => {
+    const prodDefault = state.productos.filter(p => p.estado === 'Activo')[0];
+    if (!prodDefault) return;
+    setDetalle([
+      ...detalle,
+      {
+        productoId: prodDefault.id,
+        cantidad: 1,
+        precioUnitario: esVenta ? prodDefault.precioVenta : prodDefault.precioCompra,
+        subtotal: esVenta ? prodDefault.precioVenta : prodDefault.precioCompra,
+      }
+    ]);
+  };
+
+  const eliminarLinea = (index: number) => {
+    if (detalle.length === 1) return;
+    setDetalle(detalle.filter((_, i) => i !== index));
+  };
+
+  const subtotalGeneral = detalle.reduce((acc, l) => acc + l.subtotal, 0);
+  const igvGeneral = Number((subtotalGeneral * 0.18).toFixed(2));
+  const totalGeneral = Number((subtotalGeneral + igvGeneral).toFixed(2));
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!terceroId) {
+      alert(`Selecciona un ${esVenta ? 'cliente' : 'proveedor'}`);
+      return;
+    }
+    onGuardar({
+      terceroId,
+      vendedorId: esVenta ? vendedorId : '',
+      almacenId,
+      condicion,
+      detalle,
+    });
+    onExito();
+  };
 
   return (
-    <form onSubmit={enviar} noValidate className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label htmlFor="op-tercero" className={etiqueta}>{esVenta ? 'Cliente' : 'Proveedor'}</label>
-          <select id="op-tercero" value={terceroId} onChange={(e) => setTerceroId(e.target.value)} className={clase('tercero')}>
-            <option value="">Selecciona una opción</option>
-            {terceros.map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
-          </select>
-          {errores.tercero && <p className="text-xs text-red-600 mt-1">{errores.tercero}</p>}
-        </div>
+    <form onSubmit={handleSubmit} className="space-y-5 text-sm">
+      {/* Buscador de Cliente o Proveedor (Autocomplete) */}
+      <div className="relative">
+        <label className="block font-medium text-slate-700 mb-1">
+          {esVenta ? 'Cliente' : 'Proveedor'} <span className="text-red-500">*</span>
+        </label>
+        
+        {terceroSeleccionado ? (
+          <div className="flex items-center justify-between p-2.5 bg-teal-50 border border-teal-200 rounded-lg">
+            <span className="font-medium text-teal-900">
+              {esVenta ? (terceroSeleccionado as any).razonSocial : (terceroSeleccionado as any).razonSocial} 
+              <span className="text-xs text-teal-600 ml-2">({(terceroSeleccionado as any).numeroDocumento || (terceroSeleccionado as any).ruc})</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => { setTerceroId(''); setBusquedaTercero(''); }}
+              className="text-xs text-red-600 hover:underline font-medium"
+            >
+              Cambiar
+            </button>
+          </div>
+        ) : (
+          <div>
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              <input
+                type="text"
+                placeholder={`Buscar ${esVenta ? 'cliente por RUC o Razón Social' : 'proveedor por RUC'}...`}
+                value={busquedaTercero}
+                onChange={(e) => { setBusquedaTercero(e.target.value); setMostrarDropdownTercero(true); }}
+                onFocus={() => setMostrarDropdownTercero(true)}
+                className="w-full pl-9 pr-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+              />
+            </div>
 
+            {mostrarDropdownTercero && tercerosDisponibles.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                {tercerosDisponibles.map((t: any) => (
+                  <div
+                    key={t.id}
+                    onClick={() => {
+                      setTerceroId(t.id);
+                      setBusquedaTercero(t.razonSocial);
+                      setMostrarDropdownTercero(false);
+                    }}
+                    className="px-4 py-2 hover:bg-teal-50 cursor-pointer text-xs flex justify-between items-center border-b border-slate-50 last:border-none"
+                  >
+                    <span className="font-medium text-slate-800">{t.razonSocial}</span>
+                    <span className="text-slate-500 font-mono">{t.numeroDocumento || t.ruc}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Vendedor (Select normal mantenido según requerimiento) */}
         {esVenta && (
           <div>
-            <label htmlFor="op-vendedor" className={etiqueta}>Vendedor</label>
-            <select id="op-vendedor" value={vendedorId} onChange={(e) => setVendedorId(e.target.value)} className={clase('vendedor')}>
-              <option value="">Selecciona una opción</option>
-              {vendedores.map((v) => <option key={v.id} value={v.id}>{v.nombre}</option>)}
+            <label className="block font-medium text-slate-700 mb-1">Vendedor</label>
+            <select
+              value={vendedorId}
+              onChange={(e) => setVendedorId(e.target.value)}
+              className="w-full p-2 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500"
+            >
+              {state.vendedores.filter(v => v.estado === 'Activo').map(v => (
+                <option key={v.id} value={v.id}>{v.nombre}</option>
+              ))}
             </select>
-            {errores.vendedor && <p className="text-xs text-red-600 mt-1">{errores.vendedor}</p>}
           </div>
         )}
 
+        {/* Almacén */}
         <div>
-          <label htmlFor="op-almacen" className={etiqueta}>{esVenta ? 'Almacén de salida' : 'Almacén de destino'}</label>
-          <select id="op-almacen" value={almacenId} onChange={(e) => setAlmacenId(e.target.value)} className={clase('almacen')}>
-            <option value="">Selecciona una opción</option>
-            {almacenes.map((a) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
+          <label className="block font-medium text-slate-700 mb-1">Almacén</label>
+          <select
+            value={almacenId}
+            onChange={(e) => setAlmacenId(e.target.value)}
+            className="w-full p-2 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500"
+          >
+            {state.almacenes.filter(a => a.estado === 'Activo').map(a => (
+              <option key={a.id} value={a.id}>{a.nombre}</option>
+            ))}
           </select>
-          {errores.almacen && <p className="text-xs text-red-600 mt-1">{errores.almacen}</p>}
         </div>
 
+        {/* Condición de Pago */}
         <div>
-          <label htmlFor="op-condicion" className={etiqueta}>Condición de pago</label>
-          <select id="op-condicion" value={condicion} onChange={(e) => setCondicion(e.target.value as CondicionPago)} className={clase('condicion')}>
+          <label className="block font-medium text-slate-700 mb-1">Condición de Pago</label>
+          <select
+            value={condicion}
+            onChange={(e) => setCondicion(e.target.value as CondicionPago)}
+            className="w-full p-2 rounded-lg border border-slate-300 bg-white focus:ring-2 focus:ring-teal-500"
+          >
             <option value="Contado">Contado</option>
-            <option value="Crédito">Crédito a 30 días</option>
+            <option value="Crédito">Crédito</option>
           </select>
         </div>
       </div>
 
-      <fieldset className="space-y-3">
-        <legend className="text-sm font-medium text-slate-700 mb-2">Productos</legend>
-        {lineas.map((l, i) => {
-          const disponible = l.productoId && almacenId ? stockDe(state.movimientos, l.productoId, almacenId) : null;
-          const importe = (Number(l.cantidad) || 0) * (Number(l.precio) || 0);
-          return (
-            <div key={i} className="rounded-xl border border-slate-200 p-3">
-              <div className="grid gap-3 sm:grid-cols-[1fr_6rem_8rem_7rem_auto] items-end">
-                <div>
-                  <label htmlFor={`op-prod-${i}`} className="block text-xs text-slate-500 mb-1">Producto</label>
-                  <select id={`op-prod-${i}`} value={l.productoId}
-                    onChange={(e) => cambiarLinea(i, { productoId: e.target.value, precio: precioBase(e.target.value) })}
-                    className={clase(`l${i}`)}>
-                    <option value="">Selecciona un producto</option>
-                    {productos.map((p) => <option key={p.id} value={p.id}>{p.codigo} · {p.nombre}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor={`op-cant-${i}`} className="block text-xs text-slate-500 mb-1">Cantidad</label>
-                  <input id={`op-cant-${i}`} type="number" min={1} step={1} value={l.cantidad}
-                    onChange={(e) => cambiarLinea(i, { cantidad: e.target.value })} className={clase(`l${i}`)} />
-                </div>
-                <div>
-                  <label htmlFor={`op-precio-${i}`} className="block text-xs text-slate-500 mb-1">Precio unitario</label>
-                  <input id={`op-precio-${i}`} type="number" min={0} step="any" value={l.precio}
-                    onChange={(e) => cambiarLinea(i, { precio: e.target.value })} className={clase(`l${i}`)} />
-                </div>
-                <p className="text-sm text-slate-700 tabular-nums sm:text-right pb-2">{formatMoneda(importe)}</p>
-                <button type="button" aria-label="Quitar producto" disabled={lineas.length === 1}
-                  onClick={() => setLineas((ls) => ls.filter((_, idx) => idx !== i))}
-                  className="p-2 rounded-lg text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-              {errores[`l${i}`] && <p className="text-xs text-red-600 mt-2">{errores[`l${i}`]}</p>}
-              {disponible !== null && (
-                <p className={`text-xs mt-2 ${disponible === 0 && esVenta ? 'text-amber-700' : 'text-slate-500'}`}>
-                  Stock en el almacén: {disponible}
-                  {disponible === 0 && esVenta && '. Registra primero una compra en el módulo Compras.'}
-                </p>
-              )}
+      {/* Detalle de Productos con Buscador Integrado */}
+      <div className="space-y-3 pt-2 border-t border-slate-200">
+        <div className="flex justify-between items-center">
+          <h3 className="font-semibold text-slate-800">Productos de la Operación</h3>
+          <button
+            type="button"
+            onClick={agregarLinea}
+            className="inline-flex items-center gap-1 text-xs font-medium text-teal-700 bg-teal-50 px-3 py-1.5 rounded-lg hover:bg-teal-100"
+          >
+            <Plus className="w-3.5 h-3.5" /> Agregar producto
+          </button>
+        </div>
+
+        {detalle.map((linea, index) => (
+          <div key={index} className="flex gap-2 items-center bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <div className="flex-1">
+              <label className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Producto (Buscador)</label>
+              <select
+                value={linea.productoId}
+                onChange={(e) => actualizarLinea(index, 'productoId', e.target.value)}
+                className="w-full p-1.5 rounded border border-slate-300 bg-white text-xs focus:ring-2 focus:ring-teal-500"
+              >
+                {state.productos.filter(p => p.estado === 'Activo').map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.codigo} - {p.nombre} ({formatMoneda(esVenta ? p.precioVenta : p.precioCompra)})
+                  </option>
+                ))}
+              </select>
             </div>
-          );
-        })}
-        <button type="button" disabled={lineas.length >= productos.length}
-          onClick={() => setLineas((ls) => [...ls, { productoId: '', cantidad: '1', precio: '' }])}
-          className="inline-flex items-center gap-2 text-sm text-teal-700 hover:text-teal-800 disabled:text-slate-400 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 rounded">
-          <Plus className="w-4 h-4" /> Agregar otro producto
-        </button>
-      </fieldset>
 
-      <dl className="ml-auto w-full sm:w-72 space-y-1 text-sm">
-        <div className="flex justify-between text-slate-600"><dt>Subtotal</dt><dd className="tabular-nums">{formatMoneda(subtotal)}</dd></div>
-        <div className="flex justify-between text-slate-600"><dt>IGV ({Math.round(IGV * 100)}%)</dt><dd className="tabular-nums">{formatMoneda(igv)}</dd></div>
-        <div className="flex justify-between pt-2 border-t border-slate-200 font-semibold text-slate-900"><dt>Total</dt><dd className="tabular-nums">{formatMoneda(total)}</dd></div>
-      </dl>
+            <div className="w-20">
+              <label className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Cantidad</label>
+              <input
+                type="number"
+                min="1"
+                value={linea.cantidad}
+                onChange={(e) => actualizarLinea(index, 'cantidad', Number(e.target.value))}
+                className="w-full p-1.5 rounded border border-slate-300 bg-white text-xs text-center"
+              />
+            </div>
 
-      {excedeCredito && cliente && (
-        <p className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-          El total supera el límite de crédito del cliente ({formatMoneda(cliente.limiteCredito)}). Cambia a contado o reduce la venta.
-        </p>
-      )}
-      {errorGeneral && (
-        <p role="alert" className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">{errorGeneral}</p>
-      )}
+            <div className="w-28 text-right pr-2">
+              <label className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">Subtotal</label>
+              <span className="text-xs font-semibold text-slate-800">{formatMoneda(linea.subtotal)}</span>
+            </div>
 
-      <div className="flex justify-end gap-2">
-        <button type="button" onClick={onCancelar}
-          className="px-4 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500">
+            <button
+              type="button"
+              onClick={() => eliminarLinea(index)}
+              className="text-slate-400 hover:text-red-600 p-1 mt-4"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Totales Resumen */}
+      <div className="bg-slate-100 p-3 rounded-lg flex justify-between items-center text-xs font-medium text-slate-700">
+        <span>Subtotal: {formatMoneda(subtotalGeneral)}</span>
+        <span>IGV (18%): {formatMoneda(igvGeneral)}</span>
+        <span className="text-sm font-bold text-teal-700">Total: {formatMoneda(totalGeneral)}</span>
+      </div>
+
+      {/* Botones de Acción */}
+      <div className="flex justify-end gap-2 pt-3 border-t">
+        <button
+          type="button"
+          onClick={onCancelar}
+          className="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 text-xs font-medium"
+        >
           Cancelar
         </button>
-        <button type="submit"
-          className="px-4 py-2 rounded-lg text-sm font-medium bg-teal-600 text-white hover:bg-teal-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2">
-          Registrar {modo}
+        <button
+          type="submit"
+          className="px-5 py-2 rounded-lg bg-teal-600 text-white text-xs font-medium hover:bg-teal-700 shadow"
+        >
+          Guardar y Procesar
         </button>
       </div>
     </form>
