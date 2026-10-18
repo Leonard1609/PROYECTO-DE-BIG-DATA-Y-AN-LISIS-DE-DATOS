@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Plus, CheckCircle2, ArrowRight, Calendar, Filter, DollarSign, FileText } from 'lucide-react';
 import { useErp } from '../../hooks/useErp';
 import { LIMITE_REGISTROS } from '../../services/erpStore';
 import { ERP_BASE } from '../../config/navigation';
@@ -21,7 +21,12 @@ export const OperacionesPanel: React.FC<{ modo: Modo }> = ({ modo }) => {
   const [detalle, setDetalle] = useState<FilaOperacion | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
 
-  const filas: FilaOperacion[] = esVenta
+  // Fecha de hoy por defecto (YYYY-MM-DD)
+  const hoyISO = new Date().toISOString().split('T')[0];
+  const [fechaFiltro, setFechaFiltro] = useState<string>(hoyISO);
+
+  // Obtener todas las filas de la entidad
+  const todasLasFilas: FilaOperacion[] = esVenta
     ? state.ventas.map((v) => ({
         id: v.id, numero: v.numero, fecha: v.fecha,
         tercero: state.clientes.find((c) => c.id === v.clienteId)?.razonSocial ?? '-',
@@ -35,13 +40,22 @@ export const OperacionesPanel: React.FC<{ modo: Modo }> = ({ modo }) => {
         detalle: c.detalle, documentoId: c.facturaId,
       }));
 
+  // Filtrado por fecha seleccionada (si hay filtro activo)
+  const filasFiltradas = fechaFiltro
+    ? todasLasFilas.filter((f) => f.fecha.startsWith(fechaFiltro))
+    : todasLasFilas;
+
+  // KPIs dinámicos calculados según las filas filtradas
+  const totalMontoFiltrado = filasFiltradas.reduce((acc, f) => acc + f.total, 0);
+  const totalRegistrosFiltrados = filasFiltradas.length;
+
   const faltantes: string[] = [];
   if (esVenta ? !hayActivo(state.clientes) : !hayActivo(state.proveedores)) faltantes.push(esVenta ? 'un cliente' : 'un proveedor');
   if (esVenta && !hayActivo(state.vendedores)) faltantes.push('un vendedor');
   if (!hayActivo(state.almacenes)) faltantes.push('un almacén');
   if (!hayActivo(state.productos)) faltantes.push('un producto');
 
-  const limiteAlcanzado = filas.length >= LIMITE_REGISTROS;
+  const limiteAlcanzado = todasLasFilas.length >= LIMITE_REGISTROS;
 
   const guardar = (d: DatosFormulario) =>
     esVenta
@@ -93,7 +107,7 @@ export const OperacionesPanel: React.FC<{ modo: Modo }> = ({ modo }) => {
       </p>
 
       {/* Cadena de Flujo Documental requerida por el instructor */}
-      {filas.length > 0 && (
+      {todasLasFilas.length > 0 && (
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
             Flujo de Trazabilidad Documental ({esVenta ? 'Comercial' : 'Compras'})
@@ -106,18 +120,65 @@ export const OperacionesPanel: React.FC<{ modo: Modo }> = ({ modo }) => {
               2. {esVenta ? 'Facturación / Comprobante' : 'Recepción en Kardex'} (Generado)
             </div>
             <div className={`p-3 rounded-lg border font-medium ${
-              filas[0].estado === 'Pagada' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-amber-50 border-amber-200 text-amber-800'
+              todasLasFilas[0].estado === 'Pagada' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-amber-50 border-amber-200 text-amber-800'
             }`}>
-              3. Estado de Cuenta ({filas[0].estado === 'Pagada' ? 'Cancelado' : 'Pendiente'})
+              3. Estado de Cuenta ({todasLasFilas[0].estado === 'Pagada' ? 'Cancelado' : 'Pendiente'})
             </div>
             <div className={`p-3 rounded-lg border font-medium ${
-              filas[0].estado === 'Pagada' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-slate-50 border-slate-200 text-slate-500'
+              todasLasFilas[0].estado === 'Pagada' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-slate-50 border-slate-200 text-slate-500'
             }`}>
-              4. Tesorería / Caja ({filas[0].estado === 'Pagada' ? 'Ingreso Registrado' : 'Esperando Cobro'})
+              4. Tesorería / Caja ({todasLasFilas[0].estado === 'Pagada' ? 'Ingreso Registrado' : 'Esperando Cobro'})
             </div>
           </div>
         </div>
       )}
+
+      {/* Tarjetas Informativas de Filtro Diario */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium text-slate-500 uppercase">Total {esVenta ? 'Ventas' : 'Compras'} (Fecha)</p>
+            <p className="text-xl font-bold text-slate-800 mt-1">{formatMoneda(totalMontoFiltrado)}</p>
+          </div>
+          <div className="p-3 bg-teal-50 rounded-lg text-teal-600">
+            <DollarSign className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium text-slate-500 uppercase">Documentos Registrados</p>
+            <p className="text-xl font-bold text-slate-800 mt-1">{totalRegistrosFiltrados} de {todasLasFilas.length}</p>
+          </div>
+          <div className="p-3 bg-blue-50 rounded-lg text-blue-600">
+            <FileText className="w-5 h-5" />
+          </div>
+        </div>
+
+        {/* Control del Filtro por Fecha */}
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+          <label className="text-xs font-medium text-slate-500 uppercase flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5 text-teal-600" />
+            Filtrar por fecha
+          </label>
+          <div className="flex items-center gap-2 mt-1">
+            <input
+              type="date"
+              value={fechaFiltro}
+              onChange={(e) => setFechaFiltro(e.target.value)}
+              className="w-full text-xs p-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
+            {fechaFiltro && (
+              <button
+                onClick={() => setFechaFiltro('')}
+                className="text-xs text-slate-500 hover:text-slate-800 underline shrink-0"
+              >
+                Todas
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
 
       {faltantes.length > 0 && (
         <div role="status" className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
@@ -128,7 +189,7 @@ export const OperacionesPanel: React.FC<{ modo: Modo }> = ({ modo }) => {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-slate-500">
-          {filas.length} de {LIMITE_REGISTROS} {esVenta ? 'ventas' : 'compras'} permitidas en esta versión de prueba.
+          {todasLasFilas.length} de {LIMITE_REGISTROS} {esVenta ? 'ventas' : 'compras'} permitidas en esta versión de prueba.
         </p>
         {botonNuevo}
       </div>
@@ -142,14 +203,14 @@ export const OperacionesPanel: React.FC<{ modo: Modo }> = ({ modo }) => {
 
       <DataTable
         columnas={columnas}
-        filas={filas}
+        filas={filasFiltradas}
         clave={(f) => f.id}
         vacio={
           <EmptyState
-            titulo={esVenta ? 'Aún no hay ventas' : 'Aún no hay compras'}
-            descripcion={esVenta
-              ? 'Registra la primera venta. Necesitas tener stock: si no hay, empieza por una compra.'
-              : 'Registra la primera compra para que el producto tenga stock disponible.'}
+            titulo={fechaFiltro ? `No hay ${esVenta ? 'ventas' : 'compras'} en la fecha ${formatFecha(fechaFiltro)}` : esVenta ? 'Aún no hay ventas' : 'Aún no hay compras'}
+            descripcion={fechaFiltro 
+              ? 'Las operaciones del día empiezan en cero. Puedes cambiar la fecha seleccionada o registrar una nueva operación.'
+              : esVenta ? 'Registra la primera venta.' : 'Registra la primera compra.'}
           />
         }
         acciones={(f) => (
