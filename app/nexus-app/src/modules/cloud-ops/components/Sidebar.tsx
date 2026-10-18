@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Cloud, LogOut, X } from 'lucide-react';
-import { CLOUDOPS_NAV } from '../data/cloudOpsNav';
+import { CLOUDOPS_NAV, CLOUDOPS_EXIT_PATH } from '../data/cloudOpsNav';
 import { useCloudOps } from '../context/CloudOpsContext';
 
 interface SidebarProps {
@@ -73,7 +73,7 @@ const SidebarBody: React.FC<SidebarBodyProps> = ({ collapsed, onNavigate, onClos
       {/* Única salida del módulo (antes estaba repetida en el header) */}
       <div className="border-t border-slate-800/80 p-3">
         <button
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate(CLOUDOPS_EXIT_PATH)}
           title={collapsed ? 'Salir al panel principal' : undefined}
           className={`flex w-full items-center gap-2.5 rounded-xl py-2.5 text-xs font-semibold text-slate-400 transition-all hover:bg-slate-800 hover:text-white ${
             collapsed ? 'justify-center px-0' : 'px-3.5'

@@ -4,6 +4,10 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 // Almacenamiento de sesión
 import { authStorage } from './utils/authStorage';
 
+// Estilos del selector de tema y modo oscuro del dashboard
+import './shared/styles/nexus-theme.css';
+import { ThemeProvider } from './shared/context/ThemeContext';
+
 // Páginas Principales
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -15,7 +19,10 @@ import { AzureFacialRecognitionPage } from './modules/azure/AzureModulePage';
 import CloudOpsModulePage from './modules/cloud-ops/pages/CloudOpsModulePage';
 import { ErpApp } from './modules/erp-enterprise-cloud';
 
-export default function App() {
+// Pantalla a la que se llega al entrar o al salir de un módulo
+const HOME_PATH = '/dashboard/proyectos';
+
+function AppRoutes() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     const session = authStorage.get();
     return !!session?.email;
@@ -53,16 +60,17 @@ export default function App() {
         path="/"
         element={
           isAuthenticated ? (
-            <Navigate to="/dashboard" replace />
+            <Navigate to={HOME_PATH} replace />
           ) : (
             <LoginPage onLoginSuccess={handleLogin} />
           )
         }
       />
 
-      {/* 2. Dashboard Principal */}
+      {/* 2. Dashboard Principal: una URL por sección (proyectos, accesos, mensajes, perfil) */}
+      <Route path="/dashboard" element={<Navigate to={HOME_PATH} replace />} />
       <Route
-        path="/dashboard"
+        path="/dashboard/:section"
         element={
           isAuthenticated ? (
             <DashboardPage userEmail={userEmail} onLogout={handleLogout} />
@@ -115,8 +123,17 @@ export default function App() {
       {/* 8. Redirección para rutas no encontradas (404) */}
       <Route
         path="*"
-        element={<Navigate to={isAuthenticated ? '/dashboard' : '/'} replace />}
+        element={<Navigate to={isAuthenticated ? HOME_PATH : '/'} replace />}
       />
     </Routes>
+  );
+}
+
+// El ThemeProvider envuelve toda la app: el selector de apariencia lo necesita en cualquier pantalla
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppRoutes />
+    </ThemeProvider>
   );
 }

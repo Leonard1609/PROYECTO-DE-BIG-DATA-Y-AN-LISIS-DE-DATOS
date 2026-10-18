@@ -24,3 +24,5 @@ export const CLOUDOPS_NAV: NavItem[] = [
   { id: 'arquitectura', label: 'Arquitectura Red', icon: Network },
   { id: 'servicios', label: 'Servicios AWS', icon: Cloud },
 ];
+
+export const CLOUDOPS_EXIT_PATH = '/dashboard/proyectos';

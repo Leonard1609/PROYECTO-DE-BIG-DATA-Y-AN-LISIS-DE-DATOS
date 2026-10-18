@@ -8,7 +8,10 @@ export interface AWSService {
   description: string;
   mainFunction: string;
   status: ServiceStatus;
-  estimatedCost: number; // Costo estimado $/mes
+  estimatedCost: number; // Costo base estimado $/mes (precio de referencia del catálogo)
+  resourceType?: string; // Tipo de recurso de CloudFormation, ej. AWS::EC2::Instance
+  scalesWithUsers?: boolean; // El costo crece con los usuarios estimados de la propuesta
+  multiAz?: boolean; // Se duplica cuando el SLA pedido exige alta disponibilidad multi-AZ
 }
 
 export interface CloudProposal {
@@ -22,6 +25,7 @@ export interface CloudProposal {
   selectedServices: string[];
   migrationGoal: string;
   createdAt: string;
+  estimatedMonthlyCost?: number; // Estimación calculada al guardar la propuesta
 }
 
 export interface CostEstimateItem {
@@ -33,6 +37,8 @@ export interface CostEstimateItem {
   unitCostPerHour: number;
   monthlyCost: number;
   annualCost: number;
+  region?: string; // Región a la que pertenece el costo
+  proposalId?: string; // Propuesta que generó la línea (si existe)
 }
 
 export interface AWSRegionData {

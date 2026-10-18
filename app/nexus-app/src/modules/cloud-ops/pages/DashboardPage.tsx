@@ -1,5 +1,6 @@
 import React from 'react';
-import { INITIAL_SERVICES, SECURITY_METRICS } from '../data/awsServicesData';
+import { INITIAL_SERVICES, SECURITY_METRICS, getSecuritySummary } from '../data/awsServicesData';
+import { REGION_OPTIONS } from '../data/mockInfrastructure';
 import { useCloudOps } from '../context/CloudOpsContext';
 import { StatCard } from '../components/StatCard';
 import { SecurityCard } from '../components/SecurityCard';
@@ -47,7 +48,7 @@ export const DashboardPage: React.FC = () => {
   const totalMonthlyCost = regionCosts.reduce((acc, item) => acc + item.monthlyCost, 0);
 
   const activeServicesCount = currentProposal ? currentProposal.selectedServices.length : 0;
-  const warningsCount = SECURITY_METRICS.filter((m) => m.status === 'warning').length;
+  const security = getSecuritySummary();
 
   // Costo acumulado hoy: prorrateo del costo mensual según la hora del día.
   const clock = new Date(liveMetrics.updatedAt);
@@ -91,10 +92,11 @@ export const DashboardPage: React.FC = () => {
               onChange={(e) => setSelectedRegion(e.target.value)}
               className="cursor-pointer bg-transparent font-semibold text-slate-700 focus:outline-none"
             >
-              <option value="us-east-1 (Norte de Virginia)">us-east-1 (Norte de Virginia)</option>
-              <option value="us-west-2 (Oregón)">us-west-2 (Oregón)</option>
-              <option value="sa-east-1 (São Paulo)">sa-east-1 (São Paulo)</option>
-              <option value="eu-west-1 (Irlanda)">eu-west-1 (Irlanda)</option>
+              {REGION_OPTIONS.map((r) => (
+                <option key={r.id} value={r.value}>
+                  {r.label}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -144,8 +146,8 @@ export const DashboardPage: React.FC = () => {
         />
         <StatCard
           title="Estado Seguridad"
-          value={warningsCount > 0 ? `${warningsCount} Revision(es)` : 'Óptimo'}
-          subtitle="Cumplimiento Well-Architected"
+          value={`${security.score}/100`}
+          subtitle={`${security.approved} de ${security.total} controles aprobados`}
           icon={ShieldCheck}
           iconBgColor="bg-emerald-50"
           iconTextColor="text-emerald-600"
