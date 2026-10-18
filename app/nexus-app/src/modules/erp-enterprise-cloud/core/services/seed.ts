@@ -36,13 +36,16 @@ export function crearEstadoInicial(): ErpState {
     monedas: [{ id: 'MON-001', nombre: 'Soles (PEN)', estado: 'Activo' }],
     ventas: [],
     compras: [],
+    cotizaciones: [],
+    ordenesVenta: [],
+    ordenesCompra: [],
     movimientos: [],
     cuentas: [],
     caja: [],
     documentos: [],
     roles: [{
       id: 'ROL-001', nombre: 'Administrador',
-      permisos: ['mantenimiento', 'comercial', 'compras', 'inventario', 'finanzas',
+      permisos: ['mantenimiento', 'ventas', 'compras', 'inventario', 'tesoreria',
                  'documentos', 'reportes', 'administracion', 'cloud'],
     }],
     usuarios: [{

@@ -22,8 +22,8 @@ export const DocumentosPage: React.FC = () => {
   const limiteAlcanzado = manuales >= LIMITE_REGISTROS;
 
   const vinculo = (d: Documento): string => {
-    if (d.entidad === 'Venta') return `Venta ${state.ventas.find((v) => v.id === d.entidadId)?.numero ?? ''}`;
-    if (d.entidad === 'Compra') return `Compra ${state.compras.find((c) => c.id === d.entidadId)?.numero ?? ''}`;
+    if (d.entidad === 'Venta') return `Factura ${state.ventas.find((v) => v.id === d.entidadId)?.numero ?? ''}`;
+    if (d.entidad === 'Compra') return `Recepción ${state.compras.find((c) => c.id === d.entidadId)?.numero ?? ''}`;
     return 'Sin vínculo';
   };
 
@@ -47,7 +47,7 @@ export const DocumentosPage: React.FC = () => {
     <div className="max-w-6xl space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <p className="text-slate-500 max-w-2xl">
-          Los comprobantes y facturas se archivan solos al registrar ventas y compras. Aquí también puedes subir contratos u otros archivos.
+          Los comprobantes y facturas se archivan solos al emitir una factura de venta o recibir una compra en Kardex. Aquí también puedes subir contratos u otros archivos.
           Cada archivo iría a Amazon S3 y su ficha a la base de datos; en esta versión solo se guarda la ficha.
         </p>
         <button

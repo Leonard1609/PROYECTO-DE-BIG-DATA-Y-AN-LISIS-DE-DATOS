@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { ArrowLeft, Layers, ChevronDown, ChevronRight } from 'lucide-react';
-import { ERP_MENU, ERP_BASE } from '../core/config/navigation';
+import { ArrowLeft, Layers } from 'lucide-react';
+import { ERP_MENU, ruta } from '../core/config/navigation';
 import { usePermisos } from '../core/hooks/usePermisos';
 
 interface Props {
@@ -11,16 +10,7 @@ interface Props {
 
 export const ErpSidebar: React.FC<Props> = ({ onNavigate, onExit }) => {
   const { puede } = usePermisos();
-  const location = useLocation();
-
-  // Estados para los submenús desplegables solicitados por el instructor
-  const [comercialOpen, setComercialOpen] = useState(
-    location.pathname.includes('comercial')
-  );
-  const [comprasOpen, setComprasOpen] = useState(
-    location.pathname.includes('compras')
-  );
-
+  const { pathname } = useLocation();
   const grupos = ERP_MENU
     .map((g) => ({ ...g, modulos: g.modulos.filter((m) => puede(m.path)) }))
     .filter((g) => g.modulos.length > 0);
@@ -37,89 +27,17 @@ export const ErpSidebar: React.FC<Props> = ({ onNavigate, onExit }) => {
         </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
         {grupos.map((grupo) => (
           <div key={grupo.titulo}>
             <p className="px-3 mb-1.5 text-xs font-medium text-slate-400">{grupo.titulo}</p>
             <ul className="space-y-0.5">
-              {grupo.modulos.map(({ path, nombre, icon: Icon }) => {
-                // Verificamos si el módulo es Comercial o Compras para aplicar submenú desplegable
-                const esComercial = path === 'comercial';
-                const esCompras = path === 'compras';
-
-                if (esComercial) {
-                  return (
-                    <li key={path}>
-                      <button
-                        onClick={() => setComercialOpen(!comercialOpen)}
-                        className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors focus:outline-none"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Icon className="w-[18px] h-[18px] shrink-0" />
-                          <span>{nombre}</span>
-                        </div>
-                        {comercialOpen ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
-                      </button>
-                      {comercialOpen && (
-                        <ul className="pl-9 space-y-1 mt-1 border-l border-slate-200 ml-4">
-                          <li>
-                            <NavLink
-                              to={`${ERP_BASE}/${path}`}
-                              onClick={onNavigate}
-                              className={({ isActive }) =>
-                                `block px-2 py-1.5 rounded text-xs transition-colors ${
-                                  isActive ? 'text-teal-700 font-medium bg-teal-50' : 'text-slate-500 hover:text-slate-900'
-                                }`
-                              }
-                            >
-                              Cotización y Ventas
-                            </NavLink>
-                          </li>
-                        </ul>
-                      )}
-                    </li>
-                  );
-                }
-
-                if (esCompras) {
-                  return (
-                    <li key={path}>
-                      <button
-                        onClick={() => setComprasOpen(!comprasOpen)}
-                        className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors focus:outline-none"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Icon className="w-[18px] h-[18px] shrink-0" />
-                          <span>{nombre}</span>
-                        </div>
-                        {comprasOpen ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
-                      </button>
-                      {comprasOpen && (
-                        <ul className="pl-9 space-y-1 mt-1 border-l border-slate-200 ml-4">
-                          <li>
-                            <NavLink
-                              to={`${ERP_BASE}/${path}`}
-                              onClick={onNavigate}
-                              className={({ isActive }) =>
-                                `block px-2 py-1.5 rounded text-xs transition-colors ${
-                                  isActive ? 'text-teal-700 font-medium bg-teal-50' : 'text-slate-500 hover:text-slate-900'
-                                }`
-                              }
-                            >
-                              Órdenes y Recepción
-                            </NavLink>
-                          </li>
-                        </ul>
-                      )}
-                    </li>
-                  );
-                }
-
-                // Renderizado estándar para los demás módulos con la lógica de permisos original
+              {grupo.modulos.map(({ path, nombre, icon: Icon, submodulos }) => {
+                const abierto = pathname.startsWith(ruta(path));
                 return (
                   <li key={path}>
                     <NavLink
-                      to={`${ERP_BASE}/${path}`}
+                      to={ruta(path)}
                       onClick={onNavigate}
                       className={({ isActive }) =>
                         `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
@@ -132,6 +50,28 @@ export const ErpSidebar: React.FC<Props> = ({ onNavigate, onExit }) => {
                       <Icon className="w-[18px] h-[18px] shrink-0" />
                       {nombre}
                     </NavLink>
+
+                    {submodulos && abierto && (
+                      <ul className="mt-0.5 mb-1 ml-[26px] pl-3 border-l border-slate-200 space-y-0.5">
+                        {submodulos.map((s) => (
+                          <li key={s.path}>
+                            <NavLink
+                              to={ruta(path, s.path)}
+                              onClick={onNavigate}
+                              className={({ isActive }) =>
+                                `block px-3 py-1.5 rounded-lg text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 ${
+                                  isActive
+                                    ? 'text-teal-700 font-medium bg-teal-50/60'
+                                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+                                }`
+                              }
+                            >
+                              {s.nombre}
+                            </NavLink>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </li>
                 );
               })}

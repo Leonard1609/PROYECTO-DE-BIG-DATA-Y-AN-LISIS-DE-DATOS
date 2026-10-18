@@ -1,6 +1,6 @@
 import type { ErpState } from '../../../core/types';
 import { stockDe } from '../../../core/services/erpStore';
-import { formatFecha } from '../../../core/utils/format';
+import { fechaLocal, formatFecha } from '../../../core/utils/format';
 
 export type TipoColumna = 'texto' | 'entero' | 'moneda';
 export interface ColumnaReporte { titulo: string; tipo: TipoColumna }
@@ -18,14 +18,6 @@ export interface Reporte {
 }
 
 const r2 = (n: number): number => Math.round(n * 100) / 100;
-const dosDigitos = (n: number): string => String(n).padStart(2, '0');
-
-/** Fecha local en formato AAAA-MM-DD, para comparar con los campos de fecha del filtro. */
-export const fechaLocal = (iso: string): string => {
-  const d = new Date(iso);
-  return `${d.getFullYear()}-${dosDigitos(d.getMonth() + 1)}-${dosDigitos(d.getDate())}`;
-};
-
 const enRango = (iso: string, desde: string, hasta: string): boolean => {
   const f = fechaLocal(iso);
   return (desde === '' || f >= desde) && (hasta === '' || f <= hasta);

@@ -7,10 +7,10 @@ import { ERP_MODULOS } from './core/config/navigation';
 import { usePermisos } from './core/hooks/usePermisos';
 import { DashboardPage } from './modules/dashboard/pages/DashboardPage';
 import { MantenimientoPage } from './modules/mantenimiento/pages/MantenimientoPage';
-import { ComercialPage } from './modules/comercial/pages/ComercialPage';
+import { VentasPage } from './modules/ventas/pages/VentasPage';
 import { ComprasPage } from './modules/compras/pages/ComprasPage';
 import { InventarioPage } from './modules/inventario/pages/InventarioPage';
-import { FinanzasPage } from './modules/finanzas/pages/FinanzasPage';
+import { TesoreriaPage } from './modules/tesoreria/pages/TesoreriaPage';
 import { DocumentosPage } from './modules/documentos/pages/DocumentosPage';
 import { ReportesPage } from './modules/reportes/pages/ReportesPage';
 import { AdministracionPage } from './modules/administracion/pages/AdministracionPage';
@@ -19,10 +19,10 @@ import { AdministracionPage } from './modules/administracion/pages/Administracio
 const PAGINAS: Record<string, ReactElement> = {
   dashboard: <DashboardPage />,
   mantenimiento: <MantenimientoPage />,
-  comercial: <ComercialPage />,
+  ventas: <VentasPage />,
   compras: <ComprasPage />,
   inventario: <InventarioPage />,
-  finanzas: <FinanzasPage />,
+  tesoreria: <TesoreriaPage />,
   documentos: <DocumentosPage />,
   reportes: <ReportesPage />,
   administracion: <AdministracionPage />,

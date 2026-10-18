@@ -6,6 +6,11 @@ import {
 
 export const ERP_BASE = '/erp-enterprise-cloud';
 
+export interface ErpSubmodulo {
+  path: string;
+  nombre: string;
+}
+
 export interface ErpModulo {
   path: string;
   nombre: string;
@@ -13,12 +18,18 @@ export interface ErpModulo {
   descripcion: string;
   contiene: string[];
   justificacion: string;
+  /** Pantallas del módulo. Se muestran debajo del módulo cuando está abierto. */
+  submodulos?: ErpSubmodulo[];
 }
 
 export interface ErpGrupo {
   titulo: string;
   modulos: ErpModulo[];
 }
+
+/** Ruta absoluta de un módulo o de una de sus pantallas. */
+export const ruta = (modulo: string, sub?: string): string =>
+  `${ERP_BASE}/${modulo}${sub ? `/${sub}` : ''}`;
 
 export const ERP_MENU: ErpGrupo[] = [
   {
@@ -29,7 +40,7 @@ export const ERP_MENU: ErpGrupo[] = [
         nombre: 'Dashboard',
         icon: LayoutDashboard,
         descripcion: 'Resumen general de la operación.',
-        contiene: ['Indicadores de ventas, compras y stock', 'Alertas de stock crítico', 'Cuentas por cobrar y por pagar', 'Utilidad'],
+        contiene: ['Indicadores de ventas, compras y caja', 'Alertas de stock y de documentos pendientes', 'Cuentas por cobrar y por pagar', 'Utilidad'],
         justificacion: 'No guarda datos propios. Solo resume lo que producen los demás módulos.',
       },
     ],
@@ -42,8 +53,8 @@ export const ERP_MENU: ErpGrupo[] = [
         nombre: 'Mantenimiento',
         icon: Database,
         descripcion: 'Datos base que se registran una sola vez.',
-        contiene: ['Clientes', 'Proveedores', 'Productos y categorías', 'Marcas y unidades', 'Monedas', 'Almacenes', 'Personal y vendedores', 'Tipos de documento'],
-        justificacion: 'Son datos maestros. Ventas y compras los consultan, nunca los registran. Así se evita duplicar información entre áreas.',
+        contiene: ['Clientes', 'Proveedores', 'Productos y categorías', 'Marcas y unidades', 'Monedas', 'Almacenes', 'Personal y vendedores'],
+        justificacion: 'Son datos maestros. Ventas y Compras los consultan, nunca los registran. Así se evita duplicar información entre áreas.',
       },
     ],
   },
@@ -51,36 +62,52 @@ export const ERP_MENU: ErpGrupo[] = [
     titulo: 'Operaciones',
     modulos: [
       {
-        path: 'comercial',
-        nombre: 'Comercial',
+        path: 'ventas',
+        nombre: 'Ventas',
         icon: ShoppingCart,
-        descripcion: 'Proceso de venta, de la cotización al cobro.',
-        contiene: ['Cotizaciones', 'Pedidos', 'Ventas', 'Comprobantes', 'Cobros y devoluciones'],
-        justificacion: 'Cada documento nace del anterior. Selecciona clientes y productos de Mantenimiento.',
+        descripcion: 'Del ofrecimiento al cobro, con un documento por etapa.',
+        contiene: ['Cotizaciones', 'Órdenes de venta', 'Facturación', 'Estado de cuenta (cuentas por cobrar)'],
+        justificacion: 'Cada documento nace del anterior: cotización, orden de venta, factura y cobro. Las cuentas por cobrar viven aquí porque vienen de clientes.',
+        submodulos: [
+          { path: 'cotizaciones', nombre: 'Cotizaciones' },
+          { path: 'ordenes', nombre: 'Órdenes de venta' },
+          { path: 'facturacion', nombre: 'Facturación' },
+          { path: 'estado-cuenta', nombre: 'Estado de cuenta' },
+        ],
       },
       {
         path: 'compras',
         nombre: 'Compras',
         icon: Truck,
-        descripcion: 'Proceso de abastecimiento con proveedores.',
-        contiene: ['Solicitudes', 'Órdenes de compra', 'Recepción', 'Facturas de proveedor', 'Pagos y devoluciones'],
-        justificacion: 'Es el espejo de Comercial del lado del proveedor. Su efecto es aumentar el stock.',
+        descripcion: 'Del pedido al proveedor hasta el pago.',
+        contiene: ['Órdenes de compra', 'Kardex (recepción de mercadería)', 'Estado de cuenta (cuentas por pagar)'],
+        justificacion: 'La orden de compra se recibe en Kardex, donde se verifica y entra al stock. Las cuentas por pagar viven aquí porque vienen de proveedores.',
+        submodulos: [
+          { path: 'ordenes', nombre: 'Órdenes de compra' },
+          { path: 'kardex', nombre: 'Kardex' },
+          { path: 'estado-cuenta', nombre: 'Estado de cuenta' },
+        ],
       },
       {
         path: 'inventario',
         nombre: 'Inventario',
         icon: Boxes,
         descripcion: 'Existencias y movimientos por almacén.',
-        contiene: ['Stock por almacén', 'Kardex', 'Transferencias', 'Ajustes'],
-        justificacion: 'Los movimientos los generan las ventas y compras, no se digitan a mano. El producto en sí vive en Mantenimiento.',
+        contiene: ['Stock por almacén', 'Movimientos', 'Ajustes'],
+        justificacion: 'Las existencias no se digitan: las generan Compras (entradas) y Ventas (salidas). Solo los ajustes se registran a mano.',
+        submodulos: [
+          { path: 'stock', nombre: 'Stock' },
+          { path: 'movimientos', nombre: 'Movimientos' },
+        ],
       },
       {
-        path: 'finanzas',
-        nombre: 'Finanzas',
+        path: 'tesoreria',
+        nombre: 'Tesorería',
         icon: Wallet,
-        descripcion: 'Efecto monetario de las operaciones.',
-        contiene: ['Cuentas por cobrar', 'Cuentas por pagar', 'Caja', 'Bancos', 'Ingresos y egresos'],
-        justificacion: 'Comercial registra el hecho comercial; Finanzas lleva el saldo del dinero.',
+        descripcion: 'Dinero que entra y sale.',
+        contiene: ['Caja: ingresos y egresos'],
+        justificacion: 'Caja es dinero real, distinto de las cuentas por cobrar y por pagar. Cada cobro o pago hecho en Ventas o Compras queda aquí.',
+        submodulos: [{ path: 'caja', nombre: 'Caja' }],
       },
     ],
   },
@@ -100,8 +127,8 @@ export const ERP_MENU: ErpGrupo[] = [
         nombre: 'Reportes',
         icon: BarChart3,
         descripcion: 'Consultas que cruzan varios módulos.',
-        contiene: ['Ventas por vendedor', 'Ventas por marca', 'Compras por proveedor', 'Kardex valorizado', 'Estado de cuenta'],
-        justificacion: 'Es transversal: un reporte por marca o vendedor mezcla Comercial, Mantenimiento y Personal. Por eso no pertenece a un solo módulo.',
+        contiene: ['Ventas por vendedor', 'Ventas por marca', 'Compras por proveedor', 'Inventario valorizado', 'Estado de cuenta'],
+        justificacion: 'Es transversal: un reporte por marca o vendedor mezcla Ventas, Mantenimiento y Personal. Por eso no pertenece a un solo módulo.',
       },
     ],
   },
@@ -113,7 +140,7 @@ export const ERP_MENU: ErpGrupo[] = [
         nombre: 'Administración',
         icon: ShieldCheck,
         descripcion: 'Acceso, permisos y trazabilidad.',
-        contiene: ['Usuarios', 'Roles', 'Permisos', 'Parámetros', 'Auditoría'],
+        contiene: ['Usuarios', 'Roles y permisos', 'Auditoría', 'Parámetros'],
         justificacion: 'Define quién puede hacer qué en el resto de módulos y deja registro de las acciones críticas.',
       },
       {

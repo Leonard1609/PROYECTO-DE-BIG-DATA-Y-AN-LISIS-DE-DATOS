@@ -36,7 +36,7 @@ export const DashboardPage: React.FC = () => {
       const stock = stockDe(state.movimientos, p.id, a.id);
       if (stock <= p.stockMinimo) {
         alertas.push({
-          clave: `stock-${p.id}-${a.id}`, ruta: 'inventario', critica: stock === 0,
+          clave: `stock-${p.id}-${a.id}`, ruta: 'inventario/stock', critica: stock === 0,
           texto: `${p.nombre} en ${a.nombre}: ${stock === 0 ? 'sin stock' : `stock bajo (${stock}, mínimo ${p.stockMinimo})`}`,
         });
       }
@@ -44,16 +44,27 @@ export const DashboardPage: React.FC = () => {
   }
   for (const c of pendientes.filter((x) => x.vencimiento < hoy)) {
     alertas.push({
-      clave: `venc-${c.id}`, ruta: 'finanzas', critica: true,
+      clave: `venc-${c.id}`, ruta: c.tipo === 'Cobrar' ? 'ventas/estado-cuenta' : 'compras/estado-cuenta', critica: true,
       texto: `Cuenta por ${c.tipo === 'Cobrar' ? 'cobrar' : 'pagar'} vencida: ${c.documentoNumero}`,
     });
   }
 
+  // Documentos que esperan una acción en el flujo
+  for (const c of state.cotizaciones.filter((x) => x.estado === 'Pendiente')) {
+    alertas.push({ clave: `cot-${c.id}`, ruta: 'ventas/cotizaciones', critica: false, texto: `Cotización ${c.numero} por aceptar` });
+  }
+  for (const o of state.ordenesVenta.filter((x) => x.estado === 'Pendiente')) {
+    alertas.push({ clave: `ov-${o.id}`, ruta: 'ventas/facturacion', critica: false, texto: `Orden de venta ${o.numero} por facturar` });
+  }
+  for (const o of state.ordenesCompra.filter((x) => x.estado === 'Pendiente')) {
+    alertas.push({ clave: `oc-${o.id}`, ruta: 'compras/kardex', critica: false, texto: `Orden de compra ${o.numero} por recibir en Kardex` });
+  }
+
   const pasos = [
     { texto: 'Datos maestros registrados', hecho: [state.clientes, state.proveedores, state.productos, state.almacenes, state.vendedores].every((l) => l.length > 0), ruta: 'mantenimiento' },
-    { texto: 'Compra registrada (entra stock)', hecho: state.compras.length > 0, ruta: 'compras' },
-    { texto: 'Venta registrada (sale stock)', hecho: state.ventas.length > 0, ruta: 'comercial' },
-    { texto: 'Comprobantes archivados', hecho: state.documentos.length > 0, ruta: 'documentos' },
+    { texto: 'Compra recibida en Kardex (entra stock)', hecho: state.compras.length > 0, ruta: 'compras/kardex' },
+    { texto: 'Venta facturada (sale stock)', hecho: state.ventas.length > 0, ruta: 'ventas/facturacion' },
+    { texto: 'Factura cobrada', hecho: state.ventas.some((v) => v.estadoPago === 'Pagada'), ruta: 'ventas/estado-cuenta' },
   ];
 
   const actividad = state.auditoria.slice().reverse().slice(0, 6);
@@ -61,12 +72,12 @@ export const DashboardPage: React.FC = () => {
   return (
     <div className="max-w-6xl space-y-6">
       <p className="text-slate-500 max-w-2xl">
-        Resumen de lo que producen los demás módulos. Aquí no se registra nada: cada cifra viene de Comercial, Compras, Inventario y Finanzas.
+        Resumen de lo que producen los demás módulos. Aquí no se registra nada: cada cifra viene de Ventas, Compras, Inventario y Tesorería.
       </p>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <Indicador titulo="Ventas" valor={formatMoneda(totalVentas)} nota={`${ventas.length} emitidas, IGV incluido`} />
-        <Indicador titulo="Compras" valor={formatMoneda(totalCompras)} nota={`${compras.length} recibidas, IGV incluido`} />
+        <Indicador titulo="Ventas" valor={formatMoneda(totalVentas)} nota={`${ventas.length} facturadas, IGV incluido`} />
+        <Indicador titulo="Compras" valor={formatMoneda(totalCompras)} nota={`${compras.length} recibidas en Kardex, IGV incluido`} />
         <Indicador titulo="Utilidad bruta" valor={formatMoneda(utilidad)} nota="Ventas sin IGV menos costo de lo vendido" />
         <Indicador titulo="Saldo de caja" valor={formatMoneda(ingresos - egresos)} nota="Ingresos menos egresos" />
         <Indicador titulo="Por cobrar" valor={formatMoneda(porCobrar)} nota="Saldo pendiente de clientes" />

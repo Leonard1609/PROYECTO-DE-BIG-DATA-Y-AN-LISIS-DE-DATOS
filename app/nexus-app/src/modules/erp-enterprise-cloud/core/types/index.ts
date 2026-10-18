@@ -3,6 +3,7 @@ export type CondicionPago = 'Contado' | 'Crédito';
 
 /* ───────── Mantenimiento (datos maestros) ───────── */
 
+/** Catálogo simple: categorías, marcas, unidades y monedas. */
 export interface Maestro {
   id: string;
   nombre: string;
@@ -70,10 +71,6 @@ export interface LineaDetalle {
   subtotal: number;
 }
 
-// Ampliamos los estados manteniendo retrocompatibilidad con 'Emitida' y 'Recibida'
-export type EstadoVentaFlujo = 'Cotización' | 'Orden de Venta' | 'Emitida' | 'Pagada' | 'Anulada';
-export type EstadoCompraFlujo = 'Orden de Compra' | 'Recibida' | 'Pagada' | 'Anulada';
-
 export interface Venta {
   id: string;
   numero: string;
@@ -86,8 +83,12 @@ export interface Venta {
   subtotal: number;
   igv: number;
   total: number;
-  estado: EstadoVentaFlujo;
+  estado: 'Emitida' | 'Anulada';
   comprobanteId: string;
+  /** Orden de venta de la que nació esta factura. */
+  ordenId: string;
+  /** Se sincroniza con el estado de cuenta: pasa a Pagada al cobrarse. */
+  estadoPago: 'Pendiente' | 'Pagada';
 }
 
 export interface Compra {
@@ -101,8 +102,62 @@ export interface Compra {
   subtotal: number;
   igv: number;
   total: number;
-  estado: EstadoCompraFlujo;
+  estado: 'Recibida' | 'Anulada';
   facturaId: string;
+  /** Orden de compra que se recibió en Kardex. */
+  ordenId: string;
+  /** Se sincroniza con el estado de cuenta: pasa a Pagada al pagarse. */
+  estadoPago: 'Pendiente' | 'Pagada';
+}
+
+/* ───────── Documentos previos al comprobante ───────── */
+
+export interface Cotizacion {
+  id: string;
+  numero: string;
+  fecha: string;
+  clienteId: string;
+  vendedorId: string;
+  almacenId: string;
+  condicion: CondicionPago;
+  detalle: LineaDetalle[];
+  subtotal: number;
+  igv: number;
+  total: number;
+  estado: 'Pendiente' | 'Aceptada';
+  ordenId: string;
+}
+
+export interface OrdenVenta {
+  id: string;
+  numero: string;
+  fecha: string;
+  cotizacionId: string;
+  clienteId: string;
+  vendedorId: string;
+  almacenId: string;
+  condicion: CondicionPago;
+  detalle: LineaDetalle[];
+  subtotal: number;
+  igv: number;
+  total: number;
+  estado: 'Pendiente' | 'Facturada';
+  ventaId: string;
+}
+
+export interface OrdenCompra {
+  id: string;
+  numero: string;
+  fecha: string;
+  proveedorId: string;
+  almacenId: string;
+  condicion: CondicionPago;
+  detalle: LineaDetalle[];
+  subtotal: number;
+  igv: number;
+  total: number;
+  estado: 'Pendiente' | 'Recibida';
+  compraId: string;
 }
 
 /* ───────── Inventario ───────── */
@@ -152,6 +207,7 @@ export interface Documento {
   fecha: string;
   entidad: 'Venta' | 'Compra' | 'Otro';
   entidadId: string;
+  /** Ruta simulada del objeto en Amazon S3. */
   rutaS3: string;
 }
 
@@ -196,6 +252,9 @@ export interface ErpState {
   monedas: Maestro[];
   ventas: Venta[];
   compras: Compra[];
+  cotizaciones: Cotizacion[];
+  ordenesVenta: OrdenVenta[];
+  ordenesCompra: OrdenCompra[];
   movimientos: MovimientoInventario[];
   cuentas: CuentaFinanciera[];
   caja: MovimientoCaja[];

@@ -1,42 +1,44 @@
-import type { CondicionPago, ErpState, LineaDetalle } from '../../types';
+import { ChevronRight } from 'lucide-react';
+import type { ErpState } from '../../types';
+import type { FilaDocumento } from '../../utils/filas';
 import { formatFechaHora, formatMoneda } from '../../utils/format';
 import { Insignia } from '../Insignia';
 import { Modal } from '../Modal';
-import type { Modo } from './FormularioOperacion';
-
-export interface FilaOperacion {
-  id: string;
-  numero: string;
-  fecha: string;
-  tercero: string;
-  condicion: CondicionPago;
-  estado: string;
-  subtotal: number;
-  igv: number;
-  total: number;
-  detalle: LineaDetalle[];
-  documentoId: string;
-}
 
 interface Props {
-  modo: Modo;
-  fila: FilaOperacion;
+  titulo: string;
+  etiquetaTercero: string;
+  fila: FilaDocumento;
   state: ErpState;
   onCerrar: () => void;
 }
 
-export const DetalleOperacion: React.FC<Props> = ({ modo, fila, state, onCerrar }) => {
-  const esVenta = modo === 'venta';
+export const DetalleOperacion: React.FC<Props> = ({ titulo, etiquetaTercero, fila, state, onCerrar }) => {
   const documento = state.documentos.find((d) => d.id === fila.documentoId);
   const nombreProducto = (id: string) => state.productos.find((p) => p.id === id)?.nombre ?? '-';
 
   return (
-    <Modal titulo={`${esVenta ? 'Venta' : 'Compra'} ${fila.numero}`} onCerrar={onCerrar}>
+    <Modal titulo={`${titulo} ${fila.numero}`} onCerrar={onCerrar}>
       <dl className="grid gap-4 sm:grid-cols-3 text-sm">
-        <div><dt className="text-slate-500">{esVenta ? 'Cliente' : 'Proveedor'}</dt><dd className="font-medium text-slate-800">{fila.tercero}</dd></div>
+        <div><dt className="text-slate-500">{etiquetaTercero}</dt><dd className="font-medium text-slate-800">{fila.tercero}</dd></div>
         <div><dt className="text-slate-500">Fecha</dt><dd className="font-medium text-slate-800">{formatFechaHora(fila.fecha)}</dd></div>
         <div className="flex items-center gap-2"><Insignia texto={fila.condicion} /><Insignia texto={fila.estado} /></div>
       </dl>
+
+      <div className="mt-5">
+        <p className="text-sm text-slate-500 mb-2">Recorrido del documento</p>
+        <ol className="flex flex-wrap items-center gap-y-1 text-sm">
+          {fila.traza.map((paso, i) => {
+            const pendiente = /pendiente/i.test(paso);
+            return (
+              <li key={paso} className="flex items-center">
+                <span className={`rounded-lg px-2.5 py-1 ${pendiente ? 'bg-amber-50 text-amber-700' : 'bg-teal-50 text-teal-800'}`}>{paso}</span>
+                {i < fila.traza.length - 1 && <ChevronRight aria-hidden="true" className="w-4 h-4 text-slate-400 mx-1" />}
+              </li>
+            );
+          })}
+        </ol>
+      </div>
 
       <div className="mt-5 overflow-x-auto border border-slate-200 rounded-xl">
         <table className="w-full text-sm">
@@ -69,7 +71,7 @@ export const DetalleOperacion: React.FC<Props> = ({ modo, fila, state, onCerrar 
 
       {documento && (
         <p className="mt-5 text-sm text-slate-500">
-          {esVenta ? 'Comprobante' : 'Factura'} archivado: <span className="font-medium text-slate-700">{documento.nombre}</span>
+          Archivo guardado en Documentos: <span className="font-medium text-slate-700">{documento.nombre}</span>
         </p>
       )}
     </Modal>

@@ -6,3 +6,11 @@ export const formatFecha = (iso: string): string =>
 
 export const formatFechaHora = (iso: string): string =>
   new Date(iso).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' });
+
+const dos = (n: number): string => String(n).padStart(2, '0');
+
+/** Fecha local en formato AAAA-MM-DD, para comparar con los filtros de fecha. */
+export const fechaLocal = (iso: string): string => {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}`;
+};

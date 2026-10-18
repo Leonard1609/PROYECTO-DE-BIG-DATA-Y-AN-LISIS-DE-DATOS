@@ -56,8 +56,8 @@ export const FormularioDocumento: React.FC<Props> = ({ state, onGuardar, onExito
           <label htmlFor="doc-vinculo" className={etiqueta}>Vincular a</label>
           <select id="doc-vinculo" value={vinculo} onChange={(e) => setVinculo(e.target.value)} className={campo}>
             <option value="">Sin vínculo</option>
-            {state.ventas.map((v) => <option key={v.id} value={`Venta:${v.id}`}>Venta {v.numero}</option>)}
-            {state.compras.map((c) => <option key={c.id} value={`Compra:${c.id}`}>Compra {c.numero}</option>)}
+            {state.ventas.map((v) => <option key={v.id} value={`Venta:${v.id}`}>Factura {v.numero}</option>)}
+            {state.compras.map((c) => <option key={c.id} value={`Compra:${c.id}`}>Recepción {c.numero}</option>)}
           </select>
         </div>
       </div>

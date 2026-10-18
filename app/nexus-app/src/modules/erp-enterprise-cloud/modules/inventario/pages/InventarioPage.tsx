@@ -1,25 +1,23 @@
 import { useState } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { useErp } from '../../../core/hooks/useErp';
 import { Modal } from '../../../core/components/Modal';
-import { Pestanas } from '../../../core/components/Pestanas';
+import { AvisoFlujo, type Aviso } from '../../../core/components/AvisoFlujo';
 import { StockTab } from '../components/StockTab';
-import { KardexTab } from '../components/KardexTab';
+import { MovimientosTab } from '../components/MovimientosTab';
 import { FormularioAjuste } from '../components/FormularioAjuste';
-
-type Vista = 'stock' | 'kardex';
 
 export const InventarioPage: React.FC = () => {
   const { state, acciones } = useErp();
-  const [vista, setVista] = useState<Vista>('stock');
   const [ajustando, setAjustando] = useState(false);
-  const [aviso, setAviso] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<Aviso | null>(null);
 
   return (
     <div className="max-w-6xl space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <p className="text-slate-500 max-w-2xl">
-          Las existencias no se digitan: cada compra suma y cada venta resta. Solo los ajustes se registran a mano.
+          Las existencias no se digitan: cada recepción en Kardex suma y cada factura resta. Solo los ajustes se registran a mano.
         </p>
         <button
           onClick={() => { setAviso(null); setAjustando(true); }}
@@ -30,28 +28,21 @@ export const InventarioPage: React.FC = () => {
         </button>
       </div>
 
-      {aviso && (
-        <div role="status" className="flex items-start justify-between gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-          <span>{aviso}</span>
-          <button onClick={() => setAviso(null)} className="underline shrink-0">Cerrar</button>
-        </div>
-      )}
+      {aviso && <AvisoFlujo aviso={aviso} onCerrar={() => setAviso(null)} />}
 
-      <Pestanas<Vista>
-        etiqueta="Inventario"
-        pestanas={[{ id: 'stock', titulo: 'Stock actual' }, { id: 'kardex', titulo: 'Kardex' }]}
-        activa={vista}
-        onCambiar={setVista}
-      />
-
-      {vista === 'stock' ? <StockTab /> : <KardexTab />}
+      <Routes>
+        <Route index element={<Navigate to="stock" replace />} />
+        <Route path="stock" element={<StockTab />} />
+        <Route path="movimientos" element={<MovimientosTab />} />
+        <Route path="*" element={<Navigate to="stock" replace />} />
+      </Routes>
 
       {ajustando && (
         <Modal titulo="Nuevo ajuste de inventario" onCerrar={() => setAjustando(false)}>
           <FormularioAjuste
             state={state}
             onGuardar={acciones.registrarAjuste}
-            onExito={() => { setAjustando(false); setAviso('Ajuste registrado. El saldo del kardex se actualizó.'); }}
+            onExito={() => { setAjustando(false); setAviso({ ok: true, texto: 'Ajuste registrado. El movimiento ya figura en Movimientos con su saldo.' }); }}
             onCancelar={() => setAjustando(false)}
           />
         </Modal>
