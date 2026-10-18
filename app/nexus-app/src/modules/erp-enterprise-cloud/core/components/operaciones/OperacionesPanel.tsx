@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, CheckCircle2, ArrowRight, Calendar, Filter, DollarSign, FileText } from 'lucide-react';
+import { Plus, CheckCircle2, ArrowRight, Calendar, DollarSign, FileText, RotateCcw } from 'lucide-react';
 import { useErp } from '../../hooks/useErp';
 import { LIMITE_REGISTROS } from '../../services/erpStore';
 import { ERP_BASE } from '../../config/navigation';
@@ -40,7 +40,7 @@ export const OperacionesPanel: React.FC<{ modo: Modo }> = ({ modo }) => {
         detalle: c.detalle, documentoId: c.facturaId,
       }));
 
-  // Filtrado por fecha seleccionada (si hay filtro activo)
+  // Filtrado por fecha seleccionada
   const filasFiltradas = fechaFiltro
     ? todasLasFilas.filter((f) => f.fecha.startsWith(fechaFiltro))
     : todasLasFilas;
@@ -133,7 +133,7 @@ export const OperacionesPanel: React.FC<{ modo: Modo }> = ({ modo }) => {
         </div>
       )}
 
-      {/* Tarjetas Informativas de Filtro Diario */}
+      {/* Tarjetas Informativas y Filtro Corrección Visual */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
@@ -155,7 +155,7 @@ export const OperacionesPanel: React.FC<{ modo: Modo }> = ({ modo }) => {
           </div>
         </div>
 
-        {/* Control del Filtro por Fecha */}
+        {/* Control del Filtro por Fecha Corregido Visualmente */}
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
           <label className="text-xs font-medium text-slate-500 uppercase flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5 text-teal-600" />
@@ -166,16 +166,29 @@ export const OperacionesPanel: React.FC<{ modo: Modo }> = ({ modo }) => {
               type="date"
               value={fechaFiltro}
               onChange={(e) => setFechaFiltro(e.target.value)}
-              className="w-full text-xs p-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              style={{ colorScheme: 'light' }}
+              className="w-full text-xs p-2 rounded-lg border border-slate-300 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-inner"
             />
-            {fechaFiltro && (
-              <button
-                onClick={() => setFechaFiltro('')}
-                className="text-xs text-slate-500 hover:text-slate-800 underline shrink-0"
-              >
-                Todas
-              </button>
-            )}
+            <div className="flex items-center gap-1 shrink-0">
+              {fechaFiltro !== hoyISO && (
+                <button
+                  onClick={() => setFechaFiltro(hoyISO)}
+                  title="Volver a la fecha de hoy"
+                  className="inline-flex items-center gap-1 text-xs px-2 py-1.5 rounded bg-teal-50 text-teal-700 hover:bg-teal-100 font-medium transition-colors"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  Hoy
+                </button>
+              )}
+              {fechaFiltro && (
+                <button
+                  onClick={() => setFechaFiltro('')}
+                  className="text-xs text-slate-500 hover:text-slate-800 underline px-1"
+                >
+                  Todas
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -209,7 +222,7 @@ export const OperacionesPanel: React.FC<{ modo: Modo }> = ({ modo }) => {
           <EmptyState
             titulo={fechaFiltro ? `No hay ${esVenta ? 'ventas' : 'compras'} en la fecha ${formatFecha(fechaFiltro)}` : esVenta ? 'Aún no hay ventas' : 'Aún no hay compras'}
             descripcion={fechaFiltro 
-              ? 'Las operaciones del día empiezan en cero. Puedes cambiar la fecha seleccionada o registrar una nueva operación.'
+              ? 'Las operaciones del día empiezan en cero. Puedes presionar "Hoy", cambiar la fecha seleccionada o registrar una nueva operación.'
               : esVenta ? 'Registra la primera venta.' : 'Registra la primera compra.'}
           />
         }
