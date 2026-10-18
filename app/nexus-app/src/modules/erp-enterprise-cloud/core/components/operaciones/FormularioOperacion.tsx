@@ -3,6 +3,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import type { CondicionPago, ErpState, Resultado } from '../../types';
 import { IGV, stockDe } from '../../services/erpStore';
 import { formatMoneda } from '../../utils/format';
+import { Buscador } from '../Buscador';
 
 /** Documento que se está registrando. Los dos primeros son del lado de la venta. */
 export type Modo = 'cotizacion' | 'orden-venta' | 'orden-compra';
@@ -40,8 +41,9 @@ const unico = <T extends { id: string; estado: string }>(lista: T[]): string => 
 export const FormularioOperacion: React.FC<Props> = ({ modo, state, onGuardar, onExito, onCancelar }) => {
   const esVenta = modo !== 'orden-compra';
   const terceros = esVenta
-    ? activos(state.clientes).map((c) => ({ id: c.id, nombre: c.razonSocial }))
-    : activos(state.proveedores).map((p) => ({ id: p.id, nombre: p.razonSocial }));
+    ? activos(state.clientes).map((c) => ({ value: c.id, label: c.razonSocial, detalle: `${c.tipoDocumento} ${c.numeroDocumento}` }))
+    : activos(state.proveedores).map((p) => ({ value: p.id, label: p.razonSocial, detalle: `RUC ${p.ruc}` }));
+  const opcionesProducto = activos(state.productos).map((p) => ({ value: p.id, label: `${p.codigo} · ${p.nombre}`, detalle: formatMoneda(p.precioVenta) }));
   const productos = activos(state.productos);
   const almacenes = activos(state.almacenes);
   const vendedores = activos(state.vendedores);
@@ -105,10 +107,11 @@ export const FormularioOperacion: React.FC<Props> = ({ modo, state, onGuardar, o
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="op-tercero" className={etiqueta}>{esVenta ? 'Cliente' : 'Proveedor'}</label>
-          <select id="op-tercero" value={terceroId} onChange={(e) => setTerceroId(e.target.value)} className={clase('tercero')}>
-            <option value="">Selecciona una opción</option>
-            {terceros.map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
-          </select>
+          <Buscador
+            id="op-tercero" value={terceroId} onChange={setTerceroId} opciones={terceros}
+            placeholder={esVenta ? 'Buscar cliente por nombre o documento' : 'Buscar proveedor por nombre o RUC'}
+            claseInput={clase('tercero')}
+          />
           {errores.tercero && <p className="text-xs text-red-600 mt-1">{errores.tercero}</p>}
         </div>
 
@@ -153,12 +156,11 @@ export const FormularioOperacion: React.FC<Props> = ({ modo, state, onGuardar, o
               <div className="grid gap-3 sm:grid-cols-[1fr_6rem_8rem_7rem_auto] items-end">
                 <div>
                   <label htmlFor={`op-prod-${i}`} className="block text-xs text-slate-500 mb-1">Producto</label>
-                  <select id={`op-prod-${i}`} value={l.productoId}
-                    onChange={(e) => cambiarLinea(i, { productoId: e.target.value, precio: precioBase(e.target.value) })}
-                    className={clase(`l${i}`)}>
-                    <option value="">Selecciona un producto</option>
-                    {productos.map((p) => <option key={p.id} value={p.id}>{p.codigo} · {p.nombre}</option>)}
-                  </select>
+                  <Buscador
+                    id={`op-prod-${i}`} value={l.productoId} opciones={opcionesProducto}
+                    onChange={(v) => cambiarLinea(i, { productoId: v, precio: precioBase(v) })}
+                    placeholder="Buscar por código o nombre" claseInput={clase(`l${i}`)}
+                  />
                 </div>
                 <div>
                   <label htmlFor={`op-cant-${i}`} className="block text-xs text-slate-500 mb-1">Cantidad</label>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { stockDe } from '../../../core/services/erpStore';
+import { Buscador } from '../../../core/components/Buscador';
 import type { ErpState, Resultado } from '../../../core/types';
 
 interface Props {
@@ -36,10 +37,11 @@ export const FormularioAjuste: React.FC<Props> = ({ state, onGuardar, onExito, o
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="aj-producto" className={etiqueta}>Producto</label>
-          <select id="aj-producto" value={productoId} onChange={(e) => setProductoId(e.target.value)} className={campo}>
-            <option value="">Selecciona una opción</option>
-            {activos(state.productos).map((p) => <option key={p.id} value={p.id}>{p.codigo} · {p.nombre}</option>)}
-          </select>
+          <Buscador
+            id="aj-producto" value={productoId} onChange={setProductoId} claseInput={campo}
+            opciones={activos(state.productos).map((p) => ({ value: p.id, label: `${p.codigo} · ${p.nombre}` }))}
+            placeholder="Buscar por código o nombre"
+          />
         </div>
         <div>
           <label htmlFor="aj-almacen" className={etiqueta}>Almacén</label>

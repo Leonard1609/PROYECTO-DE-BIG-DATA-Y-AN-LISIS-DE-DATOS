@@ -1,5 +1,5 @@
 import { useErp } from '../../../core/hooks/useErp';
-import { formatFechaHora, formatMoneda } from '../../../core/utils/format';
+import { formatFechaHora, formatMoneda, formatMonedaConSigno } from '../../../core/utils/format';
 import { DataTable, type ColumnaTabla } from '../../../core/components/DataTable';
 import { EmptyState } from '../../../core/components/EmptyState';
 import { FiltroFechas, useFiltroFechas } from '../../../core/components/FiltroFechas';
@@ -33,7 +33,7 @@ export const CajaPage: React.FC = () => {
     { titulo: 'Concepto', celda: (m) => m.concepto },
     { titulo: 'Tipo', celda: (m) => <Insignia texto={m.tipo} /> },
     { titulo: 'Importe', celda: (m) => (m.tipo === 'Egreso' ? `- ${formatMoneda(m.monto)}` : formatMoneda(m.monto)), derecha: true },
-    { titulo: 'Saldo de caja', celda: (m) => formatMoneda(m.acumulado), derecha: true },
+    { titulo: 'Saldo de caja', celda: (m) => formatMonedaConSigno(m.acumulado), derecha: true },
   ];
 
   return (
@@ -45,7 +45,7 @@ export const CajaPage: React.FC = () => {
       <div className="grid gap-3 sm:grid-cols-3">
         <Indicador titulo="Ingresos" valor={formatMoneda(ingresos)} nota={filtro.esHoy ? 'De hoy' : 'En el período filtrado'} />
         <Indicador titulo="Egresos" valor={formatMoneda(egresos)} />
-        <Indicador titulo="Saldo de caja" valor={formatMoneda(todas.length ? todas[todas.length - 1].acumulado : 0)} nota="Acumulado total" />
+        <Indicador titulo="Saldo de caja" valor={formatMonedaConSigno(todas.length ? todas[todas.length - 1].acumulado : 0)} nota="Acumulado total" />
       </div>
 
       <FiltroFechas filtro={filtro} />

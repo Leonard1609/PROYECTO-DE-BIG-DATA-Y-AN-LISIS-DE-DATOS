@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useErp } from '../../../core/hooks/useErp';
 import { formatFechaHora } from '../../../core/utils/format';
 import { DataTable, type ColumnaTabla } from '../../../core/components/DataTable';
+import { Buscador } from '../../../core/components/Buscador';
 import { EmptyState } from '../../../core/components/EmptyState';
 import { FiltroFechas, useFiltroFechas } from '../../../core/components/FiltroFechas';
 import { Indicador } from '../../../core/components/Indicador';
@@ -46,12 +47,13 @@ export const MovimientosTab: React.FC = () => {
 
       <div className="flex flex-wrap items-end gap-4">
         <FiltroFechas filtro={filtro} />
-        <div>
+        <div className="min-w-[16rem]">
           <label htmlFor="mov-producto" className="block text-xs text-slate-500 mb-1">Producto</label>
-          <select id="mov-producto" value={productoId} onChange={(e) => setProductoId(e.target.value)} className={campo}>
-            <option value="">Todos los productos</option>
-            {state.productos.map((p) => <option key={p.id} value={p.id}>{p.codigo} · {p.nombre}</option>)}
-          </select>
+          <Buscador
+            id="mov-producto" value={productoId} onChange={setProductoId} claseInput={campo}
+            opciones={state.productos.map((p) => ({ value: p.id, label: `${p.codigo} · ${p.nombre}` }))}
+            placeholder="Todos los productos"
+          />
         </div>
       </div>
 
