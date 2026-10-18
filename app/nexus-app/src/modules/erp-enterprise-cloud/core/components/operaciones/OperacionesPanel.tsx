@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Plus, CheckCircle2, ArrowRight } from 'lucide-react';
 import { useErp } from '../../hooks/useErp';
 import { LIMITE_REGISTROS } from '../../services/erpStore';
 import { ERP_BASE } from '../../config/navigation';
@@ -55,6 +55,15 @@ export const OperacionesPanel: React.FC<{ modo: Modo }> = ({ modo }) => {
       : 'Compra registrada. Entró stock al almacén, se archivó la factura y se actualizó Finanzas.');
   };
 
+  const handleAvanzarEstado = (fila: FilaOperacion) => {
+    const res = acciones.avanzarEstadoOperacion(esVenta ? 'Venta' : 'Compra', fila.id);
+    if (res.ok) {
+      setAviso(esVenta 
+        ? `Cobro registrado con éxito para ${fila.numero}. Estado sincronizado a Pagada.` 
+        : `Pago registrado con éxito para ${fila.numero}. Estado sincronizado a Pagada.`);
+    }
+  };
+
   const columnas: ColumnaTabla<FilaOperacion>[] = [
     { titulo: 'Número', celda: (f) => f.numero },
     { titulo: 'Fecha', celda: (f) => formatFecha(f.fecha) },
@@ -82,6 +91,33 @@ export const OperacionesPanel: React.FC<{ modo: Modo }> = ({ modo }) => {
           ? 'Cada venta selecciona un cliente y un vendedor ya registrados, descuenta stock y genera el comprobante y la cuenta por cobrar.'
           : 'Cada compra selecciona un proveedor ya registrado, aumenta el stock y genera la factura y la cuenta por pagar.'}
       </p>
+
+      {/* Cadena de Flujo Documental requerida por el instructor */}
+      {filas.length > 0 && (
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            Flujo de Trazabilidad Documental ({esVenta ? 'Comercial' : 'Compras'})
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-center text-xs">
+            <div className="p-3 rounded-lg border bg-emerald-50 border-emerald-200 text-emerald-800 font-medium">
+              1. {esVenta ? 'Cotización / Orden' : 'Orden de Compra'} (Completado)
+            </div>
+            <div className="p-3 rounded-lg border bg-emerald-50 border-emerald-200 text-emerald-800 font-medium">
+              2. {esVenta ? 'Facturación / Comprobante' : 'Recepción en Kardex'} (Generado)
+            </div>
+            <div className={`p-3 rounded-lg border font-medium ${
+              filas[0].estado === 'Pagada' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-amber-50 border-amber-200 text-amber-800'
+            }`}>
+              3. Estado de Cuenta ({filas[0].estado === 'Pagada' ? 'Cancelado' : 'Pendiente'})
+            </div>
+            <div className={`p-3 rounded-lg border font-medium ${
+              filas[0].estado === 'Pagada' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-slate-50 border-slate-200 text-slate-500'
+            }`}>
+              4. Tesorería / Caja ({filas[0].estado === 'Pagada' ? 'Ingreso Registrado' : 'Esperando Cobro'})
+            </div>
+          </div>
+        </div>
+      )}
 
       {faltantes.length > 0 && (
         <div role="status" className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
@@ -117,10 +153,26 @@ export const OperacionesPanel: React.FC<{ modo: Modo }> = ({ modo }) => {
           />
         }
         acciones={(f) => (
-          <button onClick={() => setDetalle(f)}
-            className="px-3 py-1.5 rounded-lg text-sm text-teal-700 hover:bg-teal-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500">
-            Ver detalle
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setDetalle(f)}
+              className="px-3 py-1.5 rounded-lg text-sm text-teal-700 hover:bg-teal-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500">
+              Ver detalle
+            </button>
+            {f.estado !== 'Pagada' && (
+              <button
+                onClick={() => handleAvanzarEstado(f)}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 focus:outline-none"
+              >
+                {esVenta ? 'Registrar Cobro' : 'Registrar Pago'}
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            )}
+            {f.estado === 'Pagada' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 rounded-full">
+                <CheckCircle2 className="w-3 h-3" /> {esVenta ? 'Cobrado' : 'Pagado'}
+              </span>
+            )}
+          </div>
         )}
       />
 

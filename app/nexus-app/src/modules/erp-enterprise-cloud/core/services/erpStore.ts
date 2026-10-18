@@ -4,7 +4,6 @@ import type {
 } from '../types';
 import { crearEstadoInicial } from './seed';
 
-/** Máximo de registros por colección. Para la entrega es 1; usa Infinity para quitar el tope. */
 export const LIMITE_REGISTROS = 1;
 export const IGV = 0.18;
 const STORAGE_KEY = 'erp-enterprise-cloud:v1';
@@ -19,7 +18,7 @@ function cargar(): ErpState {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw) as ErpState;
   } catch {
-    /* sin almacenamiento o dato corrupto: se usa el estado inicial */
+    /* sin almacenamiento o dato corrupto */
   }
   return crearEstadoInicial();
 }
@@ -37,7 +36,7 @@ function commit(next: ErpState, evento?: Evento): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch {
-    /* si no se puede persistir, el ERP sigue funcionando en memoria */
+    /* fallo de persistencia en almacenamiento local */
   }
   listeners.forEach((l) => l());
 }
@@ -322,8 +321,7 @@ function registrarAjuste(d: DatosAjuste): Resultado {
   return { ok: true, id };
 }
 
-/* ───────── Finanzas ───────── */
-
+/* ───────── Finanzas & Sincronización de Flujo ───────── */
 
 function liquidarCuenta(cuentaId: string): Resultado {
   const M = 'Finanzas';
@@ -332,8 +330,20 @@ function liquidarCuenta(cuentaId: string): Resultado {
   if (cuenta.estado === 'Cancelada') return rechazar(M, 'Liquidar cuenta', 'La cuenta ya está cancelada.');
 
   const esCobro = cuenta.tipo === 'Cobrar';
+  
+  // Sincroniza automáticamente la Venta o Compra a estado 'Pagada'
+  const ventasActualizadas = esCobro
+    ? state.ventas.map((v) => (v.numero === cuenta.documentoNumero ? { ...v, estado: 'Pagada' as const } : v))
+    : state.ventas;
+
+  const comprasActualizadas = !esCobro
+    ? state.compras.map((c) => (c.numero === cuenta.documentoNumero ? { ...c, estado: 'Pagada' as const } : c))
+    : state.compras;
+
   commit({
     ...state,
+    ventas: ventasActualizadas,
+    compras: comprasActualizadas,
     cuentas: state.cuentas.map((c) => (c.id === cuentaId ? { ...c, saldo: 0, estado: 'Cancelada' } : c)),
     caja: [...state.caja, {
       id: nuevoId('CAJ'), fecha: ahora(), tipo: esCobro ? 'Ingreso' : 'Egreso',
@@ -342,6 +352,41 @@ function liquidarCuenta(cuentaId: string): Resultado {
     }],
   }, { modulo: M, accion: esCobro ? 'Registrar cobro' : 'Registrar pago', registroId: cuenta.documentoNumero, resultado: 'Exitoso' });
   return { ok: true, id: cuentaId };
+}
+
+// Nueva acción que permite avanzar el flujo directamente desde el módulo comercial o compras
+function avanzarEstadoOperacion(tipo: 'Venta' | 'Compra', id: string): Resultado {
+  const M = tipo === 'Venta' ? 'Comercial' : 'Compras';
+  if (tipo === 'Venta') {
+    const v = state.ventas.find((x) => x.id === id);
+    if (!v) return fallo('Venta no encontrada');
+    const cuenta = state.cuentas.find((c) => c.documentoNumero === v.numero);
+    
+    // Si hay una cuenta pendiente la liquidamos, o simplemente actualizamos el estado
+    if (cuenta && cuenta.estado === 'Pendiente') {
+      return liquidarCuenta(cuenta.id);
+    }
+
+    commit({
+      ...state,
+      ventas: state.ventas.map((x) => (x.id === id ? { ...x, estado: 'Pagada' } : x)),
+    }, { modulo: M, accion: 'Avanzar estado', registroId: v.numero, resultado: 'Exitoso' });
+    return { ok: true, id };
+  } else {
+    const c = state.compras.find((x) => x.id === id);
+    if (!c) return fallo('Compra no encontrada');
+    const cuenta = state.cuentas.find((cu) => cu.documentoNumero === c.numero);
+
+    if (cuenta && cuenta.estado === 'Pendiente') {
+      return liquidarCuenta(cuenta.id);
+    }
+
+    commit({
+      ...state,
+      compras: state.compras.map((x) => (x.id === id ? { ...x, estado: 'Pagada' } : x)),
+    }, { modulo: M, accion: 'Avanzar estado', registroId: c.numero, resultado: 'Exitoso' });
+    return { ok: true, id };
+  }
 }
 
 /* ───────── Documentos ───────── */
@@ -426,7 +471,7 @@ export const erpStore = {
   },
   acciones: {
     crearMaestro, actualizarMaestro, eliminarMaestro,
-    registrarVenta, registrarCompra, registrarAjuste, liquidarCuenta,
+    registrarVenta, registrarCompra, registrarAjuste, liquidarCuenta, avanzarEstadoOperacion,
     registrarDocumento, eliminarDocumento, actualizarPermisos, restablecer,
   },
 };

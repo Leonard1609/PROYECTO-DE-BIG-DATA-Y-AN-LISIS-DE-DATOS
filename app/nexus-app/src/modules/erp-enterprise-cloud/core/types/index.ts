@@ -3,7 +3,6 @@ export type CondicionPago = 'Contado' | 'Crédito';
 
 /* ───────── Mantenimiento (datos maestros) ───────── */
 
-/** Catálogo simple: categorías, marcas, unidades y monedas. */
 export interface Maestro {
   id: string;
   nombre: string;
@@ -71,6 +70,10 @@ export interface LineaDetalle {
   subtotal: number;
 }
 
+// Ampliamos los estados manteniendo retrocompatibilidad con 'Emitida' y 'Recibida'
+export type EstadoVentaFlujo = 'Cotización' | 'Orden de Venta' | 'Emitida' | 'Pagada' | 'Anulada';
+export type EstadoCompraFlujo = 'Orden de Compra' | 'Recibida' | 'Pagada' | 'Anulada';
+
 export interface Venta {
   id: string;
   numero: string;
@@ -83,7 +86,7 @@ export interface Venta {
   subtotal: number;
   igv: number;
   total: number;
-  estado: 'Emitida' | 'Anulada';
+  estado: EstadoVentaFlujo;
   comprobanteId: string;
 }
 
@@ -98,7 +101,7 @@ export interface Compra {
   subtotal: number;
   igv: number;
   total: number;
-  estado: 'Recibida' | 'Anulada';
+  estado: EstadoCompraFlujo;
   facturaId: string;
 }
 
@@ -149,7 +152,6 @@ export interface Documento {
   fecha: string;
   entidad: 'Venta' | 'Compra' | 'Otro';
   entidadId: string;
-  /** Ruta simulada del objeto en Amazon S3. */
   rutaS3: string;
 }
 
