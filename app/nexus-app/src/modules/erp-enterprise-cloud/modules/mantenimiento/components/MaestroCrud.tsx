@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useErp } from '../../../core/hooks/useErp';
 import { LIMITE_REGISTROS } from '../../../core/services/erpStore';
