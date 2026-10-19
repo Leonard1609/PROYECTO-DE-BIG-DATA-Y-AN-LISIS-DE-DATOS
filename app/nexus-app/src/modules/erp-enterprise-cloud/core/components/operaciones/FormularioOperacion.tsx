@@ -159,7 +159,7 @@ export const FormularioOperacion: React.FC<Props> = ({ modo, state, onGuardar, o
                   <Buscador
                     id={`op-prod-${i}`} value={l.productoId} opciones={opcionesProducto}
                     onChange={(v) => cambiarLinea(i, { productoId: v, precio: precioBase(v) })}
-                    placeholder="Buscar por código o nombre" claseInput={clase(`l${i}`)}
+                    placeholder="Código o nombre" claseInput={clase(`l${i}`)}
                   />
                 </div>
                 <div>

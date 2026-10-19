@@ -1,5 +1,5 @@
 import {
-  Users, Truck, UserCheck, Package, Building2, Tag, Award, Ruler, Coins,
+  Users, Truck, UserCheck, Package, Building2, Tag, Award, Ruler, Coins, Landmark,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -53,6 +53,11 @@ export const TARJETAS: Record<string, Tarjeta> = {
     icon: Ruler, grupo: 'Catálogos',
     descripcion: 'Cómo se mide cada producto.',
     usadoEn: 'Se asigna a cada producto.',
+  },
+  bancos: {
+    icon: Landmark, grupo: 'Catálogos',
+    descripcion: 'Entidades financieras con las que se opera.',
+    usadoEn: 'Se elige al abrir una cuenta bancaria en Tesorería.',
   },
   monedas: {
     icon: Coins, grupo: 'Catálogos',

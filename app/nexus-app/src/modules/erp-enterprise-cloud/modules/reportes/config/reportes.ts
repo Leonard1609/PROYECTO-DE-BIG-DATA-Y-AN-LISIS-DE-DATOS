@@ -1,5 +1,5 @@
 import type { ErpState } from '../../../core/types';
-import { stockDe } from '../../../core/services/erpStore';
+import { saldoCuenta, saldoDeCaja, stockDe } from '../../../core/services/erpStore';
 import { fechaLocal, formatFecha } from '../../../core/utils/format';
 
 export type TipoColumna = 'texto' | 'entero' | 'moneda';
@@ -91,6 +91,19 @@ export const REPORTES: Reporte[] = [
       const stock = stockDe(s.movimientos, p.id, a.id);
       return [p.nombre, a.nombre, stock, p.precioCompra, r2(stock * p.precioCompra)];
     })),
+  },
+  {
+    id: 'saldos-tesoreria', titulo: 'Saldos de tesorería', usaFechas: false,
+    descripcion: 'Dinero disponible hoy: Caja y cada cuenta bancaria.',
+    columnas: [{ titulo: 'Dónde está el dinero', tipo: 'texto' }, { titulo: 'Saldo', tipo: 'moneda' }],
+    sumar: [1],
+    filas: (s) => [
+      ['Caja', saldoDeCaja(s.caja)],
+      ...s.cuentasBancarias.map((c): CeldaReporte[] => [
+        `${s.bancos.find((b) => b.id === c.bancoId)?.nombre ?? 'Banco'} ...${c.numero.slice(-4)}`,
+        saldoCuenta(s.movimientosBanco, c.id),
+      ]),
+    ],
   },
   {
     id: 'estado-cuenta', titulo: 'Estado de cuenta', usaFechas: false,

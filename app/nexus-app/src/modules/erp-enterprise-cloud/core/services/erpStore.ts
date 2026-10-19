@@ -1,6 +1,6 @@
 import type {
   ColeccionMaestra, CondicionPago, ErpState, LineaDetalle,
-  MovimientoInventario, Resultado, Auditoria,
+  MovimientoInventario, MovimientoBanco, MovimientoCaja, Resultado, Auditoria,
 } from '../types';
 import { crearEstadoInicial } from './seed';
 
@@ -68,6 +68,12 @@ export function stockDe(
     .reduce((acc, m) => acc + (m.tipo === 'Entrada' ? m.cantidad : -m.cantidad), 0);
 }
 
+export const saldoDeCaja = (caja: MovimientoCaja[]): number =>
+  r2(caja.reduce((a, m) => a + (m.tipo === 'Ingreso' ? m.monto : -m.monto), 0));
+
+export const saldoCuenta = (movimientos: MovimientoBanco[], cuentaId: string): number =>
+  r2(movimientos.filter((m) => m.cuentaId === cuentaId).reduce((a, m) => a + (m.tipo === 'Depósito' ? m.monto : -m.monto), 0));
+
 /* ───────── Mantenimiento ───────── */
 
 const META: Record<ColeccionMaestra, { prefijo: string; etiqueta: string }> = {
@@ -81,6 +87,8 @@ const META: Record<ColeccionMaestra, { prefijo: string; etiqueta: string }> = {
   unidades: { prefijo: 'UND', etiqueta: 'unidades' },
   monedas: { prefijo: 'MON', etiqueta: 'monedas' },
   usuarios: { prefijo: 'USR', etiqueta: 'usuarios' },
+  bancos: { prefijo: 'BCO', etiqueta: 'bancos' },
+  cuentasBancarias: { prefijo: 'CTA', etiqueta: 'cuentas bancarias' },
 };
 
 function enUso(col: ColeccionMaestra, id: string, s: ErpState): boolean {
@@ -104,6 +112,8 @@ function enUso(col: ColeccionMaestra, id: string, s: ErpState): boolean {
     case 'unidades': return s.productos.some((p) => p.unidadId === id);
     case 'monedas': return s.productos.some((p) => p.monedaId === id);
     case 'usuarios': return false;
+    case 'bancos': return s.cuentasBancarias.some((c) => c.bancoId === id);
+    case 'cuentasBancarias': return s.movimientosBanco.some((m) => m.cuentaId === id);
   }
 }
 
@@ -435,6 +445,52 @@ function liquidarCuenta(cuentaId: string): Resultado {
   return { ok: true, id: cuentaId };
 }
 
+/* ───────── Tesorería: depósitos y retiros entre Caja y Banco ───────── */
+
+export interface DatosMovimientoBanco {
+  cuentaId: string; tipo: 'Depósito' | 'Retiro'; monto: number; concepto: string;
+}
+
+/** Un depósito saca dinero de Caja y lo lleva al banco; un retiro hace lo contrario. El total no cambia. */
+function registrarMovimientoBanco(d: DatosMovimientoBanco): Resultado {
+  const M = 'Tesorería';
+  const A = d.tipo === 'Depósito' ? 'Depositar en banco' : 'Retirar del banco';
+  const s = state;
+  const cuenta = s.cuentasBancarias.find((c) => c.id === d.cuentaId && c.estado === 'Activo');
+  if (!cuenta) return rechazar(M, A, 'Selecciona una cuenta bancaria activa.');
+  if (!Number.isFinite(d.monto) || d.monto <= 0) return rechazar(M, A, 'El monto debe ser mayor que cero.');
+
+  const monto = r2(d.monto);
+  const saldoBanco = saldoCuenta(s.movimientosBanco, cuenta.id);
+  const esDeposito = d.tipo === 'Depósito';
+  if (esDeposito && monto > saldoDeCaja(s.caja)) {
+    return rechazar(M, A, `Caja no tiene saldo suficiente. Disponible: S/ ${saldoDeCaja(s.caja).toFixed(2)}.`);
+  }
+  if (!esDeposito && monto > saldoBanco) {
+    return rechazar(M, A, `La cuenta no tiene saldo suficiente. Disponible: S/ ${saldoBanco.toFixed(2)}.`);
+  }
+
+  const fecha = ahora();
+  const numero = numerar('MB', s.movimientosBanco.length);
+  const banco = s.bancos.find((b) => b.id === cuenta.bancoId)?.nombre ?? 'Banco';
+  const referencia = `${banco} ...${cuenta.numero.slice(-4)}`;
+  const id = nuevoId('MBN');
+  const concepto = d.concepto.trim() || (esDeposito ? `Depósito a ${referencia}` : `Retiro de ${referencia}`);
+
+  commit({
+    ...s,
+    movimientosBanco: [...s.movimientosBanco, {
+      id, fecha, numero, cuentaId: cuenta.id, tipo: d.tipo, concepto, monto,
+      saldo: r2(esDeposito ? saldoBanco + monto : saldoBanco - monto),
+    }],
+    caja: [...s.caja, {
+      id: nuevoId('CAJ'), fecha, tipo: esDeposito ? 'Egreso' : 'Ingreso',
+      concepto: `${esDeposito ? 'Depósito a' : 'Retiro de'} ${referencia}`, monto, documentoNumero: numero,
+    }],
+  }, { modulo: M, accion: A, registroId: numero, resultado: 'Exitoso', detalle: concepto });
+  return { ok: true, id };
+}
+
 /* ───────── Documentos ───────── */
 
 export interface DatosDocumento {
@@ -518,7 +574,7 @@ export const erpStore = {
   acciones: {
     crearMaestro, actualizarMaestro, eliminarMaestro,
     registrarCotizacion, aceptarCotizacion, registrarOrdenVenta, facturarOrdenVenta,
-    registrarOrdenCompra, recibirOrdenCompra, registrarAjuste, liquidarCuenta,
+    registrarOrdenCompra, recibirOrdenCompra, registrarAjuste, liquidarCuenta, registrarMovimientoBanco,
     registrarDocumento, eliminarDocumento, actualizarPermisos, restablecer,
   },
 };

@@ -29,6 +29,8 @@ export interface ConfigMaestro {
   columnas: Columna[];
   campos: Campo[];
   inicial: Valores;
+  /** Para los textos: "Nuevo cliente" o "Nueva categoría". */
+  genero?: 'm' | 'f';
 }
 
 /* ───────── Piezas reutilizables ───────── */
@@ -45,13 +47,13 @@ const digitos = (n: number, nombre: string) => (v: string): string | null =>
 const nombreDe = (lista: { id: string; nombre: string }[], id: string | number): string =>
   lista.find((x) => x.id === id)?.nombre ?? '-';
 
-type Catalogo = 'categorias' | 'marcas' | 'unidades' | 'monedas';
+type Catalogo = 'categorias' | 'marcas' | 'unidades' | 'monedas' | 'bancos';
 const opcionesDe = (col: Catalogo) => (s: ErpState): Opcion[] =>
   s[col].map((m) => ({ value: m.id, label: m.nombre }));
 
-function catalogo(coleccion: Catalogo, tab: string, singular: string, plural: string): ConfigMaestro {
+function catalogo(coleccion: Catalogo, tab: string, singular: string, plural: string, genero: 'm' | 'f' = 'f'): ConfigMaestro {
   return {
-    coleccion, tab, singular, plural,
+    coleccion, tab, singular, plural, genero,
     columnas: [{ titulo: 'Nombre', celda: (f) => f.nombre }, COL_ESTADO],
     campos: [{ clave: 'nombre', etiqueta: 'Nombre', tipo: 'texto', requerido: true, completo: true }, ESTADO],
     inicial: { nombre: '', estado: 'Activo' },
@@ -163,4 +165,5 @@ export const MAESTROS: ConfigMaestro[] = [
   catalogo('marcas', 'Marcas', 'marca', 'marcas'),
   catalogo('unidades', 'Unidades', 'unidad de medida', 'unidades'),
   catalogo('monedas', 'Monedas', 'moneda', 'monedas'),
+  catalogo('bancos', 'Bancos', 'banco', 'bancos', 'm'),
 ];

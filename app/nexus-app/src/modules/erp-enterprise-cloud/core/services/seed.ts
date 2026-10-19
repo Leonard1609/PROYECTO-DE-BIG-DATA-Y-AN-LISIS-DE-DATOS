@@ -42,6 +42,9 @@ export function crearEstadoInicial(): ErpState {
     movimientos: [],
     cuentas: [],
     caja: [],
+    bancos: [{ id: 'BCO-001', nombre: 'Banco de Crédito del Perú', estado: 'Activo' }],
+    cuentasBancarias: [],
+    movimientosBanco: [],
     documentos: [],
     roles: [{
       id: 'ROL-001', nombre: 'Administrador',

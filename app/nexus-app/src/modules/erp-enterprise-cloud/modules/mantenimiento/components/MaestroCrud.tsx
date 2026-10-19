@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useErp } from '../../../core/hooks/useErp';
 import { LIMITE_REGISTROS } from '../../../core/services/erpStore';
@@ -15,6 +15,8 @@ export const MaestroCrud: React.FC<{ config: ConfigMaestro }> = ({ config }) => 
   const { state, acciones } = useErp();
   const filas = state[config.coleccion] as unknown as Valores[];
   const limiteAlcanzado = filas.length >= LIMITE_REGISTROS;
+  const fem = config.genero === 'f';
+  const el = fem ? 'la' : 'el';
 
   const [editando, setEditando] = useState<Valores | 'nuevo' | null>(null);
   const [porEliminar, setPorEliminar] = useState<Valores | null>(null);
@@ -32,7 +34,7 @@ export const MaestroCrud: React.FC<{ config: ConfigMaestro }> = ({ config }) => 
       : acciones.actualizarMaestro(config.coleccion, String((editando as Valores).id), valores as never);
 
     setAviso(r.ok
-      ? { tipo: 'ok', texto: editando === 'nuevo' ? `Se creó el ${config.singular}.` : 'Los cambios se guardaron.' }
+      ? { tipo: 'ok', texto: editando === 'nuevo' ? `Se creó ${el} ${config.singular}.` : 'Los cambios se guardaron.' }
       : { tipo: 'error', texto: r.error });
     setEditando(null);
   };
@@ -40,7 +42,7 @@ export const MaestroCrud: React.FC<{ config: ConfigMaestro }> = ({ config }) => 
   const eliminar = () => {
     if (!porEliminar) return;
     const r = acciones.eliminarMaestro(config.coleccion, String(porEliminar.id));
-    setAviso(r.ok ? { tipo: 'ok', texto: `Se eliminó el ${config.singular}.` } : { tipo: 'error', texto: r.error });
+    setAviso(r.ok ? { tipo: 'ok', texto: `Se eliminó ${el} ${config.singular}.` } : { tipo: 'error', texto: r.error });
     setPorEliminar(null);
   };
 
@@ -51,7 +53,7 @@ export const MaestroCrud: React.FC<{ config: ConfigMaestro }> = ({ config }) => 
       className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-teal-600 text-white hover:bg-teal-700 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
     >
       <Plus className="w-4 h-4" />
-      Nuevo {config.singular}
+      {fem ? 'Nueva' : 'Nuevo'} {config.singular}
     </button>
   );
 
@@ -59,7 +61,7 @@ export const MaestroCrud: React.FC<{ config: ConfigMaestro }> = ({ config }) => 
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-slate-500">
-          {filas.length} de {LIMITE_REGISTROS} {config.plural} permitidos en esta versión de prueba.
+          {filas.length} de {LIMITE_REGISTROS} {config.plural} {fem ? 'permitidas' : 'permitidos'} en esta versión de prueba.
         </p>
         {botonNuevo}
       </div>
@@ -83,7 +85,7 @@ export const MaestroCrud: React.FC<{ config: ConfigMaestro }> = ({ config }) => 
         vacio={
           <EmptyState
             titulo={`Aún no hay ${config.plural}`}
-            descripcion={`Crea el primer ${config.singular}. Los módulos de Comercial y Compras lo seleccionarán desde aquí.`}
+            descripcion={`Crea ${fem ? 'la primera' : 'el primer'} ${config.singular}.`}
             accion={botonNuevo}
           />
         }
@@ -109,7 +111,7 @@ export const MaestroCrud: React.FC<{ config: ConfigMaestro }> = ({ config }) => 
 
       {editando && (
         <Modal
-          titulo={editando === 'nuevo' ? `Nuevo ${config.singular}` : `Editar ${config.singular}`}
+          titulo={editando === 'nuevo' ? `${fem ? 'Nueva' : 'Nuevo'} ${config.singular}` : `Editar ${config.singular}`}
           onCerrar={() => setEditando(null)}
         >
           <FormularioMaestro

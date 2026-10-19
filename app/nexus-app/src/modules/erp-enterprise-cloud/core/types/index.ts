@@ -197,6 +197,29 @@ export interface MovimientoCaja {
   documentoNumero: string;
 }
 
+/* ───────── Bancos ───────── */
+
+export interface CuentaBancaria {
+  id: string;
+  bancoId: string;
+  numero: string;
+  tipo: 'Corriente' | 'Ahorros';
+  estado: Estado;
+}
+
+export interface MovimientoBanco {
+  id: string;
+  fecha: string;
+  /** Número del movimiento, por ejemplo MB-0001. */
+  numero: string;
+  cuentaId: string;
+  tipo: 'Depósito' | 'Retiro';
+  concepto: string;
+  monto: number;
+  /** Saldo de la cuenta después de este movimiento. */
+  saldo: number;
+}
+
 /* ───────── Documentos ───────── */
 
 export interface Documento {
@@ -258,6 +281,9 @@ export interface ErpState {
   movimientos: MovimientoInventario[];
   cuentas: CuentaFinanciera[];
   caja: MovimientoCaja[];
+  bancos: Maestro[];
+  cuentasBancarias: CuentaBancaria[];
+  movimientosBanco: MovimientoBanco[];
   documentos: Documento[];
   roles: Rol[];
   usuarios: Usuario[];
@@ -266,6 +292,6 @@ export interface ErpState {
 
 export type ColeccionMaestra =
   | 'clientes' | 'proveedores' | 'productos' | 'almacenes' | 'vendedores'
-  | 'categorias' | 'marcas' | 'unidades' | 'monedas' | 'usuarios';
+  | 'categorias' | 'marcas' | 'unidades' | 'monedas' | 'usuarios' | 'bancos' | 'cuentasBancarias';
 
 export type Resultado = { ok: true; id: string } | { ok: false; error: string };
