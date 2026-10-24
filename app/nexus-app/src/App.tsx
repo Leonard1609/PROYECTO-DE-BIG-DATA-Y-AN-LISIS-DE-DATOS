@@ -16,7 +16,6 @@ import { ProyectoDetallePage } from './pages/ProyectoDetallePage';
 // Módulos
 import { BigDataModulePage } from './modules/big-data/BigDataModulePage';
 import { AzureFacialRecognitionPage } from './modules/azure/AzureModulePage';
-import CloudOpsModulePage from './modules/cloud-ops/pages/CloudOpsModulePage';
 import { ErpApp } from './modules/erp-enterprise-cloud';
 
 // Pantalla a la que se llega al entrar o al salir de un módulo
@@ -88,13 +87,6 @@ function AppRoutes() {
         }
       />
 
-      {/* 4. Módulo CloudOps */}
-      <Route
-        path="/cloud-ops"
-        element={
-          isAuthenticated ? <CloudOpsModulePage /> : <Navigate to="/" replace />
-        }
-      />
 
       {/* 5. Módulo Azure */}
       <Route
