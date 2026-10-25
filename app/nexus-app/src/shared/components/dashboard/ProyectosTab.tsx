@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../../../config/api';
 
-// 1. Interfaz amplia de Proyecto con id compatible con UUIDs de Supabase
+// 1. Interfaz amplia de Proyecto con id compatible con UUIDs de Supabase[cite: 24]
 export interface Proyecto {
   id: number | string;
   codigo_nrc?: string;
@@ -16,7 +16,7 @@ export interface Proyecto {
   colorBar?: string;
 }
 
-// 2. Interfaz de Props ajustada
+// 2. Interfaz de Props ajustada[cite: 24]
 export interface ProyectosTabProps {
   esAdmin?: boolean;
   userRole?: string;
@@ -32,7 +32,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
   onCambiarEstadoProyecto,
   onSelectProyecto,
 }) => {
-  // Determina si el usuario tiene rol administrativo
+  // Determina si el usuario tiene rol administrativo[cite: 24]
   const esAdminCalculado =
     esAdmin !== undefined
       ? esAdmin
@@ -44,7 +44,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
   const [cargando, setCargando] = useState<boolean>(!proyectosProp);
   const [error, setError] = useState<string | null>(null);
 
-  // Estados para el Modal de Crear Proyecto
+  // Estados para el Modal de Crear Proyecto[cite: 24]
   const [modalAbierto, setModalAbierto] = useState<boolean>(false);
   const [nuevoTitulo, setNuevoTitulo] = useState<string>('');
   const [nuevoLider, setNuevoLider] = useState<string>('');
@@ -52,7 +52,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
 
   const navigate = useNavigate();
 
-  // Cargar proyectos desde la API backend
+  // Cargar proyectos desde la API backend[cite: 24]
   const cargarProyectos = async () => {
     try {
       setCargando(true);
@@ -76,11 +76,11 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
     }
   }, [proyectosProp]);
 
-  // Selección de lista de proyectos
+  // Selección de lista de proyectos[cite: 24]
   const proyectosAMostrar =
     proyectosProp && proyectosProp.length > 0 ? proyectosProp : proyectosLocales;
 
-  // Crear Proyecto (solucionado URL a /api/proyectos)
+  // Crear Proyecto (solucionado URL a /api/proyectos)[cite: 24]
   const handleCrearProyecto = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nuevoTitulo.trim()) return;
@@ -109,7 +109,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
     }
   };
 
-  // Cambiar Estado del Proyecto (solucionado URL a /api/proyectos/:id/estado)
+  // Cambiar Estado del Proyecto (solucionado URL a /api/proyectos/:id/estado)[cite: 24]
   const handleCambiarEstado = async (id: number | string, nuevoEstado: string) => {
     if (onCambiarEstadoProyecto) {
       onCambiarEstadoProyecto(
@@ -133,7 +133,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
     }
   };
 
-  // Eliminación Definitiva (solucionado URL a /api/proyectos/:id)
+  // Eliminación Definitiva (solucionado URL a /api/proyectos/:id)[cite: 24]
   const handleEliminarDefinitivo = async (id: number | string) => {
     if (
       !window.confirm(
@@ -151,7 +151,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
     }
   };
 
-  // Manejar click de redirección
+  // Manejar click de redirección[cite: 24]
   const handleAccederProyecto = (id: number | string) => {
     if (onSelectProyecto) {
       onSelectProyecto(id);
@@ -166,7 +166,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
 
   return (
     <div className="p-6 space-y-6">
-      {/* Cabecera */}
+      {/* Cabecera[cite: 24] */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-800">Proyectos Asignados</h2>
         {esAdminCalculado && (
@@ -179,7 +179,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
         )}
       </div>
 
-      {/* Si no hay proyectos registrados */}
+      {/* Si no hay proyectos registrados[cite: 24] */}
       {proyectosAMostrar.length === 0 && (
         <div className="p-10 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-300">
           <p className="text-gray-500 font-medium mb-3">No hay proyectos registrados aún.</p>
@@ -194,7 +194,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
         </div>
       )}
 
-      {/* Grid de Tarjetas de Proyecto */}
+      {/* Grid de Tarjetas de Proyecto[cite: 24] */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {proyectosAMostrar.map((prj) => {
           const codigoNRC = prj.codigo_nrc || prj.nrc || 'SIN-NRC';
@@ -206,7 +206,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
               key={prj.id}
               className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden flex flex-col justify-between"
             >
-              {/* Cabecera de la Tarjeta */}
+              {/* Cabecera de la Tarjeta[cite: 24] */}
               <div className={`p-5 bg-gradient-to-r ${bgClass} text-white`}>
                 <span className="inline-block bg-black/30 text-xs font-semibold px-2.5 py-1 rounded-md mb-2">
                   {codigoNRC}
@@ -214,7 +214,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
                 <h3 className="text-lg font-bold tracking-wide uppercase">{prj.titulo}</h3>
               </div>
 
-              {/* Cuerpo de la Tarjeta */}
+              {/* Cuerpo de la Tarjeta[cite: 24] */}
               <div className="p-5 space-y-4 flex-1 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-3">
@@ -230,7 +230,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
                       ✓ {prj.estado}
                     </span>
 
-                    {/* Selector de Estado */}
+                    {/* Selector de Estado[cite: 24] */}
                     {esAdminCalculado && (
                       <select
                         value={prj.estado}
@@ -255,7 +255,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
                   </div>
                 </div>
 
-                {/* Acciones */}
+                {/* Acciones[cite: 24] */}
                 <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
                   <button
                     onClick={() => handleAccederProyecto(prj.id)}
@@ -280,7 +280,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
         })}
       </div>
 
-      {/* Modal para Crear Proyecto */}
+      {/* Modal para Crear Proyecto[cite: 24] */}
       {modalAbierto && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
