@@ -337,11 +337,17 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
                   const id = typeof proyectoData === 'object' ? proyectoData.id : proyectoData;
                   const titulo = typeof proyectoData === 'object' ? proyectoData.titulo : '';
                   const codigoNrc = typeof proyectoData === 'object' ? proyectoData.codigo_nrc : '';
+                  const url = typeof proyectoData === 'object' ? proyectoData.url : '';
+
+                  // Si el proyecto tiene una URL independiente registrada, abrirla directamente
+                  if (url) {
+                    window.open(url, '_blank');
+                    return;
+                  }
 
                   const strId = String(id || '').toLowerCase();
                   const strTitulo = String(titulo || '').toLowerCase();
                   const strNrc = String(codigoNrc || '').toLowerCase();
-
 
                   const esBigData =
                     strId === '1' ||
@@ -364,19 +370,17 @@ export const DashboardPage: React.FC<DashboardProps> = ({ userEmail, onLogout })
                     strNrc.includes('4575') ||
                     strTitulo.includes('cloud');
 
-
                   if (esErp) {
-                      navigate('/erp-enterprise-cloud');
-                  } 
-                  else if (esBigData) {
-                     navigate('/big-data');
+                    navigate('/erp-enterprise-cloud');
+                  } else if (esBigData) {
+                    navigate('/big-data');
                   } else if (esAzure) {
                     navigate('/azure');
                   } else if (esCloudOps) {
-                   navigate('/cloud-ops');
+                    navigate('/cloud-ops');
                   } else {
-                  navigate(`/proyecto/${id}`);
-                }
+                    navigate(`/proyecto/${id}`);
+                  }
                 }}
               />
             )}
