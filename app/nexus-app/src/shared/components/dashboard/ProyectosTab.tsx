@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../../../config/api';
 
-// 1. Interfaz amplia de Proyecto con id compatible con UUIDs de Supabase[cite: 24]
+// 1. Interfaz ampliada con la propiedad opcional url para repositorios independientes[cite: 24]
 export interface Proyecto {
   id: number | string;
   codigo_nrc?: string;
@@ -14,9 +14,9 @@ export interface Proyecto {
   bg_gradient?: string;
   bg?: string;
   colorBar?: string;
+  url?: string; // Enlace independiente al repositorio o aplicación
 }
 
-// 2. Interfaz de Props ajustada[cite: 24]
 export interface ProyectosTabProps {
   esAdmin?: boolean;
   userRole?: string;
@@ -32,7 +32,6 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
   onCambiarEstadoProyecto,
   onSelectProyecto,
 }) => {
-  // Determina si el usuario tiene rol administrativo[cite: 24]
   const esAdminCalculado =
     esAdmin !== undefined
       ? esAdmin
@@ -48,11 +47,11 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
   const [modalAbierto, setModalAbierto] = useState<boolean>(false);
   const [nuevoTitulo, setNuevoTitulo] = useState<string>('');
   const [nuevoLider, setNuevoLider] = useState<string>('');
+  const [nuevaUrl, setNuevaUrl] = useState<string>(''); // Nuevo estado para la URL del repositorio
   const [guardando, setGuardando] = useState<boolean>(false);
 
   const navigate = useNavigate();
 
-  // Cargar proyectos desde la API backend[cite: 24]
   const cargarProyectos = async () => {
     try {
       setCargando(true);
@@ -76,11 +75,10 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
     }
   }, [proyectosProp]);
 
-  // Selección de lista de proyectos[cite: 24]
   const proyectosAMostrar =
     proyectosProp && proyectosProp.length > 0 ? proyectosProp : proyectosLocales;
 
-  // Crear Proyecto (solucionado URL a /api/proyectos)[cite: 24]
+  // Crear Proyecto enviando la URL del repositorio al servidor[cite: 24]
   const handleCrearProyecto = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nuevoTitulo.trim()) return;
@@ -93,6 +91,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
         body: JSON.stringify({
           titulo: nuevoTitulo,
           lider_nombre: nuevoLider || 'Sin Asignar',
+          url: nuevaUrl.trim() || undefined, // Guardamos el enlace independiente
         }),
       });
 
@@ -100,6 +99,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
 
       setNuevoTitulo('');
       setNuevoLider('');
+      setNuevaUrl('');
       setModalAbierto(false);
       cargarProyectos();
     } catch (err: any) {
@@ -109,7 +109,6 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
     }
   };
 
-  // Cambiar Estado del Proyecto (solucionado URL a /api/proyectos/:id/estado)[cite: 24]
   const handleCambiarEstado = async (id: number | string, nuevoEstado: string) => {
     if (onCambiarEstadoProyecto) {
       onCambiarEstadoProyecto(
@@ -133,7 +132,6 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
     }
   };
 
-  // Eliminación Definitiva (solucionado URL a /api/proyectos/:id)[cite: 24]
   const handleEliminarDefinitivo = async (id: number | string) => {
     if (
       !window.confirm(
@@ -151,12 +149,14 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
     }
   };
 
-  // Manejar click de redirección[cite: 24]
-  const handleAccederProyecto = (id: number | string) => {
-    if (onSelectProyecto) {
-      onSelectProyecto(id);
+  // Manejar el acceso al proyecto: Si tiene URL independiente, la abre en nueva pestaña; si no, usa la ruta por defecto[cite: 24]
+  const handleAccederProyecto = (prj: Proyecto) => {
+    if (prj.url) {
+      window.open(prj.url, '_blank'); // Abre el repositorio o app independiente directamente
+    } else if (onSelectProyecto) {
+      onSelectProyecto(prj.id);
     } else {
-      navigate(`/proyectos/${id}`);
+      navigate(`/proyectos/${prj.id}`);
     }
   };
 
@@ -179,7 +179,6 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
         )}
       </div>
 
-      {/* Si no hay proyectos registrados[cite: 24] */}
       {proyectosAMostrar.length === 0 && (
         <div className="p-10 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-300">
           <p className="text-gray-500 font-medium mb-3">No hay proyectos registrados aún.</p>
@@ -206,7 +205,6 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
               key={prj.id}
               className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden flex flex-col justify-between"
             >
-              {/* Cabecera de la Tarjeta[cite: 24] */}
               <div className={`p-5 bg-gradient-to-r ${bgClass} text-white`}>
                 <span className="inline-block bg-black/30 text-xs font-semibold px-2.5 py-1 rounded-md mb-2">
                   {codigoNRC}
@@ -214,7 +212,6 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
                 <h3 className="text-lg font-bold tracking-wide uppercase">{prj.titulo}</h3>
               </div>
 
-              {/* Cuerpo de la Tarjeta[cite: 24] */}
               <div className="p-5 space-y-4 flex-1 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-3">
@@ -230,7 +227,6 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
                       ✓ {prj.estado}
                     </span>
 
-                    {/* Selector de Estado[cite: 24] */}
                     {esAdminCalculado && (
                       <select
                         value={prj.estado}
@@ -252,13 +248,17 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
                       Líder de Proyecto
                     </p>
                     <p className="font-semibold text-gray-800">{liderNombre}</p>
+                    {prj.url && (
+                      <p className="text-[11px] text-blue-600 truncate mt-1">
+                        🔗 {prj.url}
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                {/* Acciones[cite: 24] */}
                 <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
                   <button
-                    onClick={() => handleAccederProyecto(prj.id)}
+                    onClick={() => handleAccederProyecto(prj)}
                     className="w-full text-center py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium rounded-xl transition flex items-center justify-center gap-2"
                   >
                     Acceder al proyecto <span>→</span>
@@ -280,7 +280,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
         })}
       </div>
 
-      {/* Modal para Crear Proyecto[cite: 24] */}
+      {/* Modal para Crear Proyecto con campo de URL independiente[cite: 24] */}
       {modalAbierto && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
@@ -293,7 +293,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
                 <input
                   type="text"
                   required
-                  placeholder="Ej. PROYECTO BIG DATA & ANALÍTICA"
+                  placeholder="Ej. HOLA"
                   value={nuevoTitulo}
                   onChange={(e) => setNuevoTitulo(e.target.value)}
                   className="w-full mt-1 p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
@@ -306,15 +306,28 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
                 </label>
                 <input
                   type="text"
-                  placeholder="Ej. CESAR ERINSON CARLOS"
+                  placeholder="Ej. Mundo"
                   value={nuevoLider}
                   onChange={(e) => setNuevoLider(e.target.value)}
                   className="w-full mt-1 p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  URL del Repositorio o App (Opcional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej. https://github.com/tu-usuario/hola o http://localhost:5174"
+                  value={nuevaUrl}
+                  onChange={(e) => setNuevaUrl(e.target.value)}
+                  className="w-full mt-1 p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+
               <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
-                ℹ️ El código NRC se generará automáticamente en el servidor al guardar.
+                ℹ️ Si agregas una URL, el botón "Acceder al proyecto" abrirá ese repositorio o enlace directamente.
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
