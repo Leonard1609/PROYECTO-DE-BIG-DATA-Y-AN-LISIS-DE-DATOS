@@ -9,19 +9,17 @@ export interface Proyecto {
   titulo: string;
   lider_nombre?: string;
   lider?: string;
-  estado: 'Activo' | 'Suspendido' | 'Cerrado' | 'Eliminado' | 'Inactivo' | 'Pendiente de activación' | string;
+  estado: string;
   bg_gradient?: string;
   bg?: string;
-  colorBar?: string;
-  url?: string;
 }
 
 export interface ProyectosTabProps {
   esAdmin?: boolean;
   userRole?: string;
   proyectos?: Proyecto[];
-  onCambiarEstadoProyecto?: (id: number | string, nuevoEstado: 'Activo' | 'Inactivo' | 'Pendiente de activación') => void;
-  onSelectProyecto?: (proyecto: Proyecto | number | string) => void;
+  onCambiarEstadoProyecto?: (id: number | string, nuevoEstado: string) => void;
+  onSelectProyecto?: (proyecto: any) => void;
 }
 
 export const ProyectosTab: React.FC<ProyectosTabProps> = ({
@@ -76,9 +74,13 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
   const proyectosAMostrar =
     proyectosProp && proyectosProp.length > 0 ? proyectosProp : proyectosLocales;
 
+  // Empaquetamos la URL en el campo lider_nombre usando "||" para que se guarde en Supabase sin alterar el backend
   const handleCrearProyecto = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nuevoTitulo.trim()) return;
+
+    const liderLimpio = nuevoLider.trim() || 'Sin Asignar';
+    const liderConUrl = nuevaUrl.trim() ? `${liderLimpio} || ${nuevaUrl.trim()}` : liderLimpio;
 
     try {
       setGuardando(true);
@@ -87,8 +89,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           titulo: nuevoTitulo,
-          lider_nombre: nuevoLider || 'Sin Asignar',
-          url: nuevaUrl.trim() || undefined,
+          lider_nombre: liderConUrl,
         }),
       });
 
@@ -108,10 +109,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
 
   const handleCambiarEstado = async (id: number | string, nuevoEstado: string) => {
     if (onCambiarEstadoProyecto) {
-      onCambiarEstadoProyecto(
-        id,
-        nuevoEstado as 'Activo' | 'Inactivo' | 'Pendiente de activación'
-      );
+      onCambiarEstadoProyecto(id, nuevoEstado);
     }
 
     try {
@@ -130,12 +128,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
   };
 
   const handleEliminarDefinitivo = async (id: number | string) => {
-    if (
-      !window.confirm(
-        '¿Estás seguro de eliminar definitivamente este proyecto? Esta acción no se puede deshacer.'
-      )
-    )
-      return;
+    if (!window.confirm('¿Estás seguro de eliminar definitivamente este proyecto?')) return;
 
     try {
       const res = await fetch(`${API_URL}/api/proyectos/${id}`, { method: 'DELETE' });
@@ -146,9 +139,29 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
     }
   };
 
-  const handleAccederProyecto = (prj: Proyecto) => {
+  // Función para extraer el nombre y la URL del campo empaquetado
+  const parsearDatosLider = (liderRaw: string = '') => {
+    if (liderRaw.includes('||')) {
+      const partes = liderRaw.split('||');
+      return {
+        nombre: partes[0].trim(),
+        url: partes[1].trim()
+      };
+    }
+    return { nombre: liderRaw, url: '' };
+  };
+
+  const handleAccederProyecto = (prj: any) => {
+    const liderRaw = prj.lider_nombre || prj.lider || '';
+    const { url } = parsearDatosLider(liderRaw);
+
+    if (url) {
+      window.open(url, '_blank'); // Abre el repositorio o app independiente directamente
+      return;
+    }
+
     if (onSelectProyecto) {
-      onSelectProyecto(prj); // Pasamos el objeto completo con la URL
+      onSelectProyecto(prj);
     } else {
       navigate(`/proyectos/${prj.id}`);
     }
@@ -189,7 +202,8 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {proyectosAMostrar.map((prj) => {
           const codigoNRC = prj.codigo_nrc || prj.nrc || 'SIN-NRC';
-          const liderNombre = prj.lider_nombre || prj.lider || 'Sin Asignar';
+          const liderRaw = prj.lider_nombre || prj.lider || 'Sin Asignar';
+          const { nombre: liderNombre, url: urlProyecto } = parsearDatosLider(liderRaw);
           const bgClass = prj.bg_gradient || prj.bg || 'from-blue-700 to-indigo-900';
 
           return (
@@ -240,9 +254,9 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
                       Líder de Proyecto
                     </p>
                     <p className="font-semibold text-gray-800">{liderNombre}</p>
-                    {prj.url && (
+                    {urlProyecto && (
                       <p className="text-[11px] text-blue-600 truncate mt-1">
-                        🔗 {prj.url}
+                        🔗 {urlProyecto}
                       </p>
                     )}
                   </div>
@@ -284,7 +298,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
                 <input
                   type="text"
                   required
-                  placeholder="Ej. ERP ENTERPRISE CLOUD"
+                  placeholder="Ej. CLOUD OPS APP"
                   value={nuevoTitulo}
                   onChange={(e) => setNuevoTitulo(e.target.value)}
                   className="w-full mt-1 p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
@@ -297,7 +311,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
                 </label>
                 <input
                   type="text"
-                  placeholder="Ej. SAM"
+                  placeholder="Ej. Sam"
                   value={nuevoLider}
                   onChange={(e) => setNuevoLider(e.target.value)}
                   className="w-full mt-1 p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
@@ -310,7 +324,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
                 </label>
                 <input
                   type="text"
-                  placeholder="Ej. https://github.com/usuario/repo"
+                  placeholder="Ej. https://github.com/tu-usuario/repo"
                   value={nuevaUrl}
                   onChange={(e) => setNuevaUrl(e.target.value)}
                   className="w-full mt-1 p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
