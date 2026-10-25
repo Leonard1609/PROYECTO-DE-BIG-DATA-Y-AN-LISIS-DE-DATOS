@@ -14,7 +14,10 @@ import { DashboardPage } from './pages/DashboardPage';
 import { ProyectoDetallePage } from './pages/ProyectoDetallePage';
 
 // Módulos
+import { BigDataModulePage } from './modules/big-data/BigDataModulePage';
 import { AzureFacialRecognitionPage } from './modules/azure/AzureModulePage';
+import CloudOpsModulePage from './modules/cloud-ops/pages/CloudOpsModulePage';
+import { ErpApp } from './modules/erp-enterprise-cloud';
 
 // Pantalla a la que se llega al entrar o al salir de un módulo
 const HOME_PATH = '/dashboard/proyectos';
@@ -77,13 +80,35 @@ function AppRoutes() {
         }
       />
 
+      {/* 3. Módulo Big Data (El /* es indispensable para sus subrutas /cargas, /analisis, etc.) */}
+      <Route
+        path="/big-data/*"
+        element={
+          isAuthenticated ? <BigDataModulePage /> : <Navigate to="/" replace />
+        }
+      />
 
+      {/* 4. Módulo CloudOps */}
+      <Route
+        path="/cloud-ops"
+        element={
+          isAuthenticated ? <CloudOpsModulePage /> : <Navigate to="/" replace />
+        }
+      />
 
       {/* 5. Módulo Azure */}
       <Route
         path="/azure"
         element={
           isAuthenticated ? <AzureFacialRecognitionPage /> : <Navigate to="/" replace />
+        }
+      />
+
+      {/* 6. Módulo ERP EnterpriseCloud */}
+      <Route
+        path="/erp-enterprise-cloud/*"
+        element={
+          isAuthenticated ? <ErpApp /> : <Navigate to="/" replace />
         }
       />
 
