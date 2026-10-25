@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../../../config/api';
 
-// 1. Interfaz ampliada con la propiedad opcional url para repositorios independientes[cite: 24]
 export interface Proyecto {
   id: number | string;
   codigo_nrc?: string;
@@ -14,7 +13,7 @@ export interface Proyecto {
   bg_gradient?: string;
   bg?: string;
   colorBar?: string;
-  url?: string; // Enlace independiente al repositorio o aplicación
+  url?: string;
 }
 
 export interface ProyectosTabProps {
@@ -22,7 +21,7 @@ export interface ProyectosTabProps {
   userRole?: string;
   proyectos?: Proyecto[];
   onCambiarEstadoProyecto?: (id: number | string, nuevoEstado: 'Activo' | 'Inactivo' | 'Pendiente de activación') => void;
-  onSelectProyecto?: (id: number | string) => void;
+  onSelectProyecto?: (proyecto: Proyecto | number | string) => void;
 }
 
 export const ProyectosTab: React.FC<ProyectosTabProps> = ({
@@ -43,11 +42,10 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
   const [cargando, setCargando] = useState<boolean>(!proyectosProp);
   const [error, setError] = useState<string | null>(null);
 
-  // Estados para el Modal de Crear Proyecto[cite: 24]
   const [modalAbierto, setModalAbierto] = useState<boolean>(false);
   const [nuevoTitulo, setNuevoTitulo] = useState<string>('');
   const [nuevoLider, setNuevoLider] = useState<string>('');
-  const [nuevaUrl, setNuevaUrl] = useState<string>(''); // Nuevo estado para la URL del repositorio
+  const [nuevaUrl, setNuevaUrl] = useState<string>('');
   const [guardando, setGuardando] = useState<boolean>(false);
 
   const navigate = useNavigate();
@@ -78,7 +76,6 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
   const proyectosAMostrar =
     proyectosProp && proyectosProp.length > 0 ? proyectosProp : proyectosLocales;
 
-  // Crear Proyecto enviando la URL del repositorio al servidor[cite: 24]
   const handleCrearProyecto = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nuevoTitulo.trim()) return;
@@ -91,7 +88,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
         body: JSON.stringify({
           titulo: nuevoTitulo,
           lider_nombre: nuevoLider || 'Sin Asignar',
-          url: nuevaUrl.trim() || undefined, // Guardamos el enlace independiente
+          url: nuevaUrl.trim() || undefined,
         }),
       });
 
@@ -149,12 +146,9 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
     }
   };
 
-  // Manejar el acceso al proyecto: Si tiene URL independiente, la abre en nueva pestaña; si no, usa la ruta por defecto[cite: 24]
   const handleAccederProyecto = (prj: Proyecto) => {
-    if (prj.url) {
-      window.open(prj.url, '_blank'); // Abre el repositorio o app independiente directamente
-    } else if (onSelectProyecto) {
-      onSelectProyecto(prj.id);
+    if (onSelectProyecto) {
+      onSelectProyecto(prj); // Pasamos el objeto completo con la URL
     } else {
       navigate(`/proyectos/${prj.id}`);
     }
@@ -166,7 +160,6 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
 
   return (
     <div className="p-6 space-y-6">
-      {/* Cabecera[cite: 24] */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-800">Proyectos Asignados</h2>
         {esAdminCalculado && (
@@ -193,7 +186,6 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
         </div>
       )}
 
-      {/* Grid de Tarjetas de Proyecto[cite: 24] */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {proyectosAMostrar.map((prj) => {
           const codigoNRC = prj.codigo_nrc || prj.nrc || 'SIN-NRC';
@@ -280,7 +272,6 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
         })}
       </div>
 
-      {/* Modal para Crear Proyecto con campo de URL independiente[cite: 24] */}
       {modalAbierto && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
@@ -293,7 +284,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
                 <input
                   type="text"
                   required
-                  placeholder="Ej. HOLA"
+                  placeholder="Ej. ERP ENTERPRISE CLOUD"
                   value={nuevoTitulo}
                   onChange={(e) => setNuevoTitulo(e.target.value)}
                   className="w-full mt-1 p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
@@ -306,7 +297,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
                 </label>
                 <input
                   type="text"
-                  placeholder="Ej. Mundo"
+                  placeholder="Ej. SAM"
                   value={nuevoLider}
                   onChange={(e) => setNuevoLider(e.target.value)}
                   className="w-full mt-1 p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
@@ -319,7 +310,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
                 </label>
                 <input
                   type="text"
-                  placeholder="Ej. https://github.com/tu-usuario/hola o http://localhost:5174"
+                  placeholder="Ej. https://github.com/usuario/repo"
                   value={nuevaUrl}
                   onChange={(e) => setNuevaUrl(e.target.value)}
                   className="w-full mt-1 p-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
@@ -327,7 +318,7 @@ export const ProyectosTab: React.FC<ProyectosTabProps> = ({
               </div>
 
               <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
-                ℹ️ Si agregas una URL, el botón "Acceder al proyecto" abrirá ese repositorio o enlace directamente.
+                ℹ️ Si agregas una URL, el botón "Acceder al proyecto" abrirá ese repositorio directamente en una nueva pestaña.
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
