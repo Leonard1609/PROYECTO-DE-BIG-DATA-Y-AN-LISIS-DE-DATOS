@@ -1,6 +1,6 @@
 import type {
   ColeccionMaestra, CondicionPago, ErpState, LineaDetalle,
-  MovimientoInventario, MovimientoBanco, MovimientoCaja, Resultado, Auditoria,
+  MovimientoInventario, MovimientoBanco, MovimientoCaja, Resultado, Auditoria, SesionCaja,
 } from '../types';
 import { crearEstadoInicial } from './seed';
 
@@ -14,14 +14,20 @@ export const BUCKET_S3 = 's3://erp-enterprise-cloud-docs';
 
 /* ───────── Núcleo del store ───────── */
 
+/** Estado de partida. Garantiza que sesionesCaja exista aunque el seed todavía no la declare. */
+function estadoInicial(): ErpState {
+  const base = crearEstadoInicial();
+  return { ...base, sesionesCaja: base.sesionesCaja ?? [] };
+}
+
 function cargar(): ErpState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return { ...crearEstadoInicial(), ...(JSON.parse(raw) as Partial<ErpState>) };
+    if (raw) return { ...estadoInicial(), ...(JSON.parse(raw) as Partial<ErpState>) };
   } catch {
     /* sin almacenamiento o dato corrupto: se usa el estado inicial */
   }
-  return crearEstadoInicial();
+  return estadoInicial();
 }
 
 let state: ErpState = cargar();
@@ -70,6 +76,12 @@ export function stockDe(
 
 export const saldoDeCaja = (caja: MovimientoCaja[]): number =>
   r2(caja.reduce((a, m) => a + (m.tipo === 'Ingreso' ? m.monto : -m.monto), 0));
+
+/** La sesión de caja que está abierta, si hay una. */
+export const sesionAbierta = (sesiones: SesionCaja[]): SesionCaja | undefined =>
+  sesiones.find((x) => x.estado === 'Abierta');
+
+const CAJA_CERRADA = 'La caja está cerrada. Ábrela en Tesorería > Caja antes de registrar este movimiento de dinero.';
 
 export const saldoCuenta = (movimientos: MovimientoBanco[], cuentaId: string): number =>
   r2(movimientos.filter((m) => m.cuentaId === cuentaId).reduce((a, m) => a + (m.tipo === 'Depósito' ? m.monto : -m.monto), 0));
@@ -282,6 +294,9 @@ function facturarOrdenVenta(ordenId: string): Resultado {
     });
   }
 
+  // Una venta al contado entra dinero a Caja, así que la caja debe estar abierta.
+  if (orden.condicion === 'Contado' && !sesionAbierta(s.sesionesCaja)) return rechazar(M, A, CAJA_CERRADA);
+
   const contado = orden.condicion === 'Contado';
   const ventaId = nuevoId('VTA');
   const comprobanteId = nuevoId('DOC');
@@ -345,6 +360,8 @@ function recibirOrdenCompra(ordenId: string): Resultado {
   if (orden.estado === 'Recibida') return rechazar(M, A, 'La orden ya fue recibida.');
   if (s.compras.length >= LIMITE_REGISTROS) return rechazar(M, A, `Se alcanzó el límite de ${LIMITE_REGISTROS} registro en recepciones.`);
   if (!s.proveedores.some((p) => p.id === orden.proveedorId && p.estado === 'Activo')) return rechazar(M, A, 'El proveedor de la orden ya no está activo.');
+  // Una compra al contado saca dinero de Caja, así que la caja debe estar abierta.
+  if (orden.condicion === 'Contado' && !sesionAbierta(s.sesionesCaja)) return rechazar(M, A, CAJA_CERRADA);
 
   const fecha = ahora();
   const numero = numerar('REC', s.compras.length);
@@ -426,6 +443,8 @@ function liquidarCuenta(cuentaId: string): Resultado {
   const M = esCobro ? 'Ventas' : 'Compras';
   if (!cuenta) return rechazar('Tesorería', 'Liquidar cuenta', 'La cuenta no existe.');
   if (cuenta.estado === 'Cancelada') return rechazar(M, 'Liquidar cuenta', 'La cuenta ya está cancelada.');
+  // Cobrar o pagar mueve dinero real: la caja debe estar abierta.
+  if (!sesionAbierta(state.sesionesCaja)) return rechazar(M, 'Liquidar cuenta', CAJA_CERRADA);
 
   commit({
     ...state,
@@ -469,6 +488,8 @@ function registrarMovimientoBanco(d: DatosMovimientoBanco): Resultado {
   if (!esDeposito && monto > saldoBanco) {
     return rechazar(M, A, `La cuenta no tiene saldo suficiente. Disponible: S/ ${saldoBanco.toFixed(2)}.`);
   }
+  // Depositar y retirar también mueven dinero de Caja: debe estar abierta.
+  if (!sesionAbierta(s.sesionesCaja)) return rechazar(M, A, CAJA_CERRADA);
 
   const fecha = ahora();
   const numero = numerar('MB', s.movimientosBanco.length);
@@ -489,6 +510,74 @@ function registrarMovimientoBanco(d: DatosMovimientoBanco): Resultado {
     }],
   }, { modulo: M, accion: A, registroId: numero, resultado: 'Exitoso', detalle: concepto });
   return { ok: true, id };
+}
+
+/* ───────── Tesorería: apertura y cierre de caja ───────── */
+
+export interface DatosAperturaCaja { montoInicial: number }
+export interface DatosCierreCaja { saldoContado: number }
+
+/**
+ * Abre la caja con el dinero contado. Si no coincide con el saldo que el sistema tiene,
+ * la diferencia queda como un movimiento de apertura para que el libro cuadre con lo contado.
+ */
+function abrirCaja(d: DatosAperturaCaja): Resultado {
+  const M = 'Tesorería', A = 'Abrir caja';
+  const s = state;
+  if (sesionAbierta(s.sesionesCaja)) return rechazar(M, A, 'Ya hay una caja abierta. Ciérrala antes de abrir otra.');
+  if (!Number.isFinite(d.montoInicial) || d.montoInicial < 0) return rechazar(M, A, 'El monto inicial no puede ser negativo.');
+
+  const fecha = ahora();
+  const montoInicial = r2(d.montoInicial);
+  const numero = numerar('CJ', s.sesionesCaja.length);
+  const saldoLibro = saldoDeCaja(s.caja);
+  const diferencia = r2(montoInicial - saldoLibro);
+  const id = nuevoId('SCJ');
+
+  const ajuste: MovimientoCaja[] = diferencia === 0 ? [] : [{
+    id: nuevoId('CAJ'), fecha, tipo: diferencia > 0 ? 'Ingreso' : 'Egreso',
+    concepto: diferencia < 0 ? `Faltante al abrir ${numero}` : saldoLibro === 0 ? `Fondo inicial ${numero}` : `Sobrante al abrir ${numero}`,
+    monto: Math.abs(diferencia), documentoNumero: numero, origen: 'Apertura',
+  }];
+
+  commit({
+    ...s,
+    sesionesCaja: [...s.sesionesCaja, { id, numero, fechaApertura: fecha, montoInicial, estado: 'Abierta' }],
+    caja: [...s.caja, ...ajuste],
+  }, { modulo: M, accion: A, registroId: numero, resultado: 'Exitoso', detalle: `Monto inicial S/ ${montoInicial.toFixed(2)}` });
+  return { ok: true, id };
+}
+
+/** Cierra la caja con un arqueo: compara el saldo esperado con el dinero contado y registra la diferencia. */
+function cerrarCaja(d: DatosCierreCaja): Resultado {
+  const M = 'Tesorería', A = 'Cerrar caja';
+  const s = state;
+  const sesion = sesionAbierta(s.sesionesCaja);
+  if (!sesion) return rechazar(M, A, 'No hay una caja abierta.');
+  if (!Number.isFinite(d.saldoContado) || d.saldoContado < 0) return rechazar(M, A, 'El monto contado no puede ser negativo.');
+
+  const fecha = ahora();
+  const saldoContado = r2(d.saldoContado);
+  const saldoEsperado = saldoDeCaja(s.caja);
+  const diferencia = r2(saldoContado - saldoEsperado);
+
+  const ajuste: MovimientoCaja[] = diferencia === 0 ? [] : [{
+    id: nuevoId('CAJ'), fecha, tipo: diferencia > 0 ? 'Ingreso' : 'Egreso',
+    concepto: `${diferencia > 0 ? 'Sobrante' : 'Faltante'} de arqueo ${sesion.numero}`,
+    monto: Math.abs(diferencia), documentoNumero: sesion.numero, origen: 'Arqueo',
+  }];
+
+  commit({
+    ...s,
+    sesionesCaja: s.sesionesCaja.map((x) => (x.id === sesion.id
+      ? { ...x, estado: 'Cerrada', fechaCierre: fecha, saldoEsperado, saldoContado, diferencia }
+      : x)),
+    caja: [...s.caja, ...ajuste],
+  }, {
+    modulo: M, accion: A, registroId: sesion.numero, resultado: 'Exitoso',
+    detalle: diferencia === 0 ? 'Sin diferencia' : `Diferencia S/ ${diferencia.toFixed(2)}`,
+  });
+  return { ok: true, id: sesion.id };
 }
 
 /* ───────── Documentos ───────── */
@@ -562,7 +651,7 @@ function actualizarPermisos(rolId: string, permisos: string[]): Resultado {
 /* ───────── API pública ───────── */
 
 function restablecer(): void {
-  commit(crearEstadoInicial(), { modulo: 'Administración', accion: 'Restablecer datos de demostración', registroId: '-', resultado: 'Exitoso' });
+  commit(estadoInicial(), { modulo: 'Administración', accion: 'Restablecer datos de demostración', registroId: '-', resultado: 'Exitoso' });
 }
 
 export const erpStore = {
@@ -575,6 +664,6 @@ export const erpStore = {
     crearMaestro, actualizarMaestro, eliminarMaestro,
     registrarCotizacion, aceptarCotizacion, registrarOrdenVenta, facturarOrdenVenta,
     registrarOrdenCompra, recibirOrdenCompra, registrarAjuste, liquidarCuenta, registrarMovimientoBanco,
-    registrarDocumento, eliminarDocumento, actualizarPermisos, restablecer,
+    abrirCaja, cerrarCaja, registrarDocumento, eliminarDocumento, actualizarPermisos, restablecer,
   },
 };

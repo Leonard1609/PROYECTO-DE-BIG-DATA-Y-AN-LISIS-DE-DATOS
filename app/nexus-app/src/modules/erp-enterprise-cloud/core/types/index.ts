@@ -195,6 +195,26 @@ export interface MovimientoCaja {
   concepto: string;
   monto: number;
   documentoNumero: string;
+  /** Solo lo traen los asientos de apertura y de arqueo; los movimientos operativos no lo llevan. */
+  origen?: 'Apertura' | 'Arqueo';
+}
+
+/** Una apertura y su cierre. Mientras haya una Abierta, la caja puede recibir y entregar dinero. */
+export interface SesionCaja {
+  id: string;
+  /** Número de la sesión, por ejemplo CJ-0001. */
+  numero: string;
+  fechaApertura: string;
+  /** Dinero contado al abrir. */
+  montoInicial: number;
+  estado: 'Abierta' | 'Cerrada';
+  fechaCierre?: string;
+  /** Saldo que el sistema esperaba al cerrar. */
+  saldoEsperado?: number;
+  /** Dinero contado al cerrar (arqueo). */
+  saldoContado?: number;
+  /** Contado menos esperado: positivo es sobrante, negativo es faltante. */
+  diferencia?: number;
 }
 
 /* ───────── Bancos ───────── */
@@ -281,6 +301,7 @@ export interface ErpState {
   movimientos: MovimientoInventario[];
   cuentas: CuentaFinanciera[];
   caja: MovimientoCaja[];
+  sesionesCaja: SesionCaja[];
   bancos: Maestro[];
   cuentasBancarias: CuentaBancaria[];
   movimientosBanco: MovimientoBanco[];
