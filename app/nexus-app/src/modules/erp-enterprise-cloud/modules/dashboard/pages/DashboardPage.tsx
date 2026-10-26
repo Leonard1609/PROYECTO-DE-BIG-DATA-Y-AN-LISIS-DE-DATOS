@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { useErp } from '../../../core/hooks/useErp';
-import { stockDe } from '../../../core/services/erpStore';
+import { sesionAbierta, stockDe } from '../../../core/services/erpStore';
 import { ERP_BASE } from '../../../core/config/navigation';
 import { formatFechaHora, formatMoneda } from '../../../core/utils/format';
 import { Indicador } from '../../../core/components/Indicador';
@@ -29,6 +29,7 @@ export const DashboardPage: React.FC = () => {
   const pendientes = state.cuentas.filter((c) => c.estado === 'Pendiente');
   const porCobrar = suma(pendientes.filter((c) => c.tipo === 'Cobrar').map((c) => c.saldo));
   const porPagar = suma(pendientes.filter((c) => c.tipo === 'Pagar').map((c) => c.saldo));
+  const cajaAbierta = sesionAbierta(state.sesionesCaja);
 
   const alertas: Alerta[] = [];
   for (const p of state.productos) {
@@ -49,6 +50,22 @@ export const DashboardPage: React.FC = () => {
     });
   }
 
+  // Caja: con la caja cerrada, los documentos al contado no se pueden procesar.
+  const alContado = state.ordenesVenta.filter((o) => o.estado === 'Pendiente' && o.condicion === 'Contado').length
+    + state.ordenesCompra.filter((o) => o.estado === 'Pendiente' && o.condicion === 'Contado').length;
+  if (!cajaAbierta && alContado > 0) {
+    alertas.push({
+      clave: 'caja-cerrada', ruta: 'tesoreria/caja', critica: false,
+      texto: `Caja cerrada: ${alContado} documento${alContado === 1 ? '' : 's'} al contado ${alContado === 1 ? 'espera' : 'esperan'} que abras la caja`,
+    });
+  }
+  if (cajaAbierta && new Date(cajaAbierta.fechaApertura).toDateString() !== new Date().toDateString()) {
+    alertas.push({
+      clave: 'caja-vieja', ruta: 'tesoreria/caja', critica: false,
+      texto: `La caja ${cajaAbierta.numero} sigue abierta desde ${formatFechaHora(cajaAbierta.fechaApertura)}: ciérrala con un arqueo`,
+    });
+  }
+
   // Documentos que esperan una acción en el flujo
   for (const c of state.cotizaciones.filter((x) => x.estado === 'Pendiente')) {
     alertas.push({ clave: `cot-${c.id}`, ruta: 'ventas/cotizaciones', critica: false, texto: `Cotización ${c.numero} por aceptar` });
@@ -62,6 +79,7 @@ export const DashboardPage: React.FC = () => {
 
   const pasos = [
     { texto: 'Datos maestros registrados', hecho: [state.clientes, state.proveedores, state.productos, state.almacenes, state.vendedores].every((l) => l.length > 0), ruta: 'mantenimiento' },
+    { texto: 'Caja abierta (permite ventas y pagos al contado)', hecho: state.sesionesCaja.length > 0, ruta: 'tesoreria/caja' },
     { texto: 'Compra recibida en Kardex (entra stock)', hecho: state.compras.length > 0, ruta: 'compras/kardex' },
     { texto: 'Venta facturada (sale stock)', hecho: state.ventas.length > 0, ruta: 'ventas/facturacion' },
     { texto: 'Factura cobrada', hecho: state.ventas.some((v) => v.estadoPago === 'Pagada'), ruta: 'ventas/estado-cuenta' },
@@ -79,7 +97,7 @@ export const DashboardPage: React.FC = () => {
         <Indicador titulo="Ventas" valor={formatMoneda(totalVentas)} nota={`${ventas.length} facturadas, IGV incluido`} />
         <Indicador titulo="Compras" valor={formatMoneda(totalCompras)} nota={`${compras.length} recibidas en Kardex, IGV incluido`} />
         <Indicador titulo="Utilidad bruta" valor={formatMoneda(utilidad)} nota="Ventas sin IGV menos costo de lo vendido" />
-        <Indicador titulo="Saldo de caja" valor={formatMoneda(ingresos - egresos)} nota="Ingresos menos egresos" />
+        <Indicador titulo="Saldo de caja" valor={formatMoneda(ingresos - egresos)} nota={`Ingresos menos egresos · ${cajaAbierta ? `caja abierta (${cajaAbierta.numero})` : 'caja cerrada'}`} />
         <Indicador titulo="Por cobrar" valor={formatMoneda(porCobrar)} nota="Saldo pendiente de clientes" />
         <Indicador titulo="Por pagar" valor={formatMoneda(porPagar)} nota="Saldo pendiente a proveedores" />
       </div>

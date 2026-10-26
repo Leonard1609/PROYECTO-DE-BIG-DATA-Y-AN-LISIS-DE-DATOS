@@ -59,8 +59,9 @@ const sumarDias = (iso: string, dias: number): string => {
 };
 const fallo = (error: string): Resultado => ({ ok: false, error });
 
-function rechazar(modulo: string, accion: string, error: string): Resultado {
-  commit(state, { modulo, accion, registroId: '-', resultado: 'Rechazado', detalle: error });
+/** Registra el rechazo en la auditoría. Si se conoce el documento afectado, se indica en registroId. */
+function rechazar(modulo: string, accion: string, error: string, registroId = '-'): Resultado {
+  commit(state, { modulo, accion, registroId, resultado: 'Rechazado', detalle: error });
   return fallo(error);
 }
 
@@ -82,6 +83,10 @@ export const sesionAbierta = (sesiones: SesionCaja[]): SesionCaja | undefined =>
   sesiones.find((x) => x.estado === 'Abierta');
 
 const CAJA_CERRADA = 'La caja está cerrada. Ábrela en Tesorería > Caja antes de registrar este movimiento de dinero.';
+
+/** Una salida de dinero no puede dejar la caja en negativo: no se paga con dinero que no hay. */
+const cajaInsuficiente = (disponible: number, sugerencia: string): string =>
+  `Caja no tiene saldo suficiente. Disponible: S/ ${disponible.toFixed(2)}. ${sugerencia}`;
 
 export const saldoCuenta = (movimientos: MovimientoBanco[], cuentaId: string): number =>
   r2(movimientos.filter((m) => m.cuentaId === cuentaId).reduce((a, m) => a + (m.tipo === 'Depósito' ? m.monto : -m.monto), 0));
@@ -271,13 +276,13 @@ function facturarOrdenVenta(ordenId: string): Resultado {
   const s = state;
   const orden = s.ordenesVenta.find((o) => o.id === ordenId);
   if (!orden) return rechazar(M, A, 'La orden de venta no existe.');
-  if (orden.estado === 'Facturada') return rechazar(M, A, 'La orden ya fue facturada.');
-  if (s.ventas.length >= LIMITE_REGISTROS) return rechazar(M, A, `Se alcanzó el límite de ${LIMITE_REGISTROS} registro en facturas.`);
+  if (orden.estado === 'Facturada') return rechazar(M, A, 'La orden ya fue facturada.', orden.numero);
+  if (s.ventas.length >= LIMITE_REGISTROS) return rechazar(M, A, `Se alcanzó el límite de ${LIMITE_REGISTROS} registro en facturas.`, orden.numero);
 
   const cliente = s.clientes.find((c) => c.id === orden.clienteId && c.estado === 'Activo');
-  if (!cliente) return rechazar(M, A, 'El cliente de la orden ya no está activo.');
+  if (!cliente) return rechazar(M, A, 'El cliente de la orden ya no está activo.', orden.numero);
   if (orden.condicion === 'Crédito' && orden.total > cliente.limiteCredito) {
-    return rechazar(M, A, 'El total supera el límite de crédito del cliente.');
+    return rechazar(M, A, 'El total supera el límite de crédito del cliente.', orden.numero);
   }
 
   const fecha = ahora();
@@ -286,7 +291,7 @@ function facturarOrdenVenta(ordenId: string): Resultado {
   for (const l of orden.detalle) {
     const disponible = stockDe([...s.movimientos, ...movimientos], l.productoId, orden.almacenId);
     if (disponible < l.cantidad) {
-      return rechazar(M, A, `Stock insuficiente: disponible ${disponible}, solicitado ${l.cantidad}.`);
+      return rechazar(M, A, `Stock insuficiente: disponible ${disponible}, solicitado ${l.cantidad}.`, orden.numero);
     }
     movimientos.push({
       id: nuevoId('MOV'), fecha, tipo: 'Salida', origen: 'Venta', documentoNumero: numero,
@@ -295,7 +300,7 @@ function facturarOrdenVenta(ordenId: string): Resultado {
   }
 
   // Una venta al contado entra dinero a Caja, así que la caja debe estar abierta.
-  if (orden.condicion === 'Contado' && !sesionAbierta(s.sesionesCaja)) return rechazar(M, A, CAJA_CERRADA);
+  if (orden.condicion === 'Contado' && !sesionAbierta(s.sesionesCaja)) return rechazar(M, A, CAJA_CERRADA, orden.numero);
 
   const contado = orden.condicion === 'Contado';
   const ventaId = nuevoId('VTA');
@@ -357,11 +362,17 @@ function recibirOrdenCompra(ordenId: string): Resultado {
   const s = state;
   const orden = s.ordenesCompra.find((o) => o.id === ordenId);
   if (!orden) return rechazar(M, A, 'La orden de compra no existe.');
-  if (orden.estado === 'Recibida') return rechazar(M, A, 'La orden ya fue recibida.');
-  if (s.compras.length >= LIMITE_REGISTROS) return rechazar(M, A, `Se alcanzó el límite de ${LIMITE_REGISTROS} registro en recepciones.`);
-  if (!s.proveedores.some((p) => p.id === orden.proveedorId && p.estado === 'Activo')) return rechazar(M, A, 'El proveedor de la orden ya no está activo.');
-  // Una compra al contado saca dinero de Caja, así que la caja debe estar abierta.
-  if (orden.condicion === 'Contado' && !sesionAbierta(s.sesionesCaja)) return rechazar(M, A, CAJA_CERRADA);
+  if (orden.estado === 'Recibida') return rechazar(M, A, 'La orden ya fue recibida.', orden.numero);
+  if (s.compras.length >= LIMITE_REGISTROS) return rechazar(M, A, `Se alcanzó el límite de ${LIMITE_REGISTROS} registro en recepciones.`, orden.numero);
+  if (!s.proveedores.some((p) => p.id === orden.proveedorId && p.estado === 'Activo')) return rechazar(M, A, 'El proveedor de la orden ya no está activo.', orden.numero);
+  // Una compra al contado saca dinero de Caja: la caja debe estar abierta y alcanzar para pagarla.
+  if (orden.condicion === 'Contado') {
+    if (!sesionAbierta(s.sesionesCaja)) return rechazar(M, A, CAJA_CERRADA, orden.numero);
+    const disponible = saldoDeCaja(s.caja);
+    if (orden.total > disponible) {
+      return rechazar(M, A, cajaInsuficiente(disponible, 'Abre la caja con más dinero o registra la compra a crédito.'), orden.numero);
+    }
+  }
 
   const fecha = ahora();
   const numero = numerar('REC', s.compras.length);
@@ -442,9 +453,13 @@ function liquidarCuenta(cuentaId: string): Resultado {
   const esCobro = cuenta?.tipo === 'Cobrar';
   const M = esCobro ? 'Ventas' : 'Compras';
   if (!cuenta) return rechazar('Tesorería', 'Liquidar cuenta', 'La cuenta no existe.');
-  if (cuenta.estado === 'Cancelada') return rechazar(M, 'Liquidar cuenta', 'La cuenta ya está cancelada.');
-  // Cobrar o pagar mueve dinero real: la caja debe estar abierta.
-  if (!sesionAbierta(state.sesionesCaja)) return rechazar(M, 'Liquidar cuenta', CAJA_CERRADA);
+  if (cuenta.estado === 'Cancelada') return rechazar(M, 'Liquidar cuenta', 'La cuenta ya está cancelada.', cuenta.documentoNumero);
+  // Cobrar o pagar mueve dinero real: la caja debe estar abierta y, para pagar, alcanzar.
+  if (!sesionAbierta(state.sesionesCaja)) return rechazar(M, 'Liquidar cuenta', CAJA_CERRADA, cuenta.documentoNumero);
+  if (!esCobro && cuenta.saldo > saldoDeCaja(state.caja)) {
+    return rechazar(M, 'Liquidar cuenta',
+      cajaInsuficiente(saldoDeCaja(state.caja), 'Registra primero un cobro o retira dinero del banco.'), cuenta.documentoNumero);
+  }
 
   commit({
     ...state,
